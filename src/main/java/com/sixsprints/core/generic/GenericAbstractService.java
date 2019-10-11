@@ -23,6 +23,10 @@ import com.sixsprints.core.exception.EntityNotFoundException;
 
 public abstract class GenericAbstractService<T extends AbstractMongoEntity> extends ServiceHook<T> {
 
+  private static final String SEQ = "seq";
+
+  private static final String _ID = "_id";
+
   @Autowired
   protected MongoOperations mongo;
 
@@ -37,7 +41,7 @@ public abstract class GenericAbstractService<T extends AbstractMongoEntity> exte
   protected abstract T findDuplicate(T entity);
 
   protected int getNextSequence(String seqName, int size) {
-    CustomSequence counter = mongo.findAndModify(query(where("_id").is(seqName)), new Update().inc("seq", size),
+    CustomSequence counter = mongo.findAndModify(query(where(_ID).is(seqName)), new Update().inc(SEQ, size),
       options().returnNew(true).upsert(true), CustomSequence.class);
     return counter.getSeq();
   }
