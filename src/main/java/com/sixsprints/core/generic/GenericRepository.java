@@ -3,12 +3,14 @@ package com.sixsprints.core.generic;
 
 import java.util.List;
 
+import org.javers.spring.annotation.JaversSpringDataAuditable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;
 
 import com.sixsprints.core.domain.AbstractMongoEntity;
 
+@JaversSpringDataAuditable
 public interface GenericRepository<T extends AbstractMongoEntity> extends MongoRepository<T, String> {
 
   List<T> findAllByActiveTrue();

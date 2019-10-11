@@ -4,14 +4,11 @@ import java.util.List;
 
 import com.google.common.collect.Lists;
 import com.sixsprints.core.domain.AbstractMongoEntity;
-import com.sixsprints.core.dto.ChangeDto;
-import com.sixsprints.core.enums.AuditLogAction;
-import com.sixsprints.core.enums.AuditLogSource;
 import com.sixsprints.core.exception.EntityAlreadyExistsException;
 import com.sixsprints.core.exception.EntityInvalidException;
-import com.sixsprints.core.generic.delete.DeleteAbstractService;
+import com.sixsprints.core.generic.delete.AbstractDeleteService;
 
-public abstract class AbstractCreateService<T extends AbstractMongoEntity> extends DeleteAbstractService<T>
+public abstract class AbstractCreateService<T extends AbstractMongoEntity> extends AbstractDeleteService<T>
   implements GenericCreateService<T> {
 
   @Override
@@ -51,11 +48,7 @@ public abstract class AbstractCreateService<T extends AbstractMongoEntity> exten
     }
     preCreate(domain);
     domain = save(domain);
-    if (domain.getActive()) {
-      ChangeDto change = ChangeDto.builder().action(AuditLogAction.CREATE)
-        .source(AuditLogSource.SCREEN).build();
-      postCreate(domain, change);
-    }
+    postCreate(domain);
     return domain;
   }
 

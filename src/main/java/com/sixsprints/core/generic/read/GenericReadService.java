@@ -6,6 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import com.sixsprints.core.domain.AbstractMongoEntity;
+import com.sixsprints.core.dto.FilterRequestDto;
 import com.sixsprints.core.exception.EntityNotFoundException;
 
 public interface GenericReadService<T extends AbstractMongoEntity> {
@@ -31,5 +32,7 @@ public interface GenericReadService<T extends AbstractMongoEntity> {
   List<T> findAllLike(T example);
 
   T findOneLike(T example);
+
+  Page<T> filter(FilterRequestDto filters);
 
 }

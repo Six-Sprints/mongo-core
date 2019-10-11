@@ -15,6 +15,18 @@ public class DateUtil {
     return initDateFromDate(date).toString(DEFAULT_DATE_PATTERN);
   }
 
+  public static Date startOfDay(Long instant) {
+    return initDateFromLong(instant).millisOfDay().withMinimumValue().toDate();
+  }
+
+  public static Date endOfDay(Long instant) {
+    return initDateFromLong(instant).millisOfDay().withMaximumValue().toDate();
+  }
+  
+  private static DateTime initDateFromLong(Long instant) {
+    return new DateTime(instant, JAPAN_TIME_ZONE);
+  }
+  
   private static DateTime initDateFromDate(Date date) {
     return new DateTime(date, JAPAN_TIME_ZONE);
   }

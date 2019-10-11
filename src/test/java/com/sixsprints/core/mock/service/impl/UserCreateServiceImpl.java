@@ -27,8 +27,8 @@ public class UserCreateServiceImpl extends AbstractCreateService<User> implement
   }
 
   @Override
-  protected MetaData metaData(User entity) {
-    return MetaData.builder().collection("user").prefix("U").build();
+  protected MetaData<User> metaData(User entity) {
+    return MetaData.<User>builder().collection("user").prefix("U").build();
   }
 
   @Override
