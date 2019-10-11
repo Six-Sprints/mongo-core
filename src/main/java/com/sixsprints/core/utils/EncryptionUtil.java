@@ -8,7 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class EncryptionUtil {
 
-  private static final String DEFAULT_ENCRYPTION_ALGORITHM = "MD5";
+  private static final String DEFAULT_ENCRYPTION_ALGORITHM = "SHA-1";
 
   public static String encrypt(String input) {
     return encrypt(input, DEFAULT_ENCRYPTION_ALGORITHM);
