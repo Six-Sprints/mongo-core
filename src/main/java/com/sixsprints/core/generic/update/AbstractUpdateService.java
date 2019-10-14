@@ -1,5 +1,9 @@
 package com.sixsprints.core.generic.update;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.List;
 
 import org.springframework.util.CollectionUtils;
@@ -14,6 +18,9 @@ import com.sixsprints.core.exception.EntityNotFoundException;
 import com.sixsprints.core.generic.create.AbstractCreateService;
 import com.sixsprints.core.utils.BeanWrapperUtil;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public abstract class AbstractUpdateService<T extends AbstractMongoEntity> extends AbstractCreateService<T>
   implements GenericUpdateService<T> {
 
@@ -48,45 +55,58 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity> exten
 
   protected BulkUpdateInfo<T> saveOneWhileBulkImport(T domain) {
     if (isInvalid(domain)) {
-      return BulkUpdateInfo.<T>builder().updateAction(UpdateAction.INVALID).build();
+      return bulkImportInfo(null, UpdateAction.INVALID);
     }
     return saveOrOverwrite(domain);
   }
 
   private BulkUpdateInfo<T> saveOrOverwrite(T domain) {
-    T fromDB = findDuplicate(domain);
-    if (fromDB != null) {
-      if (!fromDB.getActive()) {
-        delete(fromDB);
+    T fromDb = findDuplicate(domain);
+    if (fromDb != null) {
+      if (!fromDb.getActive()) {
+        delete(fromDb);
       } else {
         Boolean active = domain.getActive();
-        domain.copyEntityFrom(fromDB);
+        domain.copyEntityFrom(fromDb);
         domain.setActive(active);
 
-        T copy = clone(fromDB);
+        T copy = clone(fromDb);
         if (metaData().isIgnoreNullWhileBulkUpdate()) {
-          copyNonNullValues(domain, fromDB);
+          copyNonNullValues(domain, fromDb);
         } else {
-          fromDB = domain;
+          fromDb = domain;
         }
 
-        if (checkEquals(fromDB, copy)) {
-          return BulkUpdateInfo.<T>builder().updateAction(UpdateAction.IGNORE).data(fromDB).build();
+        if (checkEquals(fromDb, copy)) {
+          return bulkImportInfo(fromDb, UpdateAction.IGNORE);
         }
-        preUpdate(fromDB);
-        fromDB = save(fromDB);
-        postUpdate(fromDB);
-        return BulkUpdateInfo.<T>builder().updateAction(UpdateAction.UPDATE).data(fromDB).build();
+
+        preUpdate(fromDb);
+        fromDb = save(fromDb);
+        postUpdate(fromDb);
+        return bulkImportInfo(fromDb, UpdateAction.UPDATE);
       }
     }
     preCreate(domain);
     domain = save(domain);
     postCreate(domain);
-    return BulkUpdateInfo.<T>builder().updateAction(UpdateAction.CREATE).data(domain).build();
+    return bulkImportInfo(domain, UpdateAction.CREATE);
   }
 
+  @SuppressWarnings("unchecked")
   protected T clone(T domain) {
-    return null;
+    try {
+      ByteArrayOutputStream baos = new ByteArrayOutputStream();
+      ObjectOutputStream oos = new ObjectOutputStream(baos);
+      oos.writeObject(domain);
+      ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
+      ObjectInputStream ois = new ObjectInputStream(bais);
+      return (T) ois.readObject();
+    } catch (Exception e) {
+      log.warn("Clone failed. Either override the clone method or mark {} as Serializable.",
+        e.getMessage());
+      return null;
+    }
   }
 
   protected boolean checkEquals(T obj1, T obj2) {
@@ -112,6 +132,10 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity> exten
     save(domain);
     postUpdate(domain);
     return domain;
+  }
+
+  private BulkUpdateInfo<T> bulkImportInfo(T fromDB, UpdateAction action) {
+    return BulkUpdateInfo.<T>builder().updateAction(action).data(fromDB).build();
   }
 
 }

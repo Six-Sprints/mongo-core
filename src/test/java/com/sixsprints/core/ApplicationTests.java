@@ -2,6 +2,7 @@ package com.sixsprints.core;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -27,6 +28,11 @@ public class ApplicationTests {
 
   @Before
   public void before() {
+    mongo.getDb().drop();
+  }
+
+  @After
+  public void after() {
     mongo.getDb().drop();
   }
 

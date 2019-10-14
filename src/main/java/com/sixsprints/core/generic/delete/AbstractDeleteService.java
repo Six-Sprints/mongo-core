@@ -16,27 +16,35 @@ public abstract class AbstractDeleteService<T extends AbstractMongoEntity> exten
 
   private static final String ID = "id";
 
+  @Override
   public void delete(String id) {
     repository().deleteById(id);
   }
 
+  @Override
   public void delete(T entity) {
     repository().delete(entity);
   }
 
-  public void delete(List<T> entities) {
-    repository().deleteAll(entities);
+  @Override
+  public void delete(List<String> ids) {
+    Criteria criteria = new Criteria(ID).in(ids);
+    Query query = new Query(criteria);
+    mongo.remove(query, metaData().getClassType());
   }
 
+  @Override
+  public void softDelete(T entity) {
+    softDelete(entity.getId());
+  }
+
+  @Override
   public void softDelete(String id) {
     Criteria criteria = new Criteria(ID).is(id);
     softDeleteQuery(criteria);
   }
 
-  public void softDelete(T entity) {
-    softDelete(entity.getId());
-  }
-
+  @Override
   public void softDelete(List<String> ids) {
     Criteria criteria = new Criteria(ID).in(ids);
     softDeleteQuery(criteria);

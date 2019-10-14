@@ -30,7 +30,12 @@ public abstract class GenericAbstractService<T extends AbstractMongoEntity> exte
   @Autowired
   protected MongoOperations mongo;
 
-  protected abstract GenericRepository<T> repository();
+  @Autowired
+  protected GenericRepository<T> repository;
+
+  protected GenericRepository<T> repository() {
+    return repository;
+  }
 
   protected abstract MetaData<T> metaData(T entity);
 

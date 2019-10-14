@@ -40,6 +40,7 @@ import com.sixsprints.core.utils.DateUtil;
 public abstract class AbstractReadService<T extends AbstractMongoEntity> extends GenericAbstractService<T>
   implements GenericReadService<T> {
 
+  private static final String IGNORE_CASE_FLAG = "i";
   private static final String SLUG = "slug";
 
   @Override
@@ -310,11 +311,11 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
     }
 
     if (!fields.contains(FieldDto.builder().name(SLUG).build())) {
-      searchCriteria.add(setKeyCriteria(SLUG).regex(quote, "i"));
+      searchCriteria.add(setKeyCriteria(SLUG).regex(quote, IGNORE_CASE_FLAG));
     }
     for (FieldDto field : fields) {
       if (field.getDataType().isSearchable()) {
-        Criteria criteria = setKeyCriteria(field.getName()).regex(quote, "i");
+        Criteria criteria = setKeyCriteria(field.getName()).regex(quote, IGNORE_CASE_FLAG);
         searchCriteria.add(criteria);
       }
     }
