@@ -19,6 +19,8 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import com.google.common.collect.Lists;
+import com.mongodb.client.DistinctIterable;
+import com.mongodb.client.MongoCursor;
 import com.sixsprints.core.domain.AbstractMongoEntity;
 import com.sixsprints.core.dto.FieldDto;
 import com.sixsprints.core.dto.FilterRequestDto;
@@ -128,6 +130,19 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
     query.with(pageable);
     List<T> data = mongo.find(query, meta.getClassType());
     return new PageImpl<T>(data, pageable, total);
+  }
+
+  @Override
+  public List<String> distinctColumnValues(String collection, String column) {
+    Query query = new Query();
+    DistinctIterable<String> iterable = mongo.getCollection(collection).distinct(column,
+      query.getQueryObject(), String.class);
+    MongoCursor<String> cursor = iterable.iterator();
+    List<String> list = new ArrayList<>();
+    while (cursor.hasNext()) {
+      list.add(cursor.next());
+    }
+    return list;
   }
 
   protected Pageable pageable(int page, int size) {
