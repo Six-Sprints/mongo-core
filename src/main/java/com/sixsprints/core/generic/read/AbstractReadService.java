@@ -1,6 +1,7 @@
 package com.sixsprints.core.generic.read;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -133,15 +134,21 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
   }
 
   @Override
-  public List<String> distinctColumnValues(String collection, String column) {
+  public List<String> distinctColumnValues(String column, FilterRequestDto filterRequestDto) {
     Query query = new Query();
-    DistinctIterable<String> iterable = mongo.getCollection(collection).distinct(column,
-      query.getQueryObject(), String.class);
+    query.addCriteria(buildCriteria(filterRequestDto, metaData()));
+
+    DistinctIterable<String> iterable = mongo.getCollection(mongo.getCollectionName(metaData().getClassType()))
+      .distinct(column, query.getQueryObject(), String.class);
+
     MongoCursor<String> cursor = iterable.iterator();
     List<String> list = new ArrayList<>();
     while (cursor.hasNext()) {
       list.add(cursor.next());
     }
+    list.remove("");
+    list.add(AppConstants.BLANK_STRING);
+    Collections.sort(list);
     return list;
   }
 

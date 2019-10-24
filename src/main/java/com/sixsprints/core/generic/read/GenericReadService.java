@@ -35,6 +35,6 @@ public interface GenericReadService<T extends AbstractMongoEntity> {
 
   Page<T> filter(FilterRequestDto filters);
 
-  List<String> distinctColumnValues(String collection, String column);
+  List<String> distinctColumnValues(String collection, FilterRequestDto filterRequestDto);
 
 }
