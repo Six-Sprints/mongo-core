@@ -1,8 +1,11 @@
 package com.sixsprints.core.generic.read;
 
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Pattern;
@@ -18,6 +21,10 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.http.HttpStatus;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
+import org.supercsv.cellprocessor.ift.CellProcessor;
+import org.supercsv.io.dozer.CsvDozerBeanWriter;
+import org.supercsv.io.dozer.ICsvDozerBeanWriter;
+import org.supercsv.prefs.CsvPreference;
 
 import com.google.common.collect.Lists;
 import com.mongodb.client.DistinctIterable;
@@ -26,6 +33,7 @@ import com.sixsprints.core.domain.AbstractMongoEntity;
 import com.sixsprints.core.dto.FieldDto;
 import com.sixsprints.core.dto.FilterRequestDto;
 import com.sixsprints.core.dto.MetaData;
+import com.sixsprints.core.dto.PageDto;
 import com.sixsprints.core.dto.filter.BooleanColumnFilter;
 import com.sixsprints.core.dto.filter.ColumnFilter;
 import com.sixsprints.core.dto.filter.DateColumnFilter;
@@ -34,11 +42,14 @@ import com.sixsprints.core.dto.filter.NumberColumnFilter;
 import com.sixsprints.core.dto.filter.SearchColumnFilter;
 import com.sixsprints.core.dto.filter.SetColumnFilter;
 import com.sixsprints.core.dto.filter.SortModel;
+import com.sixsprints.core.exception.BaseException;
 import com.sixsprints.core.exception.BaseRuntimeException;
 import com.sixsprints.core.exception.EntityNotFoundException;
 import com.sixsprints.core.generic.GenericAbstractService;
+import com.sixsprints.core.transformer.GenericTransformer;
 import com.sixsprints.core.utils.AppConstants;
 import com.sixsprints.core.utils.DateUtil;
+import com.sixsprints.core.utils.FieldMappingUtil;
 
 public abstract class AbstractReadService<T extends AbstractMongoEntity> extends GenericAbstractService<T>
   implements GenericReadService<T> {
@@ -150,6 +161,74 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
     list.add(AppConstants.BLANK_STRING);
     Collections.sort(list);
     return list;
+  }
+
+  @Override
+  public <DTO> void streamToCsv(GenericTransformer<T, DTO> transformer,
+    FilterRequestDto filterRequestDto, PrintWriter writer, Locale locale) throws IOException, BaseException {
+
+    if (filterRequestDto == null) {
+      filterRequestDto = FilterRequestDto.builder().build();
+    }
+
+    ICsvDozerBeanWriter beanWriter = null;
+    try {
+      List<FieldDto> fields = metaData().getFields();
+      String mappings[] = exportMappings(fields);
+
+      beanWriter = new CsvDozerBeanWriter(writer, CsvPreference.STANDARD_PREFERENCE);
+      beanWriter.configureBeanMapping(metaData().getDtoClassType(), mappings);
+      writeHeader(beanWriter, fields, mappings, locale);
+
+      // STREAMING IN BATCHES OF 750
+      filterRequestDto.setPage(0);
+      filterRequestDto.setSize(750);
+
+      PageDto<DTO> pages = transformer.pageEntityToPageDtoDto(filter(filterRequestDto));
+
+      int totalPages = pages.getTotalPages();
+      CellProcessor[] exportProcessors = exportCellProcessors(mappings);
+
+      for (int i = 0; i < totalPages; i++) {
+        List<DTO> dtos = pages.getContent();
+        for (final DTO dto : dtos) {
+          beanWriter.write(dto, exportProcessors);
+          writer.flush();
+        }
+        if (i + 1 == totalPages) {
+          continue;
+        }
+        filterRequestDto.setPage(i + 1);
+        pages = transformer.pageEntityToPageDtoDto(filter(filterRequestDto));
+      }
+
+    } finally {
+
+      if (beanWriter != null) {
+        beanWriter.close();
+      }
+      if (writer != null) {
+        writer.close();
+      }
+    }
+
+  }
+
+  protected CellProcessor[] exportCellProcessors(String[] mappings) {
+    CellProcessor[] processors = new CellProcessor[mappings.length];
+    for (int i = 0; i < mappings.length; i++) {
+      processors[i] = null;
+    }
+    return processors;
+  }
+
+  protected void writeHeader(ICsvDozerBeanWriter beanWriter, List<FieldDto> fields, String[] mappings,
+    Locale locale) throws IOException {
+    beanWriter.writeHeader(FieldMappingUtil.createHeaders(mappings, fields, locale));
+  }
+
+  protected String[] exportMappings(List<FieldDto> fields) {
+    return FieldMappingUtil.genericMappings(fields);
   }
 
   protected Pageable pageable(int page, int size) {

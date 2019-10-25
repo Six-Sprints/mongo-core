@@ -23,6 +23,8 @@ public class MetaData<T extends AbstractMongoEntity> {
 
   private Class<T> classType;
 
+  private Class<?> dtoClassType;
+
   private Sort defaultSort;
 
   private List<FieldDto> fields;

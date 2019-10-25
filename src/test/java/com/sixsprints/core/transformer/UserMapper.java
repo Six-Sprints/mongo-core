@@ -7,18 +7,19 @@ import org.mapstruct.factory.Mappers;
 
 import com.sixsprints.core.mock.domain.User;
 import com.sixsprints.core.mock.domain.embedded.Address;
+import com.sixsprints.core.mock.dto.UserDto;
 
 @Mapper(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-public interface UserMapper {
+public abstract class UserMapper extends GenericTransformer<User, UserDto> {
 
-  UserMapper INSTANCE = Mappers.getMapper(UserMapper.class);
+  public static UserMapper INSTANCE = Mappers.getMapper(UserMapper.class);
 
-  void copyNonNull(User src, @MappingTarget User target);
+  public abstract void copyNonNull(User src, @MappingTarget User target);
 
-  void copyAddress(Address src, @MappingTarget Address target);
+  public abstract void copyAddress(Address src, @MappingTarget Address target);
 
-  User clone(User src);
+  public abstract User clone(User src);
 
-  Address clone(Address vendor);
+  public abstract Address clone(Address vendor);
 
 }

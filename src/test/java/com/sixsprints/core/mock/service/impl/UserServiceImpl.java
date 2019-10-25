@@ -6,8 +6,10 @@ import org.springframework.stereotype.Service;
 import com.sixsprints.core.dto.MetaData;
 import com.sixsprints.core.generic.GenericRepository;
 import com.sixsprints.core.mock.domain.User;
+import com.sixsprints.core.mock.dto.UserDto;
 import com.sixsprints.core.mock.repository.UserRepository;
 import com.sixsprints.core.mock.service.UserService;
+import com.sixsprints.core.mock.util.UserFieldData;
 import com.sixsprints.core.service.AbstractCrudService;
 import com.sixsprints.core.transformer.UserMapper;
 
@@ -25,7 +27,9 @@ public class UserServiceImpl extends AbstractCrudService<User> implements UserSe
   @Override
   protected MetaData<User> metaData(User entity) {
     return MetaData.<User>builder().collection("user").prefix("U")
-      .classType(User.class).build();
+      .classType(User.class).dtoClassType(UserDto.class)
+      .fields(UserFieldData.fields())
+      .build();
   }
 
   @Override

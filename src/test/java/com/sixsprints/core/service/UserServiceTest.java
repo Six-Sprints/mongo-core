@@ -2,7 +2,11 @@ package com.sixsprints.core.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.List;
+import java.util.Locale;
 
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,14 +16,18 @@ import com.google.common.collect.Lists;
 import com.sixsprints.core.ApplicationTests;
 import com.sixsprints.core.dto.BulkUpdateInfo;
 import com.sixsprints.core.enums.UpdateAction;
+import com.sixsprints.core.exception.BaseException;
 import com.sixsprints.core.mock.domain.User;
 import com.sixsprints.core.mock.domain.embedded.Address;
 import com.sixsprints.core.mock.service.UserService;
+import com.sixsprints.core.transformer.UserMapper;
 
 public class UserServiceTest extends ApplicationTests {
 
   @Autowired
   private UserService service;
+
+  private UserMapper userMapper = UserMapper.INSTANCE;
 
   @Test
   public void testSave() {
@@ -53,6 +61,21 @@ public class UserServiceTest extends ApplicationTests {
     List<BulkUpdateInfo<User>> user = service.bulkImport(ImmutableList.<User>of(userWithNullAddress(--i)));
     assertThat(user.get(0).getUpdateAction()).isEqualTo(UpdateAction.IGNORE);
     userAssert(user.get(0).getData(), i);
+  }
+
+  @Test
+  public void shouldExportToCsv() throws IOException, BaseException {
+
+    List<User> list = Lists.newArrayList();
+    for (int i = 1; i < 10; i++) {
+      list.add(user(i));
+    }
+    service.bulkImport(list);
+
+    String currentUsersHomeDir = System.getProperty("user.home");
+    String otherFolder = currentUsersHomeDir + File.separator + "Desktop" + File.separator + "test.csv";
+    PrintWriter writer = new PrintWriter(new File(otherFolder));
+    service.streamToCsv(userMapper, null, writer, Locale.ENGLISH);
   }
 
   private User user(int i) {
