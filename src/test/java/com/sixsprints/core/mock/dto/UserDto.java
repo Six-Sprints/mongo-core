@@ -1,5 +1,7 @@
 package com.sixsprints.core.mock.dto;
 
+import java.util.Date;
+
 import com.sixsprints.core.mock.domain.embedded.Address;
 
 import lombok.AllArgsConstructor;
@@ -20,5 +22,7 @@ public class UserDto {
   private Boolean flag;
 
   private Address address;
+
+  protected Date dateCreated;
 
 }

@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintWriter;
 import java.util.List;
 import java.util.Locale;
@@ -15,10 +16,12 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.sixsprints.core.ApplicationTests;
 import com.sixsprints.core.dto.BulkUpdateInfo;
+import com.sixsprints.core.dto.ImportResponseWrapper;
 import com.sixsprints.core.enums.UpdateAction;
 import com.sixsprints.core.exception.BaseException;
 import com.sixsprints.core.mock.domain.User;
 import com.sixsprints.core.mock.domain.embedded.Address;
+import com.sixsprints.core.mock.dto.UserDto;
 import com.sixsprints.core.mock.service.UserService;
 import com.sixsprints.core.transformer.UserMapper;
 
@@ -72,10 +75,25 @@ public class UserServiceTest extends ApplicationTests {
     }
     service.bulkImport(list);
 
+    String fileName = fileName();
+    PrintWriter writer = new PrintWriter(new File(fileName));
+    service.exportData(userMapper, null, writer, Locale.ENGLISH);
+  }
+
+  @Test
+  public void shouldImportFromCsv() throws IOException, BaseException {
+
+    String fileName = "/test.csv";
+
+    InputStream stream = this.getClass().getResourceAsStream(fileName);
+    ImportResponseWrapper<UserDto> dataFromStream = service.importData(stream, Locale.ENGLISH);
+    System.out.println(dataFromStream);
+  }
+
+  private String fileName() {
     String currentUsersHomeDir = System.getProperty("user.home");
     String otherFolder = currentUsersHomeDir + File.separator + "Desktop" + File.separator + "test.csv";
-    PrintWriter writer = new PrintWriter(new File(otherFolder));
-    service.streamToCsv(userMapper, null, writer, Locale.ENGLISH);
+    return otherFolder;
   }
 
   private User user(int i) {

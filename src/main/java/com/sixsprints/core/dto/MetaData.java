@@ -29,6 +29,8 @@ public class MetaData<T extends AbstractMongoEntity> {
 
   private List<FieldDto> fields;
 
+  private String entityName;
+
   @Builder.Default
   private boolean ignoreNullWhileBulkUpdate = Boolean.TRUE;
 

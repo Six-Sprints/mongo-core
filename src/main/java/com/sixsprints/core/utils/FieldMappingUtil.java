@@ -1,8 +1,11 @@
 package com.sixsprints.core.utils;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+
+import org.apache.commons.lang3.ArrayUtils;
 
 import com.sixsprints.core.dto.FieldDto;
 import com.sixsprints.core.exception.BaseException;
@@ -37,11 +40,31 @@ public class FieldMappingUtil {
   }
 
   private static String findFieldLocaleName(List<FieldDto> fields, String mapping, Locale locale) {
-    Optional<FieldDto> fieldDto = fields.stream().filter(field -> field.getName().equals(mapping)).findFirst();
+    Optional<FieldDto> fieldDto = fields.stream().filter(field -> match(field.getName(), mapping)).findFirst();
     if (fieldDto.isPresent()) {
       return fieldDto.get().getLocalizedDisplay().get(locale);
     }
     return mapping;
+  }
+
+  public static int indexOf(final String[] mappings, final String field) {
+    return ArrayUtils.indexOf(mappings, field);
+  }
+
+  public static List<Integer> indexesOf(final String[] mappings, final String field) {
+    List<Integer> indexes = new ArrayList<Integer>();
+    int i = 0;
+    for (String mapping : mappings) {
+      if (match(field, mapping)) {
+        indexes.add(i);
+      }
+      i++;
+    }
+    return indexes;
+  }
+
+  private static boolean match(final String field, String mapping) {
+    return mapping.equals(field);
   }
 
 }

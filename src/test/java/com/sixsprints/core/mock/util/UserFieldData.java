@@ -16,7 +16,8 @@ public class UserFieldData {
     int i = 0;
     fields.add(FieldDto.builder().name("email").sequence(i++)
       .dataType(DataType.TEXT)
-      .localizedDisplay(ImmutableMap.<Locale, String>of(Locale.ENGLISH, "Email", Locale.JAPANESE, "メール")).build());
+      .localizedDisplay(ImmutableMap.<Locale, String>of(Locale.ENGLISH, "Email", Locale.JAPANESE, "JapanEmail"))
+      .build());
 
     fields.add(FieldDto.builder().name("name").sequence(i++)
       .dataType(DataType.TEXT)
@@ -29,6 +30,10 @@ public class UserFieldData {
     fields.add(FieldDto.builder().name("address.city").sequence(i++)
       .dataType(DataType.TEXT)
       .localizedDisplay(ImmutableMap.<Locale, String>of(Locale.ENGLISH, "City", Locale.JAPANESE, "JapanCity")).build());
+
+    fields.add(FieldDto.builder().name("dateCreated").sequence(i++)
+      .dataType(DataType.DATE)
+      .localizedDisplay(ImmutableMap.<Locale, String>of(Locale.ENGLISH, "Date", Locale.JAPANESE, "メール")).build());
 
     return fields;
   }

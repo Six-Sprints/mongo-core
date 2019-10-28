@@ -42,7 +42,7 @@ public interface GenericReadService<T extends AbstractMongoEntity> {
 
   List<String> distinctColumnValues(String collection, FilterRequestDto filterRequestDto);
 
-  <E> void streamToCsv(GenericTransformer<T, E> transformer,
+  <E> void exportData(GenericTransformer<T, E> transformer,
     FilterRequestDto filterRequestDto, PrintWriter writer, Locale locale)
     throws IOException, BaseException;
 

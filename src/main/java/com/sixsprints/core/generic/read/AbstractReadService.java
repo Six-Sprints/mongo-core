@@ -48,6 +48,7 @@ import com.sixsprints.core.exception.EntityNotFoundException;
 import com.sixsprints.core.generic.GenericAbstractService;
 import com.sixsprints.core.transformer.GenericTransformer;
 import com.sixsprints.core.utils.AppConstants;
+import com.sixsprints.core.utils.CellProcessorUtil;
 import com.sixsprints.core.utils.DateUtil;
 import com.sixsprints.core.utils.FieldMappingUtil;
 
@@ -164,7 +165,7 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
   }
 
   @Override
-  public <DTO> void streamToCsv(GenericTransformer<T, DTO> transformer,
+  public <DTO> void exportData(GenericTransformer<T, DTO> transformer,
     FilterRequestDto filterRequestDto, PrintWriter writer, Locale locale) throws IOException, BaseException {
 
     if (filterRequestDto == null) {
@@ -187,7 +188,7 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
       PageDto<DTO> pages = transformer.pageEntityToPageDtoDto(filter(filterRequestDto));
 
       int totalPages = pages.getTotalPages();
-      CellProcessor[] exportProcessors = exportCellProcessors(mappings);
+      CellProcessor[] exportProcessors = exportCellProcessors(fields);
 
       for (int i = 0; i < totalPages; i++) {
         List<DTO> dtos = pages.getContent();
@@ -214,12 +215,8 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
 
   }
 
-  protected CellProcessor[] exportCellProcessors(String[] mappings) {
-    CellProcessor[] processors = new CellProcessor[mappings.length];
-    for (int i = 0; i < mappings.length; i++) {
-      processors[i] = null;
-    }
-    return processors;
+  protected CellProcessor[] exportCellProcessors(List<FieldDto> fields) {
+    return CellProcessorUtil.exportProcessors(fields);
   }
 
   protected void writeHeader(ICsvDozerBeanWriter beanWriter, List<FieldDto> fields, String[] mappings,

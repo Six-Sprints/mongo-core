@@ -1,5 +1,7 @@
 package com.sixsprints.core.dto;
 
+import java.util.List;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -10,13 +12,13 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@EqualsAndHashCode(callSuper = false)
-public class ValidationConstraintDto {
+@EqualsAndHashCode
+public class ImportResponseWrapper<T> {
 
-  private Long minLength;
+  private List<T> data;
 
-  private Long maxLength;
+  private ImportLogDetails importLogDetails;
 
-  private boolean isRequired;
+  private String[] firstLine;
 
 }
