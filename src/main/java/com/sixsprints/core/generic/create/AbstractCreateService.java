@@ -80,11 +80,11 @@ public abstract class AbstractCreateService<T extends AbstractMongoEntity> exten
     return domain;
   }
 
-  public <E> ImportResponseWrapper<E> importData(InputStream inputStream, Locale locale)
+  public <DTO> ImportResponseWrapper<DTO> importData(InputStream inputStream, Locale locale)
     throws IOException, BaseException {
 
     @SuppressWarnings("unchecked")
-    Class<E> classType = (Class<E>) metaData().getDtoClassType();
+    Class<DTO> classType = (Class<DTO>) metaData().getDtoClassType();
 
     log.info("Import request received for {}", classType.getSimpleName());
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -93,7 +93,7 @@ public abstract class AbstractCreateService<T extends AbstractMongoEntity> exten
     ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
     List<FieldDto> fields = metaData().getFields();
     String encoding = checkEncoding(bais, fields);
-    List<E> data = new ArrayList<>();
+    List<DTO> data = new ArrayList<>();
     ICsvDozerBeanReader beanReader = null;
     List<UploadError> errors = Lists.newArrayList();
     List<String> unknownErrors = new ArrayList<>();
@@ -103,7 +103,7 @@ public abstract class AbstractCreateService<T extends AbstractMongoEntity> exten
       firstLine = beanReader.getHeader(true);
       String[] mappings = readHeader(locale, beanReader, fields, firstLine);
       beanReader.configureBeanMapping(classType, mappings);
-      E domain = null;
+      DTO domain = null;
       while (true) {
         try {
           domain = beanReader.read(classType, importCellPocessors(fields));
@@ -148,7 +148,7 @@ public abstract class AbstractCreateService<T extends AbstractMongoEntity> exten
       .totalRowCount(errorSize + unknownErrors.size() + data.size())
       .entity(metaData().getEntityName()).build();
 
-    return ImportResponseWrapper.<E>builder().data(data).importLogDetails(log).firstLine(firstLine).build();
+    return ImportResponseWrapper.<DTO>builder().data(data).importLogDetails(log).firstLine(firstLine).build();
   }
 
   protected CellProcessor[] importCellPocessors(List<FieldDto> fields) {

@@ -146,6 +146,15 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
   }
 
   @Override
+  public List<T> filterAll(FilterRequestDto filterRequestDto) {
+    MetaData<T> meta = metaData();
+    Criteria criteria = buildCriteria(filterRequestDto, meta);
+    Query query = new Query(criteria);
+    List<T> data = mongo.find(query, meta.getClassType());
+    return data;
+  }
+
+  @Override
   public List<String> distinctColumnValues(String column, FilterRequestDto filterRequestDto) {
     Query query = new Query();
     query.addCriteria(buildCriteria(filterRequestDto, metaData()));

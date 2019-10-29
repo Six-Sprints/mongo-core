@@ -18,6 +18,8 @@ import lombok.NoArgsConstructor;
 @EqualsAndHashCode(callSuper = false, of = { "name" })
 public class FieldDto implements Comparable<FieldDto> {
 
+  private String displayName;
+
   private String name;
 
   private int sequence;

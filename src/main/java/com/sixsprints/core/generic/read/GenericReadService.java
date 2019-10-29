@@ -39,6 +39,8 @@ public interface GenericReadService<T extends AbstractMongoEntity> {
   T findOneLike(T example);
 
   Page<T> filter(FilterRequestDto filters);
+  
+  List<T> filterAll(FilterRequestDto filters);
 
   List<String> distinctColumnValues(String collection, FilterRequestDto filterRequestDto);
 
