@@ -54,14 +54,14 @@ public class UserServiceTest extends ApplicationTests {
       list.add(user(i));
       list.add(user(i));
     }
-    List<BulkUpdateInfo<User>> users = service.bulkImport(list);
+    List<BulkUpdateInfo<User>> users = service.updateAll(list);
     int i = 1;
     for (BulkUpdateInfo<User> user : users) {
       if (!user.getUpdateAction().equals(UpdateAction.IGNORE)) {
         userAssert(user.getData(), i++);
       }
     }
-    List<BulkUpdateInfo<User>> user = service.bulkImport(ImmutableList.<User>of(userWithNullAddress(--i)));
+    List<BulkUpdateInfo<User>> user = service.updateAll(ImmutableList.<User>of(userWithNullAddress(--i)));
     assertThat(user.get(0).getUpdateAction()).isEqualTo(UpdateAction.IGNORE);
     userAssert(user.get(0).getData(), i);
   }
@@ -73,7 +73,7 @@ public class UserServiceTest extends ApplicationTests {
     for (int i = 1; i < 10; i++) {
       list.add(user(i));
     }
-    service.bulkImport(list);
+    service.updateAll(list);
 
     String fileName = fileName();
     PrintWriter writer = new PrintWriter(new File(fileName));

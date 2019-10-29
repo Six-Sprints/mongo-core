@@ -42,7 +42,7 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity> exten
   }
 
   @Override
-  public List<BulkUpdateInfo<T>> bulkImport(List<T> list) {
+  public List<BulkUpdateInfo<T>> updateAll(List<T> list) {
     List<BulkUpdateInfo<T>> updateInfo = Lists.newArrayList();
     if (CollectionUtils.isEmpty(list)) {
       return updateInfo;

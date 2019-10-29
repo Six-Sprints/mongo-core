@@ -13,6 +13,6 @@ public interface GenericUpdateService<T extends AbstractMongoEntity> {
 
   T patchUpdate(String id, T domain, String propChanged) throws EntityNotFoundException, EntityAlreadyExistsException;
 
-  List<BulkUpdateInfo<T>> bulkImport(List<T> list);
+  List<BulkUpdateInfo<T>> updateAll(List<T> list);
 
 }
