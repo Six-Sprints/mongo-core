@@ -38,6 +38,10 @@ public class FieldDto implements Comparable<FieldDto> {
 
   private Map<Locale, String> localizedDisplay;
 
+  private String collectionName;
+
+  private String columnName;
+
   @Override
   public int compareTo(FieldDto o) {
     return sequence - o.sequence;
