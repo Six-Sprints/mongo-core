@@ -162,7 +162,7 @@ public abstract class AbstractCreateService<T extends AbstractMongoEntity> exten
 
   protected String checkEncoding(ByteArrayInputStream bais, List<FieldDto> fields) throws IOException {
     ICsvDozerBeanReader beanReader = null;
-    String name = fields.get(0).getName();
+    String name = fields.get(0).getDisplayName();
     String encodings[] = supportedEncodings();
     for (String encoding : encodings) {
       try {
