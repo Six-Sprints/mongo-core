@@ -103,10 +103,11 @@ public abstract class AbstractCreateService<T extends AbstractMongoEntity> exten
       firstLine = beanReader.getHeader(true);
       String[] mappings = readHeader(locale, beanReader, fields, firstLine);
       beanReader.configureBeanMapping(classType, mappings);
+      CellProcessor[] cellProcessors = importCellPocessors(fields);
       DTO domain = null;
       while (true) {
         try {
-          domain = beanReader.read(classType, importCellPocessors(fields));
+          domain = beanReader.read(classType, cellProcessors);
           if (domain == null) {
             break;
           }
@@ -152,7 +153,7 @@ public abstract class AbstractCreateService<T extends AbstractMongoEntity> exten
   }
 
   protected CellProcessor[] importCellPocessors(List<FieldDto> fields) {
-    return CellProcessorUtil.importProcessors(fields);
+    return CellProcessorUtil.importProcessors(fields, mongo);
   }
 
   protected String[] readHeader(Locale locale, ICsvDozerBeanReader beanReader, List<FieldDto> fields,

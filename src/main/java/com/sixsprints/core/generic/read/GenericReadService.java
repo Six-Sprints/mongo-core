@@ -42,7 +42,7 @@ public interface GenericReadService<T extends AbstractMongoEntity> {
   
   List<T> filterAll(FilterRequestDto filters);
 
-  List<String> distinctColumnValues(String collection, FilterRequestDto filterRequestDto);
+  List<String> distinctColumnValues(String column, FilterRequestDto filterRequestDto);
 
   <E> void exportData(GenericTransformer<T, E> transformer,
     FilterRequestDto filterRequestDto, PrintWriter writer, Locale locale)

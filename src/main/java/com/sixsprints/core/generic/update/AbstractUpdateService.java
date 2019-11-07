@@ -14,6 +14,7 @@ import com.sixsprints.core.domain.AbstractMongoEntity;
 import com.sixsprints.core.dto.BulkUpdateInfo;
 import com.sixsprints.core.enums.UpdateAction;
 import com.sixsprints.core.exception.EntityAlreadyExistsException;
+import com.sixsprints.core.exception.EntityInvalidException;
 import com.sixsprints.core.exception.EntityNotFoundException;
 import com.sixsprints.core.generic.create.AbstractCreateService;
 import com.sixsprints.core.utils.BeanWrapperUtil;
@@ -53,6 +54,15 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity> exten
     return updateInfo;
   }
 
+  @Override
+  public T saveOrUpdate(T domain) throws EntityInvalidException {
+    BulkUpdateInfo<T> updateInfo = saveOneWhileBulkImport(domain);
+    if (UpdateAction.INVALID.equals(updateInfo.getUpdateAction())) {
+      throw invalidException(domain);
+    }
+    return updateInfo.getData();
+  }
+
   protected BulkUpdateInfo<T> saveOneWhileBulkImport(T domain) {
     if (isInvalid(domain)) {
       return bulkImportInfo(null, UpdateAction.INVALID);
@@ -60,7 +70,7 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity> exten
     return saveOrOverwrite(domain);
   }
 
-  private BulkUpdateInfo<T> saveOrOverwrite(T domain) {
+  protected BulkUpdateInfo<T> saveOrOverwrite(T domain) {
     T fromDb = findDuplicate(domain);
     if (fromDb != null) {
       if (!fromDb.getActive()) {

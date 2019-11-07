@@ -11,14 +11,17 @@ import java.util.Locale;
 
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.mongodb.core.MongoOperations;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.sixsprints.core.ApplicationTests;
 import com.sixsprints.core.dto.BulkUpdateInfo;
+import com.sixsprints.core.dto.ImportLogDetails;
 import com.sixsprints.core.dto.ImportResponseWrapper;
 import com.sixsprints.core.enums.UpdateAction;
 import com.sixsprints.core.exception.BaseException;
+import com.sixsprints.core.mock.domain.Role;
 import com.sixsprints.core.mock.domain.User;
 import com.sixsprints.core.mock.domain.embedded.Address;
 import com.sixsprints.core.mock.dto.UserDto;
@@ -28,22 +31,25 @@ import com.sixsprints.core.transformer.UserMapper;
 public class UserServiceTest extends ApplicationTests {
 
   @Autowired
-  private UserService service;
+  private UserService userService;
+
+  @Autowired
+  private MongoOperations mongo;
 
   private UserMapper userMapper = UserMapper.INSTANCE;
 
   @Test
   public void testSave() {
     User user = user(1);
-    user = service.save(user);
+    user = userService.save(user);
     userAssert(user, 1);
   }
 
   @Test
   public void testSaveTwiceAndSlugMustNotChange() {
     User user = user(1);
-    user = service.save(user);
-    user = service.save(user);
+    user = userService.save(user);
+    user = userService.save(user);
     userAssert(user, 1);
   }
 
@@ -54,14 +60,14 @@ public class UserServiceTest extends ApplicationTests {
       list.add(user(i));
       list.add(user(i));
     }
-    List<BulkUpdateInfo<User>> users = service.updateAll(list);
+    List<BulkUpdateInfo<User>> users = userService.updateAll(list);
     int i = 1;
     for (BulkUpdateInfo<User> user : users) {
       if (!user.getUpdateAction().equals(UpdateAction.IGNORE)) {
         userAssert(user.getData(), i++);
       }
     }
-    List<BulkUpdateInfo<User>> user = service.updateAll(ImmutableList.<User>of(userWithNullAddress(--i)));
+    List<BulkUpdateInfo<User>> user = userService.updateAll(ImmutableList.<User>of(userWithNullAddress(--i)));
     assertThat(user.get(0).getUpdateAction()).isEqualTo(UpdateAction.IGNORE);
     userAssert(user.get(0).getData(), i);
   }
@@ -73,21 +79,28 @@ public class UserServiceTest extends ApplicationTests {
     for (int i = 1; i < 10; i++) {
       list.add(user(i));
     }
-    service.updateAll(list);
+    userService.updateAll(list);
 
     String fileName = fileName();
     PrintWriter writer = new PrintWriter(new File(fileName));
-    service.exportData(userMapper, null, writer, Locale.ENGLISH);
+    userService.exportData(userMapper, null, writer, Locale.ENGLISH);
   }
 
   @Test
   public void shouldImportFromCsv() throws IOException, BaseException {
 
+    mongo.save(Role.builder().name("ADMIN").build(), "role");
+
     String fileName = "/test.csv";
 
     InputStream stream = this.getClass().getResourceAsStream(fileName);
-    ImportResponseWrapper<UserDto> dataFromStream = service.importData(stream, Locale.ENGLISH);
-    System.out.println(dataFromStream);
+    ImportResponseWrapper<UserDto> dataFromStream = userService.importData(stream, Locale.ENGLISH);
+    ImportLogDetails log = dataFromStream.getImportLogDetails();
+
+    assertThat(log.getTotalRowCount()).isEqualTo(9);
+    assertThat(log.getSuccessRowCount()).isEqualTo(4);
+    assertThat(log.getErrorRowCount()).isEqualTo(5);
+    
   }
 
   private String fileName() {

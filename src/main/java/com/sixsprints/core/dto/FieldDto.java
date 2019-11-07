@@ -42,6 +42,10 @@ public class FieldDto implements Comparable<FieldDto> {
 
   private String columnName;
 
+  private Class<? extends Enum<?>> enumClass;
+
+  private Object defaultValue;
+
   @Override
   public int compareTo(FieldDto o) {
     return sequence - o.sequence;
