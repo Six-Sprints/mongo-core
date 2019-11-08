@@ -7,8 +7,10 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.tomcat.util.http.fileupload.IOUtils;
@@ -103,7 +105,7 @@ public abstract class AbstractCreateService<T extends AbstractMongoEntity> exten
       firstLine = beanReader.getHeader(true);
       String[] mappings = readHeader(locale, beanReader, fields, firstLine);
       beanReader.configureBeanMapping(classType, mappings);
-      CellProcessor[] cellProcessors = importCellPocessors(fields);
+      CellProcessor[] cellProcessors = cellProcessors(fields);
       DTO domain = null;
       while (true) {
         try {
@@ -152,8 +154,13 @@ public abstract class AbstractCreateService<T extends AbstractMongoEntity> exten
     return ImportResponseWrapper.<DTO>builder().data(data).importLogDetails(log).firstLine(firstLine).build();
   }
 
-  protected CellProcessor[] importCellPocessors(List<FieldDto> fields) {
-    return CellProcessorUtil.importProcessors(fields, mongo);
+  private CellProcessor[] cellProcessors(List<FieldDto> fields) {
+    Map<String, CellProcessor> map = importCellProcessors(fields);
+    return CellProcessorUtil.importProcessors(fields, map, mongo);
+  }
+
+  protected Map<String, CellProcessor> importCellProcessors(List<FieldDto> fields) {
+    return new HashMap<>();
   }
 
   protected String[] readHeader(Locale locale, ICsvDozerBeanReader beanReader, List<FieldDto> fields,

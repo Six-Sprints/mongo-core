@@ -1,6 +1,7 @@
 package com.sixsprints.core.utils;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.data.mongodb.core.MongoOperations;
 import org.supercsv.cellprocessor.ParseDouble;
@@ -20,12 +21,18 @@ import com.sixsprints.core.utils.csv.ParseUrl;
 public class CellProcessorUtil {
 
   public static <T extends AbstractMongoEntity> CellProcessor[] importProcessors(List<FieldDto> fields,
-    MongoOperations mongo) {
+    Map<String, CellProcessor> map, MongoOperations mongo) {
     int total = fields.size();
     final CellProcessor[] processors = new CellProcessor[total];
     int i = 0;
     for (FieldDto field : fields) {
-      processors[i++] = addImportProcessor(field, mongo);
+      if (map.containsKey(field.getName())) {
+        processors[i++] = map.get(field.getName());
+      } else if (map.containsKey(field.getDataType().name())) {
+        processors[i++] = map.get(field.getDataType().name());
+      } else {
+        processors[i++] = addImportProcessor(field, mongo);
+      }
     }
     return processors;
   }
