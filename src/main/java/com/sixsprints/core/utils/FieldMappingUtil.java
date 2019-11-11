@@ -6,6 +6,7 @@ import java.util.Locale;
 import java.util.Optional;
 
 import org.apache.commons.lang3.ArrayUtils;
+import org.springframework.util.StringUtils;
 
 import com.sixsprints.core.dto.FieldDto;
 import com.sixsprints.core.exception.BaseException;
@@ -42,7 +43,12 @@ public class FieldMappingUtil {
   private static String findFieldLocaleName(List<FieldDto> fields, String mapping, Locale locale) {
     Optional<FieldDto> fieldDto = fields.stream().filter(field -> match(field.getName(), mapping)).findFirst();
     if (fieldDto.isPresent()) {
-      return fieldDto.get().getLocalizedDisplay().get(locale);
+      if (fieldDto.get().getLocalizedDisplay() == null || fieldDto.get().getLocalizedDisplay().isEmpty()
+        || StringUtils.isEmpty(fieldDto.get().getLocalizedDisplay().get(locale))) {
+        return fieldDto.get().getDisplayName();
+      } else {
+        fieldDto.get().getLocalizedDisplay().get(locale);
+      }
     }
     return mapping;
   }
