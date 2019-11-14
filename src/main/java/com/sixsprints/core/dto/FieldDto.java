@@ -47,7 +47,7 @@ public class FieldDto implements Comparable<FieldDto> {
 
   private Object defaultValue;
 
-  private List<? extends Enum<?>> allValues;
+  private List<?> allValues;
 
   @Override
   public int compareTo(FieldDto o) {

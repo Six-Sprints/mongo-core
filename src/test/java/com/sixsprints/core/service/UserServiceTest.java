@@ -46,6 +46,13 @@ public class UserServiceTest extends ApplicationTests {
   }
 
   @Test
+  public void testFindAllWithConverters() {
+    testSave();
+    List<User> findAll = userService.findAll();
+    userAssert(findAll.get(0), 1);
+  }
+
+  @Test
   public void testSaveTwiceAndSlugMustNotChange() {
     User user = user(1);
     user = userService.save(user);
@@ -100,7 +107,7 @@ public class UserServiceTest extends ApplicationTests {
     assertThat(log.getTotalRowCount()).isEqualTo(9);
     assertThat(log.getSuccessRowCount()).isEqualTo(4);
     assertThat(log.getErrorRowCount()).isEqualTo(5);
-    
+
   }
 
   private String fileName() {
