@@ -20,8 +20,8 @@ import com.sixsprints.core.utils.csv.ParseUrl;
 
 public class CellProcessorUtil {
 
-  public static <T extends AbstractMongoEntity> CellProcessor[] importProcessors(List<FieldDto> fields,
-    Map<String, CellProcessor> map, MongoOperations mongo) {
+  public static CellProcessor[] importProcessors(List<FieldDto> fields, Map<String, CellProcessor> map,
+    MongoOperations mongo) {
     int total = fields.size();
     final CellProcessor[] processors = new CellProcessor[total];
     int i = 0;
@@ -32,6 +32,25 @@ public class CellProcessorUtil {
         processors[i++] = map.get(field.getDataType().name());
       } else {
         processors[i++] = addImportProcessor(field, mongo);
+      }
+    }
+    return processors;
+  }
+
+  public static CellProcessor[] exportProcessors(List<FieldDto> fields,
+    Map<String, CellProcessor> map) {
+    int total = fields.size();
+    final CellProcessor[] processors = new CellProcessor[total];
+    int i = 0;
+    for (FieldDto field : fields) {
+      if (map.containsKey(field.getName())) {
+        processors[i++] = map.get(field.getName());
+      } else if (map.containsKey(field.getDataType().name())) {
+        processors[i++] = map.get(field.getDataType().name());
+      } else if (DataType.DATE.equals(field.getDataType())) {
+        processors[i] = new ParseDateExport(true, ParseDateExport.IGNORE_EXCEPTION);
+      } else {
+        processors[i++] = null;
       }
     }
     return processors;
@@ -63,20 +82,6 @@ public class CellProcessorUtil {
       return new ParseEnum(field.getEnumClass(), (Enum<?>) field.getDefaultValue());
     }
     return null;
-  }
-
-  public static CellProcessor[] exportProcessors(List<FieldDto> fields) {
-    int total = fields.size();
-    final CellProcessor[] processors = new CellProcessor[total];
-    int i = 0;
-    for (FieldDto field : fields) {
-      processors[i] = null;
-      if (DataType.DATE.equals(field.getDataType())) {
-        processors[i] = new ParseDateExport(true, ParseDateExport.IGNORE_EXCEPTION);
-      }
-      i++;
-    }
-    return processors;
   }
 
   public static String toExcelCellNotation(int row, int number) {

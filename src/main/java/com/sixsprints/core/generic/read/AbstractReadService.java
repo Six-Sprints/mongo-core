@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -197,7 +198,7 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
       PageDto<DTO> pages = transformer.pageEntityToPageDtoDto(filter(filterRequestDto));
 
       int totalPages = pages.getTotalPages();
-      CellProcessor[] exportProcessors = exportCellProcessors(fields);
+      CellProcessor[] exportProcessors = cellProcessors(fields);
 
       for (int i = 0; i < totalPages; i++) {
         List<DTO> dtos = pages.getContent();
@@ -224,8 +225,13 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
 
   }
 
-  protected CellProcessor[] exportCellProcessors(List<FieldDto> fields) {
-    return CellProcessorUtil.exportProcessors(fields);
+  private CellProcessor[] cellProcessors(List<FieldDto> fields) {
+    Map<String, CellProcessor> map = exportCellProcessors(fields);
+    return CellProcessorUtil.exportProcessors(fields, map);
+  }
+
+  protected Map<String, CellProcessor> exportCellProcessors(List<FieldDto> fields) {
+    return new HashMap<>();
   }
 
   protected void writeHeader(ICsvDozerBeanWriter beanWriter, List<FieldDto> fields, String[] mappings,

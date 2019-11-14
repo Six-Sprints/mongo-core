@@ -1,5 +1,6 @@
 package com.sixsprints.core.dto;
 
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -45,6 +46,8 @@ public class FieldDto implements Comparable<FieldDto> {
   private Class<? extends Enum<?>> enumClass;
 
   private Object defaultValue;
+
+  private List<? extends Enum<?>> allValues;
 
   @Override
   public int compareTo(FieldDto o) {

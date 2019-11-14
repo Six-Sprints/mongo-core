@@ -1,6 +1,7 @@
 package com.sixsprints.core.mock.util;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
@@ -42,7 +43,7 @@ public class UserFieldData {
       .build());
 
     fields.add(FieldDto.builder().name("gender").sequence(i++)
-      .dataType(DataType.ENUM).enumClass(Gender.class)
+      .dataType(DataType.ENUM).enumClass(Gender.class).allValues(Arrays.asList(Gender.values()))
       .localizedDisplay(ImmutableMap.<Locale, String>of(Locale.ENGLISH, "Gender", Locale.JAPANESE, "JapanGender"))
       .build());
 
