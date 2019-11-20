@@ -11,15 +11,15 @@ public class ParseEnum extends CellProcessorAdaptor {
 
   private final Class<? extends Enum<?>> enumClass;
 
-  private final Enum<?> defaultValue;
+  private final Object defaultValue;
 
-  public ParseEnum(Class<? extends Enum<?>> enumClass, Enum<?> defaultValue) {
+  public ParseEnum(Class<? extends Enum<?>> enumClass, Object defaultValue) {
     super();
     this.enumClass = enumClass;
     this.defaultValue = defaultValue;
   }
 
-  public ParseEnum(Class<? extends Enum<?>> enumClass, Enum<?> defaultValue, CellProcessor next) {
+  public ParseEnum(Class<? extends Enum<?>> enumClass, Object defaultValue, CellProcessor next) {
     super(next);
     this.enumClass = enumClass;
     this.defaultValue = defaultValue;
@@ -29,16 +29,27 @@ public class ParseEnum extends CellProcessorAdaptor {
   public <T> T execute(Object value, CsvContext context) {
     if (value != null) {
       final String inputString = value.toString();
-      for (final Enum<?> enumConstant : enumClass.getEnumConstants()) {
-        String constantName = enumConstant.name();
-        if (constantName.equalsIgnoreCase(inputString)) {
-          return next.execute(enumConstant, context);
-        }
+      Enum<?> enumConstant = findEnum(inputString);
+      if (enumConstant != null) {
+        return next.execute(enumConstant, context);
       }
       if (defaultValue == null) {
         throw new SuperCsvCellProcessorException(MESSAGE, context, this);
       }
     }
-    return next.execute(this.defaultValue, context);
+    return next.execute(findEnum(this.defaultValue), context);
+  }
+
+  private Enum<?> findEnum(Object value) {
+    if (value == null) {
+      return null;
+    }
+    for (final Enum<?> enumConstant : enumClass.getEnumConstants()) {
+      String constantName = enumConstant.name();
+      if (constantName.equalsIgnoreCase(value.toString())) {
+        return enumConstant;
+      }
+    }
+    return null;
   }
 }

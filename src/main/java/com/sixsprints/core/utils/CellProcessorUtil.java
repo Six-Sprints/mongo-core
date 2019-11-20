@@ -79,7 +79,7 @@ public class CellProcessorUtil {
     case EMAIL:
       return new ParseEmail();
     case ENUM:
-      return new ParseEnum(field.getEnumClass(), (Enum<?>) field.getDefaultValue());
+      return new ParseEnum(field.getEnumClass(), field.getDefaultValue());
     }
     return null;
   }
