@@ -3,9 +3,8 @@ package com.sixsprints.core.utils;
 
 import java.security.MessageDigest;
 
-import lombok.extern.slf4j.Slf4j;
+import com.sixsprints.core.exception.BaseRuntimeException;
 
-@Slf4j
 public class EncryptionUtil {
 
   private static final String DEFAULT_ENCRYPTION_ALGORITHM = "SHA-1";
@@ -25,9 +24,8 @@ public class EncryptionUtil {
       }
       return output.toString();
     } catch (Exception ex) {
-      log.error(ex.getMessage(), ex);
+      throw BaseRuntimeException.builder().error(ex.getMessage()).build();
     }
-    return "";
   }
 
 }
