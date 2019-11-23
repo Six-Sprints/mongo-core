@@ -22,9 +22,11 @@ public class BaseRuntimeException extends RuntimeException {
 
   public static final String DEFAULT_MESSAGE = "Something Bad Happened !";
 
-  private HttpStatus httpStatus;
+  @Builder.Default
+  private HttpStatus httpStatus = DEFAULT_HTTP_STATUS;
 
-  private String error;
+  @Builder.Default
+  private String error = DEFAULT_MESSAGE;
 
   private Object[] arguments;
 
