@@ -31,6 +31,12 @@ public class ParseDateImport extends CellProcessorAdaptor {
     this.throwException = throwException;
   }
 
+  public ParseDateImport(String pattern, boolean throwException) {
+    super();
+    this.pattern = pattern;
+    this.throwException = throwException;
+  }
+
   public ParseDateImport(String pattern, boolean throwException, CellProcessor next) {
     super(next);
     this.pattern = pattern;
