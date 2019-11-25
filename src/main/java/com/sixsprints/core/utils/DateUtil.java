@@ -37,21 +37,21 @@ public class DateUtil {
     return initDateFromDate(date).toString(datePattern);
   }
 
-  public Date startOfDay(Long instant) {
-    return initDateFromLong(instant).millisOfDay().withMinimumValue().toDate();
+  public DateTime startOfDay(Long instant) {
+    return initDateFromLong(instant).millisOfDay().withMinimumValue();
   }
 
-  public Date endOfDay(Long instant) {
-    return initDateFromLong(instant).millisOfDay().withMaximumValue().toDate();
+  public DateTime endOfDay(Long instant) {
+    return initDateFromLong(instant).millisOfDay().withMaximumValue();
   }
 
   public String format(Date date) {
     return initDateFromDate(date).toString(datePattern);
   }
 
-  public Date stringToDate(String date) {
+  public DateTime stringToDate(String date) {
     DateTimeFormatter formatter = DateTimeFormat.forPattern(datePattern);
-    return formatter.parseDateTime(date).toDate();
+    return formatter.parseDateTime(date);
   }
 
   private DateTime initDateFromLong(Long instant) {
