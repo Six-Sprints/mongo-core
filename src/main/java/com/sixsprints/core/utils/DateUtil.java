@@ -29,6 +29,10 @@ public class DateUtil {
   @Builder.Default
   private String datePattern = DEFAULT_DATE_PATTERN;
 
+  public DateTime now() {
+    return initDateFromDate(new Date());
+  }
+
   public String dateToString(Date date) {
     return initDateFromDate(date).toString(datePattern);
   }
