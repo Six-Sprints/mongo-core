@@ -1,11 +1,13 @@
 package com.sixsprints.core.utils.csv;
 
+import org.apache.commons.lang3.StringUtils;
 import org.supercsv.cellprocessor.CellProcessorAdaptor;
 import org.supercsv.cellprocessor.ift.CellProcessor;
 import org.supercsv.exception.SuperCsvCellProcessorException;
 import org.supercsv.util.CsvContext;
 
 import com.sixsprints.core.utils.DateUtil;
+import com.sixsprints.core.utils.DateUtil.DateUtilBuilder;
 
 public class ParseDateImport extends CellProcessorAdaptor {
 
@@ -15,15 +17,23 @@ public class ParseDateImport extends CellProcessorAdaptor {
 
   private boolean throwException;
 
+  private String pattern;
+
   private static final String MESSAGE = "Date is invalid";
+
+  public ParseDateImport(boolean throwException) {
+    super();
+    this.throwException = throwException;
+  }
 
   public ParseDateImport(boolean throwException, CellProcessor next) {
     super(next);
     this.throwException = throwException;
   }
 
-  public ParseDateImport(boolean throwException) {
-    super();
+  public ParseDateImport(String pattern, boolean throwException, CellProcessor next) {
+    super(next);
+    this.pattern = pattern;
     this.throwException = throwException;
   }
 
@@ -31,7 +41,11 @@ public class ParseDateImport extends CellProcessorAdaptor {
   public <T> T execute(Object value, CsvContext context) {
     if (value != null) {
       try {
-        return next.execute(DateUtil.stringToDate(value.toString()), context);
+        DateUtilBuilder instance = DateUtil.instance();
+        if (StringUtils.isNotBlank(pattern)) {
+          instance = instance.datePattern(pattern);
+        }
+        return next.execute(instance.build().stringToDate(value.toString()), context);
       } catch (Exception ex) {
         if (throwException) {
           throw new SuperCsvCellProcessorException(MESSAGE, context, this);

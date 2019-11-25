@@ -383,31 +383,32 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
     Criteria criteria = new Criteria(criteria2.getKey());
     switch (type) {
     case AppConstants.EQUALS:
-      criteria.lte(DateUtil.endOfDay(filter)).gte(DateUtil.startOfDay(filter));
+      criteria.lte(DateUtil.instance().build().endOfDay(filter)).gte(DateUtil.instance().build().startOfDay(filter));
       break;
 
     case AppConstants.NOT_EQUAL:
-      return new Criteria().orOperator(new Criteria(criteria2.getKey()).lt(DateUtil.startOfDay(filter)),
-        new Criteria(criteria2.getKey()).gt(DateUtil.endOfDay(filter)));
+      return new Criteria().orOperator(
+        new Criteria(criteria2.getKey()).lt(DateUtil.instance().build().startOfDay(filter)),
+        new Criteria(criteria2.getKey()).gt(DateUtil.instance().build().endOfDay(filter)));
 
     case AppConstants.LESS_THAN:
-      criteria.lt(DateUtil.startOfDay(filter));
+      criteria.lt(DateUtil.instance().build().startOfDay(filter));
       break;
 
     case AppConstants.LESS_THAN_OR_EQUAL:
-      criteria.lte(DateUtil.endOfDay(filter));
+      criteria.lte(DateUtil.instance().build().endOfDay(filter));
       break;
 
     case AppConstants.GREATER_THAN:
-      criteria.gt(DateUtil.endOfDay(filter));
+      criteria.gt(DateUtil.instance().build().endOfDay(filter));
       break;
 
     case AppConstants.GREATER_THAN_OR_EQUAL:
-      criteria.gte(DateUtil.startOfDay(filter));
+      criteria.gte(DateUtil.instance().build().startOfDay(filter));
       break;
 
     case AppConstants.IN_RANGE:
-      criteria.lte(DateUtil.endOfDay(filterTo)).gte(DateUtil.startOfDay(filter));
+      criteria.lte(DateUtil.instance().build().endOfDay(filterTo)).gte(DateUtil.instance().build().startOfDay(filter));
       break;
     }
     return criteria;

@@ -210,7 +210,7 @@ public abstract class AbstractService<T extends AbstractMongoEntity> implements 
     }
     if (value instanceof Date) {
       Date date = (Date) value;
-      return DateUtil.dateToString(date);
+      return DateUtil.instance().build().dateToString(date);
     }
     return value.toString();
   }

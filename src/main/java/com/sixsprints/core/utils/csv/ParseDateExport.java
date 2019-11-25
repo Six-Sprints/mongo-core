@@ -2,12 +2,14 @@ package com.sixsprints.core.utils.csv;
 
 import java.util.Date;
 
+import org.apache.commons.lang3.StringUtils;
 import org.supercsv.cellprocessor.CellProcessorAdaptor;
 import org.supercsv.cellprocessor.ift.CellProcessor;
 import org.supercsv.exception.SuperCsvCellProcessorException;
 import org.supercsv.util.CsvContext;
 
 import com.sixsprints.core.utils.DateUtil;
+import com.sixsprints.core.utils.DateUtil.DateUtilBuilder;
 
 public class ParseDateExport extends CellProcessorAdaptor {
 
@@ -17,21 +19,32 @@ public class ParseDateExport extends CellProcessorAdaptor {
 
   private static final String MESSAGE = "Date is invalid";
 
-  private boolean fullDate;
-
   private boolean throwException;
 
-  public ParseDateExport(CellProcessor next) {
-    super(next);
-  }
+  private String pattern;
 
   public ParseDateExport() {
     super();
   }
 
-  public ParseDateExport(boolean fullDate, boolean throwException) {
+  public ParseDateExport(CellProcessor next) {
+    super(next);
+  }
+
+  public ParseDateExport(boolean throwException) {
     super();
-    this.fullDate = fullDate;
+    this.throwException = throwException;
+  }
+
+  public ParseDateExport(String pattern, boolean throwException) {
+    super();
+    this.pattern = pattern;
+    this.throwException = throwException;
+  }
+
+  public ParseDateExport(String pattern, boolean throwException, CellProcessor next) {
+    super(next);
+    this.pattern = pattern;
     this.throwException = throwException;
   }
 
@@ -41,10 +54,11 @@ public class ParseDateExport extends CellProcessorAdaptor {
       return next.execute(null, context);
     }
     try {
-      if (fullDate) {
-        return next.execute(DateUtil.formatToDateTime((Date) value), context);
+      DateUtilBuilder instance = DateUtil.instance();
+      if (StringUtils.isNotBlank(pattern)) {
+        instance = instance.datePattern(pattern);
       }
-      return next.execute(DateUtil.format((Date) value), context);
+      return next.execute(instance.build().format((Date) value), context);
     } catch (Exception ex) {
       if (throwException) {
         throw new SuperCsvCellProcessorException(MESSAGE, context, this);

@@ -7,45 +7,55 @@ import org.joda.time.DateTimeZone;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@Builder(builderMethodName = "instance")
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class DateUtil {
 
-  public static final DateTimeZone IST = DateTimeZone.forID("+05:30");
+  private static final DateTimeZone IST = DateTimeZone.forID("+05:30");
 
   private static final String DEFAULT_DATE_PATTERN = "yyyy/MM/dd";
 
-  private static final String DEFAULT_DATE_TIME_PATTERN = "yyyy/MM/dd HH:mm:ss";
+  @Builder.Default
+  private DateTimeZone timeZone = IST;
 
-  public static String dateToString(Date date) {
-    return initDateFromDate(date).toString(DEFAULT_DATE_PATTERN);
+  @Builder.Default
+  private String datePattern = DEFAULT_DATE_PATTERN;
+
+  public String dateToString(Date date) {
+    return initDateFromDate(date).toString(datePattern);
   }
 
-  public static Date startOfDay(Long instant) {
+  public Date startOfDay(Long instant) {
     return initDateFromLong(instant).millisOfDay().withMinimumValue().toDate();
   }
 
-  public static Date endOfDay(Long instant) {
+  public Date endOfDay(Long instant) {
     return initDateFromLong(instant).millisOfDay().withMaximumValue().toDate();
   }
 
-  public static String format(Date date) {
-    return initDateFromDate(date).toString(DEFAULT_DATE_PATTERN);
+  public String format(Date date) {
+    return initDateFromDate(date).toString(datePattern);
   }
 
-  public static String formatToDateTime(Date date) {
-    return initDateFromDate(date).toString(DEFAULT_DATE_TIME_PATTERN);
-  }
-
-  public static Date stringToDate(String date) {
-    DateTimeFormatter formatter = DateTimeFormat.forPattern(DEFAULT_DATE_TIME_PATTERN);
+  public Date stringToDate(String date) {
+    DateTimeFormatter formatter = DateTimeFormat.forPattern(datePattern);
     return formatter.parseDateTime(date).toDate();
   }
 
-  private static DateTime initDateFromLong(Long instant) {
-    return new DateTime(instant, IST);
+  private DateTime initDateFromLong(Long instant) {
+    return new DateTime(instant, timeZone);
   }
 
-  private static DateTime initDateFromDate(Date date) {
-    return new DateTime(date, IST);
+  private DateTime initDateFromDate(Date date) {
+    return new DateTime(date, timeZone);
   }
 
 }
