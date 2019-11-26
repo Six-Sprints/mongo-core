@@ -51,7 +51,7 @@ public class ParseDateImport extends CellProcessorAdaptor {
         if (StringUtils.isNotBlank(pattern)) {
           instance = instance.datePattern(pattern);
         }
-        return next.execute(instance.build().stringToDate(value.toString()), context);
+        return next.execute(instance.build().stringToDate(value.toString()).toDate(), context);
       } catch (Exception ex) {
         if (throwException) {
           throw new SuperCsvCellProcessorException(MESSAGE, context, this);
