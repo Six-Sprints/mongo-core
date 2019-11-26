@@ -54,11 +54,11 @@ public class DateUtil {
     return formatter.parseDateTime(date);
   }
 
-  private DateTime initDateFromLong(Long instant) {
+  public DateTime initDateFromLong(Long instant) {
     return new DateTime(instant, timeZone);
   }
 
-  private DateTime initDateFromDate(Date date) {
+  public DateTime initDateFromDate(Date date) {
     return new DateTime(date, timeZone);
   }
 
