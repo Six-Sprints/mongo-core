@@ -66,6 +66,7 @@ public abstract class AbstractCreateService<T extends AbstractMongoEntity> exten
 
   @Override
   public T create(T domain) throws EntityAlreadyExistsException, EntityInvalidException {
+    preCreate(domain);
     if (isInvalid(domain)) {
       throw invalidException(domain);
     }
@@ -76,7 +77,6 @@ public abstract class AbstractCreateService<T extends AbstractMongoEntity> exten
       }
       delete(fromDB);
     }
-    preCreate(domain);
     domain = save(domain);
     postCreate(domain);
     return domain;
