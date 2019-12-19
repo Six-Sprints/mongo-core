@@ -150,16 +150,20 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
   public List<T> filterAll(FilterRequestDto filterRequestDto) {
     MetaData<T> meta = metaData();
     Criteria criteria = buildCriteria(filterRequestDto, meta);
+    Sort sort = buildSort(filterRequestDto.getSortModel(), meta);
     Query query = new Query(criteria);
+    query.with(sort);
     List<T> data = mongo.find(query, meta.getClassType());
     return data;
   }
 
   @Override
   public List<String> distinctColumnValues(String column, FilterRequestDto filterRequestDto) {
+    MetaData<T> metaData = metaData();
+    Sort sort = buildSort(filterRequestDto.getSortModel(), metaData);
     Query query = new Query();
-    query.addCriteria(buildCriteria(filterRequestDto, metaData()));
-
+    query.addCriteria(buildCriteria(filterRequestDto, metaData));
+    query.with(sort);
     DistinctIterable<String> iterable = mongo.getCollection(mongo.getCollectionName(metaData().getClassType()))
       .distinct(column, query.getQueryObject(), String.class);
 

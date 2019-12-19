@@ -56,7 +56,7 @@ public abstract class GenericAbstractService<T extends AbstractMongoEntity> exte
   }
 
   protected void generateSlugIfRequired(T entity) {
-    if (isNew(entity) && StringUtils.isEmpty(entity.getSlug())) {
+    if (shouldOverwriteSlug(entity)) {
       MetaData<T> metaData = metaData(entity);
       if (metaData != null && metaData.getCollection() != null) {
         int nextSequence = getNextSequence(metaData.getCollection());
@@ -77,7 +77,9 @@ public abstract class GenericAbstractService<T extends AbstractMongoEntity> exte
     int sequence = getNextSequence(metaData.getCollection(), size);
     int i = 1;
     for (T entity : entities) {
-      entity.setSlug(slug(sequence - size + i++, metaData));
+      if (shouldOverwriteSlug(entity)) {
+        entity.setSlug(slug(sequence - size + i++, metaData));
+      }
     }
 
   }
@@ -112,6 +114,10 @@ public abstract class GenericAbstractService<T extends AbstractMongoEntity> exte
 
   private String slug(int nextSequence, MetaData<T> metaData) {
     return new StringBuffer(metaData.getPrefix()).append(nextSequence).toString();
+  }
+
+  private boolean shouldOverwriteSlug(T entity) {
+    return isNew(entity) && StringUtils.isEmpty(entity.getSlug());
   }
 
 }
