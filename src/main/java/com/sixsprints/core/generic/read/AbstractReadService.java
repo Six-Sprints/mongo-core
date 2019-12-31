@@ -170,7 +170,9 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
     MongoCursor<String> cursor = iterable.iterator();
     List<String> list = new ArrayList<>();
     while (cursor.hasNext()) {
-      list.add(cursor.next());
+      String next = cursor.next();
+      if (next != null)
+        list.add(next);
     }
     list.remove("");
     list.add(AppConstants.BLANK_STRING);
