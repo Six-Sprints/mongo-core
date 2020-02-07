@@ -3,7 +3,6 @@ package com.sixsprints.core.config;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.convert.converter.Converter;
@@ -17,16 +16,13 @@ import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 
 @Configuration
-public class MongoConfig extends AbstractMongoClientConfiguration {
+public class ParentMongoConfig extends AbstractMongoClientConfiguration {
 
-  @Value(value = "${spring.data.mongodb.host}")
   private String host;
 
-  @Value(value = "${spring.data.mongodb.database}")
   private String database;
 
-  @Value(value = "${spring.data.mongodb.port}")
-  private int port;
+  private Integer port;
 
   @Bean
   public MongoTransactionManager transactionManager(MongoDbFactory dbFactory) {
@@ -35,13 +31,14 @@ public class MongoConfig extends AbstractMongoClientConfiguration {
 
   @Override
   protected String getDatabaseName() {
-    return database;
+    return getDatabase();
   }
 
   @Override
   public MongoClient mongoClient() {
-    StringBuilder connectionString = new StringBuilder("mongodb://").append(host).append(":").append(port).append("/")
-      .append(database);
+    StringBuilder connectionString = new StringBuilder("mongodb://").append(getHost()).append(":").append(getPort())
+      .append("/")
+      .append(getDatabase());
     return MongoClients.create(connectionString.toString());
   }
 
@@ -55,7 +52,19 @@ public class MongoConfig extends AbstractMongoClientConfiguration {
 
   @Bean
   public com.mongodb.MongoClient client() {
-    return new com.mongodb.MongoClient(host, port);
+    return new com.mongodb.MongoClient(getHost(), getPort());
+  }
+
+  protected String getHost() {
+    return host == null ? "localhost" : host;
+  }
+
+  protected String getDatabase() {
+    return database == null ? "test-db" : host;
+  }
+
+  protected Integer getPort() {
+    return port == null ? 27017 : port;
   }
 
 }
