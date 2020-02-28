@@ -46,6 +46,7 @@ import com.sixsprints.core.exception.BaseException;
 import com.sixsprints.core.exception.EntityAlreadyExistsException;
 import com.sixsprints.core.exception.EntityInvalidException;
 import com.sixsprints.core.exception.EntityNotFoundException;
+import com.sixsprints.core.repository.GenericRepository;
 import com.sixsprints.core.utils.BeanWrapperUtil;
 import com.sixsprints.core.utils.DateUtil;
 

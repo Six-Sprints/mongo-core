@@ -17,9 +17,13 @@ public interface AppConstants {
   String GREATER_THAN_OR_EQUAL = "greaterThanOrEqual";
 
   String IN_RANGE = "inRange";
-  
+
   String AND_OPERATOR = "AND";
-  
+
   String OR_OPERATOR = "OR";
+  
+  String INHERITANCE_CRITERIA = "_class";
+
+  int TOKEN_EXPIRY_IN_DAYS = 30;
 
 }

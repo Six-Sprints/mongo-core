@@ -20,6 +20,7 @@ import com.sixsprints.core.exception.BaseRuntimeException;
 import com.sixsprints.core.exception.EntityAlreadyExistsException;
 import com.sixsprints.core.exception.EntityInvalidException;
 import com.sixsprints.core.exception.EntityNotFoundException;
+import com.sixsprints.core.repository.GenericRepository;
 
 public abstract class GenericAbstractService<T extends AbstractMongoEntity> extends ServiceHook<T> {
 
@@ -30,12 +31,7 @@ public abstract class GenericAbstractService<T extends AbstractMongoEntity> exte
   @Autowired
   protected MongoOperations mongo;
 
-  @Autowired
-  protected GenericRepository<T> repository;
-
-  protected GenericRepository<T> repository() {
-    return repository;
-  }
+  protected abstract GenericRepository<T> repository();
 
   protected abstract MetaData<T> metaData(T entity);
 

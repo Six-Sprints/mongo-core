@@ -42,7 +42,7 @@ public class AuthUtil {
   }
 
   public static String createToken(String subject) {
-    return createToken(subject, Constants.TOKEN_EXPIRY_IN_DAYS);
+    return createToken(subject, AppConstants.TOKEN_EXPIRY_IN_DAYS);
   }
 
   public static String createToken(String subject, int expiryDays) {
