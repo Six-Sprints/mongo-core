@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 
 import com.sixsprints.core.ApplicationTests;
+import com.sixsprints.core.dto.FilterRequestDto;
 import com.sixsprints.core.mock.domain.inheritance.Animal;
 import com.sixsprints.core.mock.domain.inheritance.Parrot;
 import com.sixsprints.core.mock.domain.inheritance.Tiger;
@@ -29,10 +30,8 @@ public class InheritanceTest extends ApplicationTests {
 
   @Test
   public void test() {
-
     parrotService.save(Parrot.builder().canFly(true).beakColor("red").build());
     tigerService.save(Tiger.builder().canFly(false).runningSpeed(84).build());
-
     List<Animal> animals = animalService.findAll();
     Assertions.assertThat(animals.size()).isEqualTo(2);
     Assertions.assertThat(animalService.findByCanFly(false).size()).isEqualTo(1);
@@ -40,6 +39,10 @@ public class InheritanceTest extends ApplicationTests {
     Assertions.assertThat(tigerService.findAll().size()).isEqualTo(1);
     Assertions.assertThat(tigerService.findByCanFly(true).size()).isEqualTo(0);
     Assertions.assertThat(tigerService.findByCanFly(false).size()).isEqualTo(1);
+    Assertions.assertThat(tigerService.filterAll(FilterRequestDto.builder().page(0).size(10).build()).size())
+      .isEqualTo(1);
+    Assertions.assertThat(tigerService.filter(FilterRequestDto.builder().page(0).size(10).build()).getContent().size())
+      .isEqualTo(1);
 
   }
 

@@ -52,6 +52,7 @@ import com.sixsprints.core.utils.AppConstants;
 import com.sixsprints.core.utils.CellProcessorUtil;
 import com.sixsprints.core.utils.DateUtil;
 import com.sixsprints.core.utils.FieldMappingUtil;
+import com.sixsprints.core.utils.InheritanceMongoUtil;
 
 public abstract class AbstractReadService<T extends AbstractMongoEntity> extends GenericAbstractService<T>
   implements GenericReadService<T> {
@@ -130,10 +131,7 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
 
   @Override
   public Page<T> filter(FilterRequestDto filterRequestDto) {
-    if (filterRequestDto == null) {
-      throw BaseRuntimeException.builder().error("page number and page size can't be null")
-        .httpStatus(HttpStatus.BAD_REQUEST).build();
-    }
+    checkFilterRequestDto(filterRequestDto);
     validatePageAndSize(filterRequestDto.getPage(), filterRequestDto.getSize());
     MetaData<T> meta = metaData();
     Sort sort = buildSort(filterRequestDto.getSortModel(), meta);
@@ -148,6 +146,7 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
 
   @Override
   public List<T> filterAll(FilterRequestDto filterRequestDto) {
+    checkFilterRequestDto(filterRequestDto);
     MetaData<T> meta = metaData();
     Criteria criteria = buildCriteria(filterRequestDto, meta);
     Sort sort = buildSort(filterRequestDto.getSortModel(), meta);
@@ -270,7 +269,10 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
 
   private Criteria buildCriteria(FilterRequestDto filterRequestDto, MetaData<T> meta) {
     List<Criteria> criterias = new ArrayList<>();
-
+    Criteria criteria = InheritanceMongoUtil.generate(meta.getClassType());
+    if (criteria != null) {
+      criterias.add(criteria);
+    }
     if (!(filterRequestDto == null || filterRequestDto.getFilterModel() == null
       || filterRequestDto.getFilterModel().isEmpty())) {
       Map<String, ColumnFilter> filters = filterRequestDto.getFilterModel();
@@ -453,4 +455,10 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
     return Criteria.where(key);
   }
 
+  private void checkFilterRequestDto(FilterRequestDto filterRequestDto) {
+    if (filterRequestDto == null) {
+      throw BaseRuntimeException.builder().error("page number and page size can't be null")
+        .httpStatus(HttpStatus.BAD_REQUEST).build();
+    }
+  }
 }
