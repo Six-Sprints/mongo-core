@@ -1,13 +1,17 @@
 
 package com.sixsprints.core.exception;
 
+import java.util.List;
+
 import org.springframework.http.HttpStatus;
+import org.springframework.util.CollectionUtils;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.Singular;
 
 @Data
 @Builder
@@ -30,11 +34,15 @@ public class BaseException extends Exception {
 
   private Object data;
 
-  private Object[] arguments;
+  @Singular
+  private List<Object> arguments;
 
   @Override
   public String getMessage() {
-    return String.format(error, arguments);
+    if (CollectionUtils.isEmpty(arguments)) {
+      return error;
+    }
+    return String.format(error, arguments.toArray());
   }
 
   protected static HttpStatus checkIfNull(HttpStatus httpStatus, HttpStatus defaultStatus) {

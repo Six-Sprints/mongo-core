@@ -15,7 +15,7 @@ public class StringToClassConverter implements Converter<String, Class<?>> {
       return forName;
     } catch (Exception e) {
       throw BaseRuntimeException.builder().error("Unable to convert {0} to desired class type.")
-        .arguments(new Object[] { source }).build();
+        .argument(source).build();
     }
   }
 
