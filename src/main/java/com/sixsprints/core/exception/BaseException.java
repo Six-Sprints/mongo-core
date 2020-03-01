@@ -28,9 +28,9 @@ public class BaseException extends Exception {
   @Builder.Default
   private String error = DEFAULT_MESSAGE;
 
-  private Object[] arguments;
-
   private Object data;
+
+  private Object[] arguments;
 
   @Override
   public String getMessage() {

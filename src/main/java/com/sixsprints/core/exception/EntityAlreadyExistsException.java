@@ -14,8 +14,8 @@ public class EntityAlreadyExistsException extends BaseException {
   private static final HttpStatus DEFAULT_HTTP_STATUS = HttpStatus.CONFLICT;
 
   @Builder(builderMethodName = "childBuilder")
-  public EntityAlreadyExistsException(HttpStatus httpStatus, String error, Object[] arguments, Object data) {
-    super(checkIfNull(httpStatus, DEFAULT_HTTP_STATUS), checkIfNull(error, DEFAULT_MESSAGE), arguments, data);
+  public EntityAlreadyExistsException(HttpStatus httpStatus, String error, Object data, Object... arguments) {
+    super(checkIfNull(httpStatus, DEFAULT_HTTP_STATUS), checkIfNull(error, DEFAULT_MESSAGE), data, arguments);
   }
 
 }

@@ -22,4 +22,6 @@ public abstract class Animal extends AbstractMongoEntity {
 
   private Boolean canFly;
 
+  private String name;
+
 }

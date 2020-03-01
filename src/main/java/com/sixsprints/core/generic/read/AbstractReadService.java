@@ -159,10 +159,8 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
   @Override
   public List<String> distinctColumnValues(String column, FilterRequestDto filterRequestDto) {
     MetaData<T> metaData = metaData();
-    Sort sort = buildSort(filterRequestDto.getSortModel(), metaData);
     Query query = new Query();
     query.addCriteria(buildCriteria(filterRequestDto, metaData));
-    query.with(sort);
     DistinctIterable<String> iterable = mongo.getCollection(mongo.getCollectionName(metaData().getClassType()))
       .distinct(column, query.getQueryObject(), String.class);
 

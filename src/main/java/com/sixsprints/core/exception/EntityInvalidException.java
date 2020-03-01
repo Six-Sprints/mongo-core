@@ -14,8 +14,8 @@ public class EntityInvalidException extends BaseException {
   private static final HttpStatus DEFAULT_HTTP_STATUS = HttpStatus.BAD_REQUEST;
 
   @Builder(builderMethodName = "childBuilder")
-  public EntityInvalidException(HttpStatus httpStatus, String error, Object[] arguments, Object data) {
-    super(checkIfNull(httpStatus, DEFAULT_HTTP_STATUS), checkIfNull(error, DEFAULT_MESSAGE), arguments, data);
+  public EntityInvalidException(HttpStatus httpStatus, String error, Object data, Object... arguments) {
+    super(checkIfNull(httpStatus, DEFAULT_HTTP_STATUS), checkIfNull(error, DEFAULT_MESSAGE), data, arguments);
   }
 
 }
