@@ -21,8 +21,6 @@ import com.sixsprints.core.dto.FilterRequestDto;
 import com.sixsprints.core.dto.ImportResponseWrapper;
 import com.sixsprints.core.dto.PageDto;
 import com.sixsprints.core.exception.BaseException;
-import com.sixsprints.core.exception.EntityAlreadyExistsException;
-import com.sixsprints.core.exception.EntityInvalidException;
 import com.sixsprints.core.exception.EntityNotFoundException;
 import com.sixsprints.core.service.GenericCrudService;
 import com.sixsprints.core.transformer.GenericTransformer;
@@ -42,16 +40,16 @@ public abstract class AbstractCrudController<T extends AbstractMongoEntity, DTO,
   }
 
   @PutMapping
-  public ResponseEntity<?> patch(U user, @RequestBody @Valid DTO companyDto, @RequestParam String propChanged)
-    throws EntityNotFoundException, EntityAlreadyExistsException {
-    T domain = mapper.toDomain(companyDto);
+  public ResponseEntity<?> patch(U user, @RequestBody @Valid DTO dto, @RequestParam String propChanged)
+    throws BaseException {
+    T domain = mapper.toDomain(dto);
     return RestUtil.successResponse(service.patchUpdate(domain.getId(), domain, propChanged));
   }
 
   @PostMapping
-  public ResponseEntity<RestResponse<DTO>> add(U user, @RequestBody @Valid DTO companyDto)
-    throws EntityAlreadyExistsException, EntityInvalidException {
-    return RestUtil.successResponse(mapper.toDto(service.create(mapper.toDomain(companyDto))));
+  public ResponseEntity<RestResponse<DTO>> add(U user, @RequestBody @Valid DTO dto)
+    throws BaseException {
+    return RestUtil.successResponse(mapper.toDto(service.create(mapper.toDomain(dto))));
   }
 
   @GetMapping("/{slug}")
