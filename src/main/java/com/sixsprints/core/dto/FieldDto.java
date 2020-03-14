@@ -1,5 +1,9 @@
 package com.sixsprints.core.dto;
 
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+
 import com.sixsprints.core.enums.DataType;
 
 import lombok.AllArgsConstructor;
@@ -15,6 +19,8 @@ import lombok.NoArgsConstructor;
 @EqualsAndHashCode(callSuper = false, of = { "name" })
 public class FieldDto implements Comparable<FieldDto> {
 
+  private String displayName;
+
   private String name;
 
   private int sequence;
@@ -23,10 +29,6 @@ public class FieldDto implements Comparable<FieldDto> {
 
   private boolean isHidden;
 
-  private boolean isHiddenExport;
-
-  private boolean isMandatoryForDynamic;
-
   private boolean isPinned;
 
   private boolean isLocked;
@@ -34,6 +36,18 @@ public class FieldDto implements Comparable<FieldDto> {
   private ValidationConstraintDto validation;
 
   private boolean aggregationAllowed;
+
+  private Map<Locale, String> localizedDisplay;
+
+  private String collectionName;
+
+  private String columnName;
+
+  private Class<? extends Enum<?>> enumClass;
+
+  private Object defaultValue;
+
+  private List<?> allValues;
 
   @Override
   public int compareTo(FieldDto o) {

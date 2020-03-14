@@ -46,6 +46,7 @@ import com.sixsprints.core.exception.BaseException;
 import com.sixsprints.core.exception.EntityAlreadyExistsException;
 import com.sixsprints.core.exception.EntityInvalidException;
 import com.sixsprints.core.exception.EntityNotFoundException;
+import com.sixsprints.core.repository.GenericRepository;
 import com.sixsprints.core.utils.BeanWrapperUtil;
 import com.sixsprints.core.utils.DateUtil;
 
@@ -210,7 +211,7 @@ public abstract class AbstractService<T extends AbstractMongoEntity> implements 
     }
     if (value instanceof Date) {
       Date date = (Date) value;
-      return DateUtil.dateToString(date);
+      return DateUtil.instance().build().dateToString(date);
     }
     return value.toString();
   }

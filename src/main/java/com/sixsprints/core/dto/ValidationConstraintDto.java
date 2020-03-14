@@ -17,4 +17,6 @@ public class ValidationConstraintDto {
 
   private Long maxLength;
 
+  private boolean isRequired;
+
 }

@@ -10,7 +10,7 @@ public interface GenericDeleteService<T extends AbstractMongoEntity> {
 
   void delete(T entity);
 
-  void delete(List<T> entities);
+  void delete(List<String> ids);
 
   void softDelete(String id);
 

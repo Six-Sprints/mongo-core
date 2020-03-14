@@ -1,13 +1,17 @@
 
 package com.sixsprints.core.exception;
 
+import java.util.List;
+
 import org.springframework.http.HttpStatus;
+import org.springframework.util.CollectionUtils;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.Singular;
 
 @Data
 @Builder
@@ -22,17 +26,23 @@ public class BaseException extends Exception {
 
   public static final String DEFAULT_MESSAGE = "Something Bad Happened !";
 
-  private HttpStatus httpStatus;
+  @Builder.Default
+  private HttpStatus httpStatus = DEFAULT_HTTP_STATUS;
 
-  private String error;
-
-  private Object[] arguments;
+  @Builder.Default
+  private String error = DEFAULT_MESSAGE;
 
   private Object data;
 
+  @Singular
+  private List<Object> arguments;
+
   @Override
   public String getMessage() {
-    return String.format(error, arguments);
+    if (CollectionUtils.isEmpty(arguments)) {
+      return error;
+    }
+    return String.format(error, arguments.toArray());
   }
 
   protected static HttpStatus checkIfNull(HttpStatus httpStatus, HttpStatus defaultStatus) {

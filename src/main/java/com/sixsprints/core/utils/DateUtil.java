@@ -4,31 +4,71 @@ import java.util.Date;
 
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
 
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@Builder(builderMethodName = "instance")
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class DateUtil {
 
-  public static final DateTimeZone JAPAN_TIME_ZONE = DateTimeZone.forID("+09:00");
+  public static final DateTimeZone DEFAULT_TIMEZONE = DateTimeZone.forID("+05:30");
 
-  private static final String DEFAULT_DATE_PATTERN = "yyyy/MM/dd";
+  public static final String DEFAULT_DATE_PATTERN = "dd-MM-YYYY";
 
-  public static String dateToString(Date date) {
-    return initDateFromDate(date).toString(DEFAULT_DATE_PATTERN);
+  public static final String DEFAULT_SHORT_DATE_PATTERN = "dd MMM";
+
+  @Builder.Default
+  private DateTimeZone timeZone = DEFAULT_TIMEZONE;
+
+  @Builder.Default
+  private String datePattern = DEFAULT_DATE_PATTERN;
+
+  @Builder.Default
+  private String shortDatePattern = DEFAULT_SHORT_DATE_PATTERN;
+
+  public DateTime now() {
+    return initDateFromDate(new Date());
   }
 
-  public static Date startOfDay(Long instant) {
-    return initDateFromLong(instant).millisOfDay().withMinimumValue().toDate();
+  public String dateToShortString(Date date) {
+    return initDateFromDate(date).toString(shortDatePattern);
   }
 
-  public static Date endOfDay(Long instant) {
-    return initDateFromLong(instant).millisOfDay().withMaximumValue().toDate();
+  public String dateToString(Date date) {
+    return initDateFromDate(date).toString(datePattern);
   }
-  
-  private static DateTime initDateFromLong(Long instant) {
-    return new DateTime(instant, JAPAN_TIME_ZONE);
+
+  public String dateToStringWithFormat(Date date, String format) {
+    return initDateFromDate(date).toString(format);
   }
-  
-  private static DateTime initDateFromDate(Date date) {
-    return new DateTime(date, JAPAN_TIME_ZONE);
+
+  public DateTime stringToDate(String date) {
+    DateTimeFormatter formatter = DateTimeFormat.forPattern(datePattern);
+    return formatter.parseDateTime(date);
+  }
+
+  public DateTime startOfDay(Long instant) {
+    return initDateFromLong(instant).millisOfDay().withMinimumValue();
+  }
+
+  public DateTime endOfDay(Long instant) {
+    return initDateFromLong(instant).millisOfDay().withMaximumValue();
+  }
+
+  public DateTime initDateFromLong(Long instant) {
+    return new DateTime(instant, timeZone);
+  }
+
+  public DateTime initDateFromDate(Date date) {
+    return new DateTime(date, timeZone);
   }
 
 }

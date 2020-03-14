@@ -20,8 +20,13 @@ import com.sixsprints.core.exception.BaseRuntimeException;
 import com.sixsprints.core.exception.EntityAlreadyExistsException;
 import com.sixsprints.core.exception.EntityInvalidException;
 import com.sixsprints.core.exception.EntityNotFoundException;
+import com.sixsprints.core.repository.GenericRepository;
 
 public abstract class GenericAbstractService<T extends AbstractMongoEntity> extends ServiceHook<T> {
+
+  private static final String SEQ = "seq";
+
+  private static final String _ID = "_id";
 
   @Autowired
   protected MongoOperations mongo;
@@ -37,7 +42,7 @@ public abstract class GenericAbstractService<T extends AbstractMongoEntity> exte
   protected abstract T findDuplicate(T entity);
 
   protected int getNextSequence(String seqName, int size) {
-    CustomSequence counter = mongo.findAndModify(query(where("_id").is(seqName)), new Update().inc("seq", size),
+    CustomSequence counter = mongo.findAndModify(query(where(_ID).is(seqName)), new Update().inc(SEQ, size),
       options().returnNew(true).upsert(true), CustomSequence.class);
     return counter.getSeq();
   }
@@ -47,11 +52,12 @@ public abstract class GenericAbstractService<T extends AbstractMongoEntity> exte
   }
 
   protected void generateSlugIfRequired(T entity) {
-    if (isNew(entity) && StringUtils.isEmpty(entity.getSlug())) {
+    if (shouldOverwriteSlug(entity)) {
       MetaData<T> metaData = metaData(entity);
       if (metaData != null && metaData.getCollection() != null) {
         int nextSequence = getNextSequence(metaData.getCollection());
         entity.setSlug(slug(nextSequence, metaData));
+        entity.setSequence(nextSequence);
       }
     }
   }
@@ -68,7 +74,11 @@ public abstract class GenericAbstractService<T extends AbstractMongoEntity> exte
     int sequence = getNextSequence(metaData.getCollection(), size);
     int i = 1;
     for (T entity : entities) {
-      entity.setSlug(slug(sequence - size + i++, metaData));
+      if (shouldOverwriteSlug(entity)) {
+        int nextSequence = sequence - size + i++;
+        entity.setSlug(slug(nextSequence, metaData));
+        entity.setSequence(nextSequence);
+      }
     }
 
   }
@@ -103,6 +113,10 @@ public abstract class GenericAbstractService<T extends AbstractMongoEntity> exte
 
   private String slug(int nextSequence, MetaData<T> metaData) {
     return new StringBuffer(metaData.getPrefix()).append(nextSequence).toString();
+  }
+
+  private boolean shouldOverwriteSlug(T entity) {
+    return isNew(entity) && StringUtils.isEmpty(entity.getSlug());
   }
 
 }

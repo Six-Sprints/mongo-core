@@ -16,7 +16,7 @@ public final class RestUtil {
   }
 
   public static <T> ResponseEntity<RestResponse<T>> successResponse(T data, HttpStatus statusCode) {
-    return response(data, null, HttpStatus.OK, Boolean.TRUE);
+    return response(data, null, statusCode, Boolean.TRUE);
   }
 
   public static <T> ResponseEntity<RestResponse<T>> successResponse(T data, String message) {

@@ -15,7 +15,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-public class DiffTest extends ApplicationTests {
+public class DiffTest {
 
   private Javers javers = JaversBuilder.javers().build();
 
@@ -33,7 +33,6 @@ public class DiffTest extends ApplicationTests {
     List<ValueChange> changes = diff.getChangesByType(ValueChange.class);
 
     assertThat(changes).hasSize(2);
-
   }
 
   @Data

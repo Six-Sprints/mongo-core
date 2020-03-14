@@ -1,9 +1,12 @@
 
 package com.sixsprints.core.exception;
 
+import java.util.List;
+
 import org.springframework.http.HttpStatus;
 
 import lombok.Builder;
+import lombok.Singular;
 
 public class EntityAlreadyExistsException extends BaseException {
 
@@ -14,8 +17,8 @@ public class EntityAlreadyExistsException extends BaseException {
   private static final HttpStatus DEFAULT_HTTP_STATUS = HttpStatus.CONFLICT;
 
   @Builder(builderMethodName = "childBuilder")
-  public EntityAlreadyExistsException(HttpStatus httpStatus, String error, Object[] arguments, Object data) {
-    super(checkIfNull(httpStatus, DEFAULT_HTTP_STATUS), checkIfNull(error, DEFAULT_MESSAGE), arguments, data);
+  public EntityAlreadyExistsException(HttpStatus httpStatus, String error, Object data, @Singular List<Object> args) {
+    super(checkIfNull(httpStatus, DEFAULT_HTTP_STATUS), checkIfNull(error, DEFAULT_MESSAGE), data, args);
   }
 
 }

@@ -1,7 +1,12 @@
 package com.sixsprints.core.generic.read;
 
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Pattern;
@@ -17,12 +22,19 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.http.HttpStatus;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
+import org.supercsv.cellprocessor.ift.CellProcessor;
+import org.supercsv.io.dozer.CsvDozerBeanWriter;
+import org.supercsv.io.dozer.ICsvDozerBeanWriter;
+import org.supercsv.prefs.CsvPreference;
 
 import com.google.common.collect.Lists;
+import com.mongodb.client.DistinctIterable;
+import com.mongodb.client.MongoCursor;
 import com.sixsprints.core.domain.AbstractMongoEntity;
 import com.sixsprints.core.dto.FieldDto;
 import com.sixsprints.core.dto.FilterRequestDto;
 import com.sixsprints.core.dto.MetaData;
+import com.sixsprints.core.dto.PageDto;
 import com.sixsprints.core.dto.filter.BooleanColumnFilter;
 import com.sixsprints.core.dto.filter.ColumnFilter;
 import com.sixsprints.core.dto.filter.DateColumnFilter;
@@ -31,15 +43,21 @@ import com.sixsprints.core.dto.filter.NumberColumnFilter;
 import com.sixsprints.core.dto.filter.SearchColumnFilter;
 import com.sixsprints.core.dto.filter.SetColumnFilter;
 import com.sixsprints.core.dto.filter.SortModel;
+import com.sixsprints.core.exception.BaseException;
 import com.sixsprints.core.exception.BaseRuntimeException;
 import com.sixsprints.core.exception.EntityNotFoundException;
 import com.sixsprints.core.generic.GenericAbstractService;
+import com.sixsprints.core.transformer.GenericTransformer;
 import com.sixsprints.core.utils.AppConstants;
+import com.sixsprints.core.utils.CellProcessorUtil;
 import com.sixsprints.core.utils.DateUtil;
+import com.sixsprints.core.utils.FieldMappingUtil;
+import com.sixsprints.core.utils.InheritanceMongoUtil;
 
 public abstract class AbstractReadService<T extends AbstractMongoEntity> extends GenericAbstractService<T>
   implements GenericReadService<T> {
 
+  private static final String IGNORE_CASE_FLAG = "i";
   private static final String SLUG = "slug";
 
   @Override
@@ -113,10 +131,7 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
 
   @Override
   public Page<T> filter(FilterRequestDto filterRequestDto) {
-    if (filterRequestDto == null) {
-      throw BaseRuntimeException.builder().error("page number and page size can't be null")
-        .httpStatus(HttpStatus.BAD_REQUEST).build();
-    }
+    checkFilterRequestDto(filterRequestDto);
     validatePageAndSize(filterRequestDto.getPage(), filterRequestDto.getSize());
     MetaData<T> meta = metaData();
     Sort sort = buildSort(filterRequestDto.getSortModel(), meta);
@@ -127,6 +142,112 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
     query.with(pageable);
     List<T> data = mongo.find(query, meta.getClassType());
     return new PageImpl<T>(data, pageable, total);
+  }
+
+  @Override
+  public List<T> filterAll(FilterRequestDto filterRequestDto) {
+    checkFilterRequestDto(filterRequestDto);
+    MetaData<T> meta = metaData();
+    Criteria criteria = buildCriteria(filterRequestDto, meta);
+    Sort sort = buildSort(filterRequestDto.getSortModel(), meta);
+    Query query = new Query(criteria);
+    query.with(sort);
+    List<T> data = mongo.find(query, meta.getClassType());
+    return data;
+  }
+
+  @Override
+  public List<String> distinctColumnValues(String column, FilterRequestDto filterRequestDto) {
+    MetaData<T> metaData = metaData();
+    Query query = new Query();
+    query.addCriteria(buildCriteria(filterRequestDto, metaData));
+    DistinctIterable<String> iterable = mongo.getCollection(mongo.getCollectionName(metaData().getClassType()))
+      .distinct(column, query.getQueryObject(), String.class);
+
+    MongoCursor<String> cursor = iterable.iterator();
+    List<String> list = new ArrayList<>();
+    while (cursor.hasNext()) {
+      String next = cursor.next();
+      if (next != null)
+        list.add(next);
+    }
+    list.remove("");
+    list.add(AppConstants.BLANK_STRING);
+    Collections.sort(list);
+    return list;
+  }
+
+  @Override
+  public <DTO> void exportData(GenericTransformer<T, DTO> transformer,
+    FilterRequestDto filterRequestDto, PrintWriter writer, Locale locale) throws IOException, BaseException {
+
+    if (filterRequestDto == null) {
+      filterRequestDto = FilterRequestDto.builder().build();
+    }
+
+    ICsvDozerBeanWriter beanWriter = null;
+    try {
+      List<FieldDto> fields = metaData().getFields();
+      String mappings[] = exportMappings(fields);
+
+      beanWriter = new CsvDozerBeanWriter(writer, CsvPreference.STANDARD_PREFERENCE);
+      beanWriter.configureBeanMapping(metaData().getDtoClassType(), mappings);
+      writeHeader(beanWriter, fields, mappings, locale);
+
+      // STREAMING IN BATCHES OF 750
+      filterRequestDto.setPage(0);
+      filterRequestDto.setSize(defaultBatchSize());
+
+      PageDto<DTO> pages = transformer.pageEntityToPageDtoDto(filter(filterRequestDto));
+
+      int totalPages = pages.getTotalPages();
+      CellProcessor[] exportProcessors = cellProcessors(fields);
+
+      for (int i = 0; i < totalPages; i++) {
+        List<DTO> dtos = pages.getContent();
+        for (final DTO dto : dtos) {
+          beanWriter.write(dto, exportProcessors);
+          writer.flush();
+        }
+        if (i + 1 == totalPages) {
+          continue;
+        }
+        filterRequestDto.setPage(i + 1);
+        pages = transformer.pageEntityToPageDtoDto(filter(filterRequestDto));
+      }
+
+    } finally {
+
+      if (beanWriter != null) {
+        beanWriter.close();
+      }
+      if (writer != null) {
+        writer.close();
+      }
+    }
+
+  }
+
+  protected int defaultBatchSize() {
+    return 750;
+  }
+
+  private CellProcessor[] cellProcessors(List<FieldDto> fields) {
+    Map<String, CellProcessor> map = exportCellProcessors(fields);
+    return CellProcessorUtil.exportProcessors(fields, map);
+  }
+
+  protected Map<String, CellProcessor> exportCellProcessors(List<FieldDto> fields) {
+    return new HashMap<>();
+  }
+
+  protected void writeHeader(ICsvDozerBeanWriter beanWriter, List<FieldDto> fields, String[] mappings,
+    Locale locale) throws IOException {
+    beanWriter.writeHeader(FieldMappingUtil.createHeaders(mappings, fields, locale));
+  }
+
+  protected String[] exportMappings(List<FieldDto> fields) {
+    return FieldMappingUtil.genericMappings(fields);
   }
 
   protected Pageable pageable(int page, int size) {
@@ -150,7 +271,10 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
 
   private Criteria buildCriteria(FilterRequestDto filterRequestDto, MetaData<T> meta) {
     List<Criteria> criterias = new ArrayList<>();
-
+    Criteria criteria = InheritanceMongoUtil.generate(meta.getClassType());
+    if (criteria != null) {
+      criterias.add(criteria);
+    }
     if (!(filterRequestDto == null || filterRequestDto.getFilterModel() == null
       || filterRequestDto.getFilterModel().isEmpty())) {
       Map<String, ColumnFilter> filters = filterRequestDto.getFilterModel();
@@ -269,31 +393,32 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
     Criteria criteria = new Criteria(criteria2.getKey());
     switch (type) {
     case AppConstants.EQUALS:
-      criteria.lte(DateUtil.endOfDay(filter)).gte(DateUtil.startOfDay(filter));
+      criteria.lte(DateUtil.instance().build().endOfDay(filter)).gte(DateUtil.instance().build().startOfDay(filter));
       break;
 
     case AppConstants.NOT_EQUAL:
-      return new Criteria().orOperator(new Criteria(criteria2.getKey()).lt(DateUtil.startOfDay(filter)),
-        new Criteria(criteria2.getKey()).gt(DateUtil.endOfDay(filter)));
+      return new Criteria().orOperator(
+        new Criteria(criteria2.getKey()).lt(DateUtil.instance().build().startOfDay(filter)),
+        new Criteria(criteria2.getKey()).gt(DateUtil.instance().build().endOfDay(filter)));
 
     case AppConstants.LESS_THAN:
-      criteria.lt(DateUtil.startOfDay(filter));
+      criteria.lt(DateUtil.instance().build().startOfDay(filter));
       break;
 
     case AppConstants.LESS_THAN_OR_EQUAL:
-      criteria.lte(DateUtil.endOfDay(filter));
+      criteria.lte(DateUtil.instance().build().endOfDay(filter));
       break;
 
     case AppConstants.GREATER_THAN:
-      criteria.gt(DateUtil.endOfDay(filter));
+      criteria.gt(DateUtil.instance().build().endOfDay(filter));
       break;
 
     case AppConstants.GREATER_THAN_OR_EQUAL:
-      criteria.gte(DateUtil.startOfDay(filter));
+      criteria.gte(DateUtil.instance().build().startOfDay(filter));
       break;
 
     case AppConstants.IN_RANGE:
-      criteria.lte(DateUtil.endOfDay(filterTo)).gte(DateUtil.startOfDay(filter));
+      criteria.lte(DateUtil.instance().build().endOfDay(filterTo)).gte(DateUtil.instance().build().startOfDay(filter));
       break;
     }
     return criteria;
@@ -310,11 +435,11 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
     }
 
     if (!fields.contains(FieldDto.builder().name(SLUG).build())) {
-      searchCriteria.add(setKeyCriteria(SLUG).regex(quote, "i"));
+      searchCriteria.add(setKeyCriteria(SLUG).regex(quote, IGNORE_CASE_FLAG));
     }
     for (FieldDto field : fields) {
       if (field.getDataType().isSearchable()) {
-        Criteria criteria = setKeyCriteria(field.getName()).regex(quote, "i");
+        Criteria criteria = setKeyCriteria(field.getName()).regex(quote, IGNORE_CASE_FLAG);
         searchCriteria.add(criteria);
       }
     }
@@ -332,4 +457,10 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
     return Criteria.where(key);
   }
 
+  private void checkFilterRequestDto(FilterRequestDto filterRequestDto) {
+    if (filterRequestDto == null) {
+      throw BaseRuntimeException.builder().error("page number and page size can't be null")
+        .httpStatus(HttpStatus.BAD_REQUEST).build();
+    }
+  }
 }

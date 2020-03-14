@@ -1,5 +1,6 @@
 package com.sixsprints.core.domain;
 
+import java.io.Serializable;
 import java.util.Date;
 
 import org.springframework.data.annotation.CreatedBy;
@@ -23,13 +24,18 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class AbstractMongoEntity {
+public class AbstractMongoEntity implements Serializable {
+
+  private static final long serialVersionUID = 1L;
 
   @Id
   protected String id;
 
   @Indexed(unique = true, sparse = true)
   protected String slug;
+
+  @Indexed(unique = true, sparse = true)
+  protected Integer sequence;
 
   @Indexed
   @Builder.Default

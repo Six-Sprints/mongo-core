@@ -1,9 +1,12 @@
 
 package com.sixsprints.core.exception;
 
+import java.util.List;
+
 import org.springframework.http.HttpStatus;
 
 import lombok.Builder;
+import lombok.Singular;
 
 public class EntityInvalidException extends BaseException {
 
@@ -11,11 +14,11 @@ public class EntityInvalidException extends BaseException {
 
   private static final String DEFAULT_MESSAGE = "Entity is invalid!";
 
-  private static final HttpStatus DEFAULT_HTTP_STATUS = HttpStatus.BAD_REQUEST;
+  private static final HttpStatus DEFAULT_HTTP_STATUS = HttpStatus.NOT_ACCEPTABLE;
 
   @Builder(builderMethodName = "childBuilder")
-  public EntityInvalidException(HttpStatus httpStatus, String error, Object[] arguments, Object data) {
-    super(checkIfNull(httpStatus, DEFAULT_HTTP_STATUS), checkIfNull(error, DEFAULT_MESSAGE), arguments, data);
+  public EntityInvalidException(HttpStatus httpStatus, String error, Object data, @Singular List<Object> args) {
+    super(checkIfNull(httpStatus, DEFAULT_HTTP_STATUS), checkIfNull(error, DEFAULT_MESSAGE), data, args);
   }
 
 }
