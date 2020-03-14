@@ -38,6 +38,9 @@ public class AbstractMongoEntity implements Serializable {
   protected Integer sequence;
 
   @Indexed
+  protected Integer sequence;
+
+  @Indexed
   @Builder.Default
   protected Boolean active = Boolean.TRUE;
 
