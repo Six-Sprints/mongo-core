@@ -49,13 +49,6 @@ public abstract class RestExceptionHandler extends ResponseEntityExceptionHandle
     return RestUtil.errorResponse(null, errorMessage, BaseException.DEFAULT_HTTP_STATUS);
   }
 
-  @ExceptionHandler(value = { IllegalArgumentException.class })
-  protected ResponseEntity<?> handleIllegalArgumentException(IllegalArgumentException ex,
-    WebRequest request, Locale locale) {
-    log.error(getErrorMessage(ex.getMessage()));
-    return RestUtil.errorResponse(null, getErrorMessage(ex.getMessage(), locale), HttpStatus.NOT_ACCEPTABLE);
-  }
-
   @Override
   protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex, HttpHeaders headers,
     HttpStatus status, WebRequest request) {
@@ -64,7 +57,7 @@ public abstract class RestExceptionHandler extends ResponseEntityExceptionHandle
       HttpStatus.BAD_REQUEST);
   }
 
-  private String convertConstraintViolation(MethodArgumentNotValidException ex) {
+  protected String convertConstraintViolation(MethodArgumentNotValidException ex) {
     List<FieldError> fieldErrors = ex.getBindingResult().getFieldErrors();
     List<String> errorMessages = new ArrayList<String>();
     for (FieldError c : fieldErrors) {
@@ -77,7 +70,7 @@ public abstract class RestExceptionHandler extends ResponseEntityExceptionHandle
     return errorMessages.toString();
   }
 
-  private String getErrorMessage(String key, List<Object> args, Locale locale) {
+  protected String getErrorMessage(String key, List<Object> args, Locale locale) {
     try {
       String errorMessage = messageSourceService().messageSource().getMessage(key, args.toArray(), locale);
       return errorMessage;
@@ -86,11 +79,11 @@ public abstract class RestExceptionHandler extends ResponseEntityExceptionHandle
     }
   }
 
-  private String getErrorMessage(String key, Locale locale) {
+  protected String getErrorMessage(String key, Locale locale) {
     return getErrorMessage(key, null, locale);
   }
 
-  private String getErrorMessage(String key) {
+  protected String getErrorMessage(String key) {
     return getErrorMessage(key, Locale.ENGLISH);
   }
 }

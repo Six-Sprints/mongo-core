@@ -15,6 +15,12 @@ import org.springframework.data.mongodb.repository.config.EnableMongoRepositorie
 
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
+import com.sixsprints.core.converters.BigDecimalToDecimal128Converter;
+import com.sixsprints.core.converters.ClassToStringConverter;
+import com.sixsprints.core.converters.Decimal128ToBigDecimalConverter;
+import com.sixsprints.core.converters.IntegerToLocalTimeConverter;
+import com.sixsprints.core.converters.LocalTimeToIntegerConverter;
+import com.sixsprints.core.converters.StringToClassConverter;
 import com.sixsprints.core.repository.InheritanceAwareMongoRepositoryFactoryBean;
 
 @Configuration
@@ -47,10 +53,23 @@ public class ParentMongoConfig extends AbstractMongoClientConfiguration {
 
   @Override
   public CustomConversions customConversions() {
+    List<Converter<?, ?>> converters = converters();
+    return new MongoCustomConversions(converters);
+  }
+
+  protected List<Converter<?, ?>> converters() {
     List<Converter<?, ?>> converters = new ArrayList<>();
+
     converters.add(new ClassToStringConverter());
     converters.add(new StringToClassConverter());
-    return new MongoCustomConversions(converters);
+
+    converters.add(new BigDecimalToDecimal128Converter());
+    converters.add(new Decimal128ToBigDecimalConverter());
+
+    converters.add(new LocalTimeToIntegerConverter());
+    converters.add(new IntegerToLocalTimeConverter());
+
+    return converters;
   }
 
   @Bean

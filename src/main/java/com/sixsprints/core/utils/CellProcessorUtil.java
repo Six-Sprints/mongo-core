@@ -48,7 +48,7 @@ public class CellProcessorUtil {
       } else if (map.containsKey(field.getDataType().name())) {
         processors[i++] = map.get(field.getDataType().name());
       } else if (DataType.DATE.equals(field.getDataType())) {
-        processors[i] = new ParseDateExport(ParseDateExport.IGNORE_EXCEPTION);
+        processors[i++] = new ParseDateExport(ParseDateExport.IGNORE_EXCEPTION);
       } else {
         processors[i++] = null;
       }

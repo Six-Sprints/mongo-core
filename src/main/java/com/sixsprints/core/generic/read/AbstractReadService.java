@@ -196,7 +196,7 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
 
       // STREAMING IN BATCHES OF 750
       filterRequestDto.setPage(0);
-      filterRequestDto.setSize(750);
+      filterRequestDto.setSize(defaultBatchSize());
 
       PageDto<DTO> pages = transformer.pageEntityToPageDtoDto(filter(filterRequestDto));
 
@@ -226,6 +226,10 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
       }
     }
 
+  }
+
+  protected int defaultBatchSize() {
+    return 750;
   }
 
   private CellProcessor[] cellProcessors(List<FieldDto> fields) {
