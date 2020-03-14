@@ -34,6 +34,9 @@ public class AbstractMongoEntity implements Serializable {
   @Indexed(unique = true, sparse = true)
   protected String slug;
 
+  @Indexed(unique = true, sparse = true)
+  protected Integer sequence;
+
   @Indexed
   @Builder.Default
   protected Boolean active = Boolean.TRUE;

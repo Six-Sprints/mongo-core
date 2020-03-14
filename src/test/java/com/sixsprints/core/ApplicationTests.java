@@ -40,6 +40,7 @@ public class ApplicationTests {
     assertThat(entity).isNotEqualTo(null);
     assertThat(entity.getId()).isNotEqualTo(null);
     assertThat(entity.getSlug()).isEqualTo("U" + i);
+    assertThat(entity.getSequence()).isEqualTo(i);
     assertThat(entity.getDateCreated()).isNotEqualTo(null);
     assertThat(entity.getDateModified()).isNotEqualTo(null);
   }

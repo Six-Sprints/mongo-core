@@ -57,6 +57,7 @@ public abstract class GenericAbstractService<T extends AbstractMongoEntity> exte
       if (metaData != null && metaData.getCollection() != null) {
         int nextSequence = getNextSequence(metaData.getCollection());
         entity.setSlug(slug(nextSequence, metaData));
+        entity.setSequence(nextSequence);
       }
     }
   }
@@ -74,7 +75,9 @@ public abstract class GenericAbstractService<T extends AbstractMongoEntity> exte
     int i = 1;
     for (T entity : entities) {
       if (shouldOverwriteSlug(entity)) {
-        entity.setSlug(slug(sequence - size + i++, metaData));
+        int nextSequence = sequence - size + i++;
+        entity.setSlug(slug(nextSequence, metaData));
+        entity.setSequence(nextSequence);
       }
     }
 
