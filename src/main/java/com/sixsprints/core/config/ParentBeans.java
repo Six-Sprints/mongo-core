@@ -19,7 +19,7 @@ public class ParentBeans {
   @Bean
   public DateUtil dateUtil() {
     return DateUtil.instance().timeZone(defaultTimeZone())
-      .datePattern(defaultDateFormat()).build();
+      .datePattern(defaultDateFormat()).shortDatePattern(defaultShortDateFormat()).build();
   }
 
   @Bean
@@ -27,11 +27,16 @@ public class ParentBeans {
     ObjectMapper mapper = new ObjectMapper();
     mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     mapper.setTimeZone(defaultTimeZone().toTimeZone());
+    SimpleModule module = module();
+    mapper.registerModule(module);
+    return mapper;
+  }
+
+  protected SimpleModule module() {
     SimpleModule module = new SimpleModule();
     module.addSerializer(LocalTime.class, LocalTimeSerializerAsString.INSTANCE);
     module.addDeserializer(LocalTime.class, LocalTimeDeserializer.INSTANCE);
-    mapper.registerModule(module);
-    return mapper;
+    return module;
   }
 
   protected DateTimeZone defaultTimeZone() {
@@ -40,6 +45,10 @@ public class ParentBeans {
 
   protected String defaultDateFormat() {
     return DateUtil.DEFAULT_DATE_PATTERN;
+  }
+
+  protected String defaultShortDateFormat() {
+    return DateUtil.DEFAULT_SHORT_DATE_PATTERN;
   }
 
 }

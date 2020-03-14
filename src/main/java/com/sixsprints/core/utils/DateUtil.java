@@ -21,7 +21,7 @@ public class DateUtil {
 
   public static final DateTimeZone DEFAULT_TIMEZONE = DateTimeZone.forID("+05:30");
 
-  public static final String DEFAULT_DATE_PATTERN = "yyyy/MM/dd";
+  public static final String DEFAULT_DATE_PATTERN = "dd-MM-YYYY";
 
   public static final String DEFAULT_SHORT_DATE_PATTERN = "dd MMM";
 
@@ -44,6 +44,10 @@ public class DateUtil {
 
   public String dateToString(Date date) {
     return initDateFromDate(date).toString(datePattern);
+  }
+
+  public String dateToStringWithFormat(Date date, String format) {
+    return initDateFromDate(date).toString(format);
   }
 
   public DateTime stringToDate(String date) {
