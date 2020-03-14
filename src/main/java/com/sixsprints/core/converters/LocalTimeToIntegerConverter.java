@@ -10,7 +10,7 @@ public class LocalTimeToIntegerConverter implements Converter<LocalTime, Integer
 
   @Override
   public Integer convert(LocalTime source) {
-    return source.getHour() * 10000 + source.getMinute() * 100 + source.getSecond();
+    return (source.getHour() * 10000) + (source.getMinute() * 100) + (source.getSecond());
   }
 
 }

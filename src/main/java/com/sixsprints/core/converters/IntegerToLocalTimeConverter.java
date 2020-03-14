@@ -10,9 +10,14 @@ public class IntegerToLocalTimeConverter implements Converter<Integer, LocalTime
 
   @Override
   public LocalTime convert(Integer source) {
-    int hr = (source / 10000) % LocalTime.MAX.getHour();
-    int min = ((source / 100) % 100) % LocalTime.MAX.getMinute();
-    int sec = (source % 100) % LocalTime.MAX.getSecond();
+    boolean hrMax = (source / 10000) > LocalTime.MAX.getHour();
+    boolean minMax = hrMax || ((source / 100) % 100) > LocalTime.MAX.getMinute();
+    boolean secMax = minMax || (source % 100) > LocalTime.MAX.getSecond();
+
+    int hr = hrMax ? LocalTime.MAX.getHour() : (source / 10000);
+    int min = minMax ? LocalTime.MAX.getMinute() : ((source / 100) % 100);
+    int sec = secMax ? LocalTime.MAX.getSecond() : (source % 100);
     return LocalTime.of(hr, min, sec);
   }
+
 }
