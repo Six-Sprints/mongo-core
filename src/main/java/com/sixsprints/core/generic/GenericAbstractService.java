@@ -16,6 +16,7 @@ import org.springframework.util.StringUtils;
 import com.sixsprints.core.domain.AbstractMongoEntity;
 import com.sixsprints.core.domain.CustomSequence;
 import com.sixsprints.core.dto.MetaData;
+import com.sixsprints.core.dto.SlugFormatter;
 import com.sixsprints.core.exception.BaseRuntimeException;
 import com.sixsprints.core.exception.EntityAlreadyExistsException;
 import com.sixsprints.core.exception.EntityInvalidException;
@@ -33,30 +34,33 @@ public abstract class GenericAbstractService<T extends AbstractMongoEntity> exte
 
   protected abstract GenericRepository<T> repository();
 
-  protected abstract MetaData<T> metaData(T entity);
+  protected abstract MetaData<T> metaData();
 
-  protected MetaData<T> metaData() {
-    return metaData(null);
+  protected SlugFormatter slugFromatter(T entity) {
+    String className = entity.getClass().getSimpleName().toLowerCase();
+    String prefix = className.replaceAll("[aeiou]", "");
+    return SlugFormatter.builder().collection(className)
+      .prefix(prefix.substring(0, Math.min(3, prefix.length())).toUpperCase()).build();
   }
 
   protected abstract T findDuplicate(T entity);
 
-  protected int getNextSequence(String seqName, int size) {
+  protected Long getNextSequence(String seqName, int size) {
     CustomSequence counter = mongo.findAndModify(query(where(_ID).is(seqName)), new Update().inc(SEQ, size),
       options().returnNew(true).upsert(true), CustomSequence.class);
     return counter.getSeq();
   }
 
-  protected int getNextSequence(String seqName) {
+  protected Long getNextSequence(String seqName) {
     return getNextSequence(seqName, 1);
   }
 
   protected void generateSlugIfRequired(T entity) {
     if (shouldOverwriteSlug(entity)) {
-      MetaData<T> metaData = metaData(entity);
-      if (metaData != null && metaData.getCollection() != null) {
-        int nextSequence = getNextSequence(metaData.getCollection());
-        entity.setSlug(slug(nextSequence, metaData));
+      SlugFormatter slugFromatter = slugFromatter(entity);
+      if (slugFromatter != null && slugFromatter.getCollection() != null) {
+        Long nextSequence = getNextSequence(slugFromatter.getCollection());
+        entity.setSlug(slug(nextSequence, slugFromatter));
         entity.setSequence(nextSequence);
       }
     }
@@ -66,17 +70,17 @@ public abstract class GenericAbstractService<T extends AbstractMongoEntity> exte
     if (CollectionUtils.isEmpty(entities)) {
       return;
     }
-    MetaData<T> metaData = metaData(entities.get(0));
-    if (metaData == null) {
+    SlugFormatter slugFromatter = slugFromatter(entities.get(0));
+    if (slugFromatter == null) {
       return;
     }
     int size = entities.size();
-    int sequence = getNextSequence(metaData.getCollection(), size);
+    Long sequence = getNextSequence(slugFromatter.getCollection(), size);
     int i = 1;
     for (T entity : entities) {
       if (shouldOverwriteSlug(entity)) {
-        int nextSequence = sequence - size + i++;
-        entity.setSlug(slug(nextSequence, metaData));
+        Long nextSequence = sequence - size + i++;
+        entity.setSlug(slug(nextSequence, slugFromatter(entity)));
         entity.setSequence(nextSequence);
       }
     }
@@ -111,8 +115,12 @@ public abstract class GenericAbstractService<T extends AbstractMongoEntity> exte
     }
   }
 
-  private String slug(int nextSequence, MetaData<T> metaData) {
-    return new StringBuffer(metaData.getPrefix()).append(nextSequence).toString();
+  private String slug(Long nextSequence, SlugFormatter slugFromatter) {
+    StringBuffer buffer = new StringBuffer(slugFromatter.getPrefix());
+    if (slugFromatter.getMinimumSequenceNumber() != null) {
+      nextSequence += slugFromatter.getMinimumSequenceNumber();
+    }
+    return buffer.append(nextSequence).toString();
   }
 
   private boolean shouldOverwriteSlug(T entity) {

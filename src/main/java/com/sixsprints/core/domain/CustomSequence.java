@@ -15,6 +15,6 @@ public class CustomSequence {
   @Id
   private String id;
 
-  private int seq;
+  private long seq;
 
 }

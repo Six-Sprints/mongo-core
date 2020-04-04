@@ -17,10 +17,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class MetaData<T extends AbstractMongoEntity> {
 
-  private String prefix;
-
-  private String collection;
-
   private Class<T> classType;
 
   private Class<?> dtoClassType;

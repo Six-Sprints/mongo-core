@@ -46,9 +46,8 @@ public class FieldMappingUtil {
       if (fieldDto.get().getLocalizedDisplay() == null || fieldDto.get().getLocalizedDisplay().isEmpty()
         || StringUtils.isEmpty(fieldDto.get().getLocalizedDisplay().get(locale))) {
         return fieldDto.get().getDisplayName();
-      } else {
-        fieldDto.get().getLocalizedDisplay().get(locale);
       }
+      return fieldDto.get().getLocalizedDisplay().get(locale);
     }
     return mapping;
   }

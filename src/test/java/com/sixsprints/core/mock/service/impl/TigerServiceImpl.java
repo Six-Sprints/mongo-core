@@ -21,8 +21,8 @@ public class TigerServiceImpl extends AnimalAbstractService<Tiger> implements Ti
   }
 
   @Override
-  protected MetaData<Tiger> metaData(Tiger parrot) {
-    return MetaData.<Tiger>builder().classType(Tiger.class).collection("tiger").prefix("TIG").build();
+  protected MetaData<Tiger> metaData() {
+    return MetaData.<Tiger>builder().classType(Tiger.class).build();
   }
 
 }

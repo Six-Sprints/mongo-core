@@ -35,7 +35,7 @@ public class AbstractMongoEntity implements Serializable {
   protected String slug;
 
   @Indexed
-  protected Integer sequence;
+  protected Long sequence;
 
   @Indexed
   @Builder.Default

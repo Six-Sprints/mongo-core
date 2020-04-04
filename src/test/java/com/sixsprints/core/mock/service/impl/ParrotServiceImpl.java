@@ -21,8 +21,8 @@ public class ParrotServiceImpl extends AnimalAbstractService<Parrot> implements 
   }
 
   @Override
-  protected MetaData<Parrot> metaData(Parrot parrot) {
-    return MetaData.<Parrot>builder().classType(Parrot.class).collection("parrot").prefix("PAR").build();
+  protected MetaData<Parrot> metaData() {
+    return MetaData.<Parrot>builder().classType(Parrot.class).build();
   }
 
 }

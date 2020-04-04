@@ -194,7 +194,7 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
       beanWriter.configureBeanMapping(metaData().getDtoClassType(), mappings);
       writeHeader(beanWriter, fields, mappings, locale);
 
-      // STREAMING IN BATCHES OF 750
+      // STREAMING IN BATCHES OF 750 or overriden defaultBatchSize() method.
       filterRequestDto.setPage(0);
       filterRequestDto.setSize(defaultBatchSize());
 

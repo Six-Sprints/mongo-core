@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.sixsprints.core.dto.MetaData;
+import com.sixsprints.core.dto.SlugFormatter;
 import com.sixsprints.core.mock.domain.User;
 import com.sixsprints.core.mock.dto.UserDto;
 import com.sixsprints.core.mock.repository.UserRepository;
@@ -25,11 +26,16 @@ public class UserServiceImpl extends AbstractCrudService<User> implements UserSe
   }
 
   @Override
-  protected MetaData<User> metaData(User entity) {
-    return MetaData.<User>builder().collection("user").prefix("U")
+  protected MetaData<User> metaData() {
+    return MetaData.<User>builder()
       .classType(User.class).dtoClassType(UserDto.class)
       .fields(UserFieldData.fields())
       .build();
+  }
+
+  @Override
+  protected SlugFormatter slugFromatter(User entity) {
+    return SlugFormatter.builder().collection("user").prefix("U").build();
   }
 
   @Override
