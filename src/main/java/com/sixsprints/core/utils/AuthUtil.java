@@ -1,7 +1,6 @@
 
 package com.sixsprints.core.utils;
 
-import java.security.SecureRandom;
 import java.util.Date;
 
 import org.joda.time.DateTime;
@@ -29,13 +28,13 @@ public class AuthUtil {
 
   private static final String ISSUER = "https://www.website.com";
 
-  private static SecureRandom random = new SecureRandom();
+//  private static SecureRandom random = new SecureRandom();
 
-  private static byte[] sharedSecret = new byte[32];
+  private static byte[] sharedSecret = "f0jtXAnEq6bdLdjaV91CrXRsXu6oyvof".getBytes();
 
-  static {
-    random.nextBytes(sharedSecret);
-  }
+//  static {
+//    random.nextBytes(sharedSecret);
+//  }
 
   public static String decodeToken(String authHeader) throws NotAuthorizedException {
     return xor(decode(authHeader).getSubject().getBytes());
