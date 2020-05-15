@@ -450,7 +450,29 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
   }
 
   private void addExactMatchCriteria(List<Criteria> criterias, String key, ExactMatchColumnFilter filter) {
-    criterias.add(setKeyCriteria(key).is(filter.getFilter()));
+    String type = filter.getType();
+
+    switch (type) {
+    case AppConstants.EQUALS:
+      criterias.add(setKeyCriteria(key).is(filter.getFilter()));
+      break;
+
+    case AppConstants.NOT_EQUAL:
+      criterias.add(setKeyCriteria(key).ne(filter.getFilter()));
+      break;
+
+    case AppConstants.EXISTS:
+      criterias.add(setKeyCriteria(key).exists(true));
+      break;
+
+    case AppConstants.DOES_NOT_EXIST:
+      criterias.add(setKeyCriteria(key).exists(false));
+      break;
+
+    default:
+      criterias.add(setKeyCriteria(key).is(filter.getFilter()));
+      break;
+    }
   }
 
   private Criteria setKeyCriteria(String key) {
