@@ -347,7 +347,7 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
     criterias.add(criteria);
   }
 
-  private void numberCriteria(String type, Integer filter, Integer filterTo, Criteria criteria) {
+  private void numberCriteria(String type, Number filter, Number filterTo, Criteria criteria) {
     switch (type) {
     case AppConstants.EQUALS:
       criteria.is(filter);
@@ -385,12 +385,17 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
 
   private void addDateFilter(List<Criteria> criterias, String key, DateColumnFilter filter) {
     Criteria criteria = setKeyCriteria(key);
-    criteria = dateCriteria(filter.getType(), filter.getFilter(), filter.getFilterTo(), criteria);
+    criteria = dateCriteria(filter.getType(), filter.getFilter(), filter.getFilterTo(), filter.isExactMatch(),
+      criteria);
     criterias.add(criteria);
   }
 
-  private Criteria dateCriteria(String type, Long filter, Long filterTo, Criteria criteria2) {
+  private Criteria dateCriteria(String type, Long filter, Long filterTo, boolean isExactMatch, Criteria criteria2) {
     Criteria criteria = new Criteria(criteria2.getKey());
+    if (isExactMatch) {
+      numberCriteria(type, filter, filterTo, criteria);
+      return criteria;
+    }
     switch (type) {
     case AppConstants.EQUALS:
       criteria.lte(DateUtil.instance().build().endOfDay(filter)).gte(DateUtil.instance().build().startOfDay(filter));
