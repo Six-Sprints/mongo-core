@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Pattern;
 
+import org.joda.time.DateTime;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -347,7 +348,7 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
     criterias.add(criteria);
   }
 
-  private void numberCriteria(String type, Number filter, Number filterTo, Criteria criteria) {
+  private void numberCriteria(String type, Integer filter, Integer filterTo, Criteria criteria) {
     switch (type) {
     case AppConstants.EQUALS:
       criteria.is(filter);
@@ -390,10 +391,46 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
     criterias.add(criteria);
   }
 
+  private void exactDateCriteria(String type, Long filterEpoch, Long filterToEpoch, Criteria criteria) {
+
+    DateTime filter = DateUtil.instance().build().initDateFromLong(filterEpoch);
+    DateTime filterTo = DateUtil.instance().build().initDateFromLong(filterToEpoch);
+
+    switch (type) {
+    case AppConstants.EQUALS:
+      criteria.is(filter);
+      break;
+
+    case AppConstants.NOT_EQUAL:
+      criteria.ne(filter);
+      break;
+
+    case AppConstants.LESS_THAN:
+      criteria.lt(filter);
+      break;
+
+    case AppConstants.LESS_THAN_OR_EQUAL:
+      criteria.lte(filter);
+      break;
+
+    case AppConstants.GREATER_THAN:
+      criteria.gt(filter);
+      break;
+
+    case AppConstants.GREATER_THAN_OR_EQUAL:
+      criteria.gte(filter);
+      break;
+
+    case AppConstants.IN_RANGE:
+      criteria.lte(filterTo).gte(filter);
+      break;
+    }
+  }
+
   private Criteria dateCriteria(String type, Long filter, Long filterTo, boolean isExactMatch, Criteria criteria2) {
     Criteria criteria = new Criteria(criteria2.getKey());
     if (isExactMatch) {
-      numberCriteria(type, filter, filterTo, criteria);
+      exactDateCriteria(type, filter, filterTo, criteria);
       return criteria;
     }
     switch (type) {
