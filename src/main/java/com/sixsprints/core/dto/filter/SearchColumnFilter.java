@@ -18,5 +18,7 @@ public class SearchColumnFilter extends ColumnFilter {
   private String filter;
   
   private List<String> fields;
+  
+  private boolean slugExcludedFromSearch;
 
 }

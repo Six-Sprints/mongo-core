@@ -43,6 +43,7 @@ import com.sixsprints.core.dto.filter.NumberColumnFilter;
 import com.sixsprints.core.dto.filter.SearchColumnFilter;
 import com.sixsprints.core.dto.filter.SetColumnFilter;
 import com.sixsprints.core.dto.filter.SortModel;
+import com.sixsprints.core.enums.DataType;
 import com.sixsprints.core.exception.BaseException;
 import com.sixsprints.core.exception.BaseRuntimeException;
 import com.sixsprints.core.exception.EntityNotFoundException;
@@ -420,18 +421,17 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
     return criteria;
   }
 
-  private void addSearchCriteria(SearchColumnFilter searchFilter, List<Criteria> criterias) {
-    String searchKey = searchFilter.getFilter();
+  private void addSearchCriteria(SearchColumnFilter filter, List<Criteria> criterias) {
     List<Criteria> searchCriteria = Lists.newArrayList();
-    String quote = Pattern.quote(searchKey);
+    String quote = Pattern.quote(filter.getFilter());
 
-    List<FieldDto> fields = metaData().getFields();
+    List<FieldDto> fields = buildSearchFields(filter);
 
     if (CollectionUtils.isEmpty(fields)) {
       return;
     }
 
-    if (!fields.contains(FieldDto.builder().name(SLUG).build())) {
+    if (!filter.isSlugExcludedFromSearch() && !fields.contains(FieldDto.builder().name(SLUG).build())) {
       searchCriteria.add(setKeyCriteria(SLUG).regex(quote, IGNORE_CASE_FLAG));
     }
     for (FieldDto field : fields) {
@@ -444,6 +444,18 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
       criterias.add(new Criteria().orOperator(searchCriteria.toArray(new Criteria[searchCriteria.size()])));
     }
 
+  }
+
+  private List<FieldDto> buildSearchFields(SearchColumnFilter filter) {
+    List<FieldDto> fields = new ArrayList<>();
+    if (CollectionUtils.isEmpty(filter.getFields())) {
+      return metaData().getFields();
+    }
+
+    for (String fieldName : filter.getFields()) {
+      fields.add(FieldDto.builder().name(fieldName).dataType(DataType.TEXT).build());
+    }
+    return fields;
   }
 
   private void addExactMatchCriteria(List<Criteria> criterias, String key, ExactMatchColumnFilter filter) {
