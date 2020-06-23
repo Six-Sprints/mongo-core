@@ -295,7 +295,7 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
     } else if (filter instanceof DateColumnFilter) {
       addDateFilter(criterias, key, (DateColumnFilter) filter);
     } else if (filter instanceof SearchColumnFilter) {
-      addSearchCriteria(((SearchColumnFilter) filter).getFilter(), criterias);
+      addSearchCriteria((SearchColumnFilter) filter, criterias);
     } else if (filter instanceof ExactMatchColumnFilter) {
       addExactMatchCriteria(criterias, key, (ExactMatchColumnFilter) filter);
     }
@@ -343,7 +343,7 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
     criterias.add(criteria);
   }
 
-  private void numberCriteria(String type, Integer filter, Integer filterTo, Criteria criteria) {
+  private void numberCriteria(String type, Number filter, Number filterTo, Criteria criteria) {
     switch (type) {
     case AppConstants.EQUALS:
       criteria.is(filter);
@@ -420,7 +420,8 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
     return criteria;
   }
 
-  private void addSearchCriteria(String searchKey, List<Criteria> criterias) {
+  private void addSearchCriteria(SearchColumnFilter searchFilter, List<Criteria> criterias) {
+    String searchKey = searchFilter.getFilter();
     List<Criteria> searchCriteria = Lists.newArrayList();
     String quote = Pattern.quote(searchKey);
 

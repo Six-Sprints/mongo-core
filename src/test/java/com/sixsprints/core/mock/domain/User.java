@@ -36,5 +36,7 @@ public class User extends AbstractMongoEntity {
   private String roleName;
 
   private Gender gender;
+  
+  private Long transactionId;
 
 }

@@ -15,9 +15,9 @@ public class NumberColumnFilter extends ColumnFilter {
 
   private String type;
 
-  private Integer filter;
+  private Number filter;
 
-  private Integer filterTo;
+  private Number filterTo;
 
   private ConditionDto condition1;
 
