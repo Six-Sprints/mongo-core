@@ -6,8 +6,7 @@ import java.util.List;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.convert.converter.Converter;
-import org.springframework.data.convert.CustomConversions;
-import org.springframework.data.mongodb.MongoDbFactory;
+import org.springframework.data.mongodb.MongoDatabaseFactory;
 import org.springframework.data.mongodb.MongoTransactionManager;
 import org.springframework.data.mongodb.config.AbstractMongoClientConfiguration;
 import org.springframework.data.mongodb.core.convert.MongoCustomConversions;
@@ -34,7 +33,7 @@ public class ParentMongoConfig extends AbstractMongoClientConfiguration {
   private Integer port;
 
   @Bean
-  public MongoTransactionManager transactionManager(MongoDbFactory dbFactory) {
+  public MongoTransactionManager transactionManager(MongoDatabaseFactory dbFactory) {
     return new MongoTransactionManager(dbFactory);
   }
 
@@ -44,6 +43,7 @@ public class ParentMongoConfig extends AbstractMongoClientConfiguration {
   }
 
   @Override
+  @Bean
   public MongoClient mongoClient() {
     StringBuilder connectionString = new StringBuilder("mongodb://").append(getHost()).append(":").append(getPort())
       .append("/")
@@ -52,7 +52,7 @@ public class ParentMongoConfig extends AbstractMongoClientConfiguration {
   }
 
   @Override
-  public CustomConversions customConversions() {
+  public MongoCustomConversions customConversions() {
     List<Converter<?, ?>> converters = converters();
     return new MongoCustomConversions(converters);
   }
@@ -70,11 +70,6 @@ public class ParentMongoConfig extends AbstractMongoClientConfiguration {
     converters.add(new IntegerToLocalTimeConverter());
 
     return converters;
-  }
-
-  @Bean
-  public com.mongodb.MongoClient client() {
-    return new com.mongodb.MongoClient(getHost(), getPort());
   }
 
   protected String getHost() {

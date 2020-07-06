@@ -5,9 +5,9 @@ import java.util.List;
 import java.util.Locale;
 
 import javax.servlet.http.HttpServletResponse;
-import javax.validation.Valid;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -40,14 +40,14 @@ public abstract class AbstractCrudController<T extends AbstractMongoEntity, DTO,
   }
 
   @PutMapping
-  public ResponseEntity<?> patch(U user, @RequestBody @Valid DTO dto, @RequestParam String propChanged)
+  public ResponseEntity<?> patch(U user, @RequestBody @Validated DTO dto, @RequestParam String propChanged)
     throws BaseException {
     T domain = mapper.toDomain(dto);
     return RestUtil.successResponse(service.patchUpdate(domain.getId(), domain, propChanged));
   }
 
   @PostMapping
-  public ResponseEntity<RestResponse<DTO>> add(U user, @RequestBody @Valid DTO dto)
+  public ResponseEntity<RestResponse<DTO>> add(U user, @RequestBody @Validated DTO dto)
     throws BaseException {
     return RestUtil.successResponse(mapper.toDto(service.create(mapper.toDomain(dto))));
   }
