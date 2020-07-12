@@ -64,7 +64,7 @@ public abstract class AbstractCrudController<T extends AbstractMongoEntity, DTO>
   }
 
   @PostMapping("/column/master")
-  public ResponseEntity<RestResponse<List<String>>> getDistinctValues(@RequestParam String column,
+  public ResponseEntity<RestResponse<List<?>>> getDistinctValues(@RequestParam String column,
     @RequestBody FilterRequestDto filterRequestDto) {
     return RestUtil.successResponse(service.distinctColumnValues(column, filterRequestDto));
   }

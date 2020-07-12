@@ -15,6 +15,6 @@ import lombok.NoArgsConstructor;
 @EqualsAndHashCode(callSuper = true)
 public class SetColumnFilter extends ColumnFilter {
 
-  private List<String> values;
+  private List<?> values;
 
 }

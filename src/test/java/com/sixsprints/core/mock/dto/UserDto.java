@@ -29,5 +29,7 @@ public class UserDto {
   private String roleName;
   
   private Gender gender;
+  
+  private Long customId;
 
 }

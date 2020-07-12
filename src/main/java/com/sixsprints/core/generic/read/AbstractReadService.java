@@ -3,7 +3,6 @@ package com.sixsprints.core.generic.read;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -18,6 +17,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.http.HttpStatus;
@@ -29,8 +29,6 @@ import org.supercsv.io.dozer.ICsvDozerBeanWriter;
 import org.supercsv.prefs.CsvPreference;
 
 import com.google.common.collect.Lists;
-import com.mongodb.client.DistinctIterable;
-import com.mongodb.client.MongoCursor;
 import com.sixsprints.core.domain.AbstractMongoEntity;
 import com.sixsprints.core.dto.FieldDto;
 import com.sixsprints.core.dto.FilterRequestDto;
@@ -56,6 +54,9 @@ import com.sixsprints.core.utils.DateUtil;
 import com.sixsprints.core.utils.FieldMappingUtil;
 import com.sixsprints.core.utils.InheritanceMongoUtil;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public abstract class AbstractReadService<T extends AbstractMongoEntity> extends GenericAbstractService<T>
   implements GenericReadService<T> {
 
@@ -159,24 +160,47 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
   }
 
   @Override
-  public List<String> distinctColumnValues(String column, FilterRequestDto filterRequestDto) {
+  public List<Object> distinctColumnValues(String column, FilterRequestDto filterRequestDto) {
     MetaData<T> metaData = metaData();
-    Query query = new Query();
-    query.addCriteria(buildCriteria(filterRequestDto, metaData));
-    DistinctIterable<String> iterable = mongo.getCollection(mongo.getCollectionName(metaData().getClassType()))
-      .distinct(column, query.getQueryObject(), String.class);
 
-    MongoCursor<String> cursor = iterable.iterator();
-    List<String> list = new ArrayList<>();
-    while (cursor.hasNext()) {
-      String next = cursor.next();
-      if (next != null)
-        list.add(next);
+    FieldDto field = findField(column, metaData);
+    if (field == null) {
+      log.warn("Unable to find the column {} in meta data fields. Returning empty list", column);
+      return Lists.newArrayList();
     }
-    list.remove("");
-    list.add(AppConstants.BLANK_STRING);
-    Collections.sort(list);
-    return list;
+    Class<?> classTypeFromField = getClassTypeFromField(field);
+    if (classTypeFromField == null) {
+      log.warn("Unable to determine the class type from field {} and column {}. Returning empty list", field, column);
+      return Lists.newArrayList();
+    }
+
+    Query query = new Query().with(Sort.by(Direction.ASC, column));
+    query.addCriteria(buildCriteria(filterRequestDto, metaData));
+    List<?> list = mongo.getCollection(mongo.getCollectionName(metaData().getClassType()))
+      .distinct(column, query.getQueryObject(), classTypeFromField).into(new ArrayList<>());
+
+    List<Object> result = new ArrayList<>();
+    result.add(AppConstants.BLANK_STRING);
+
+    list.forEach(i -> result.add(i));
+    result.remove("");
+
+    return result;
+  }
+
+  private Class<?> getClassTypeFromField(FieldDto field) {
+    if (field.getDataType() == null) {
+      return null;
+    }
+    return field.getDataType().getClassType();
+  }
+
+  private FieldDto findField(String column, MetaData<T> metaData) {
+    List<FieldDto> fields = metaData.getFields();
+    if (CollectionUtils.isEmpty(fields)) {
+      return null;
+    }
+    return fields.stream().filter(f -> f.getName().equals(column)).findFirst().orElse(null);
   }
 
   @Override
@@ -310,9 +334,9 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
   private void addSetFilter(List<Criteria> criterias, String key, SetColumnFilter filter) {
     if (!CollectionUtils.isEmpty(filter.getValues())) {
       int i = 0;
-      List<String> values = filter.getValues();
+      List<?> values = filter.getValues();
       int size = values.size();
-      Object[] array = new String[size];
+      Object[] array = new Object[size];
 
       long count = values.stream().filter(val -> StringUtils.isEmpty(val) || val.equals(AppConstants.BLANK_STRING))
         .count();
@@ -321,8 +345,8 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
         array[i++] = "";
       }
 
-      for (String val : values) {
-        array[i++] = StringUtils.isEmpty(val) || val.equals(AppConstants.BLANK_STRING) ? null : val;
+      for (Object val : values) {
+        array[i++] = StringUtils.isEmpty(val) || val.toString().equals(AppConstants.BLANK_STRING) ? null : val;
       }
       criterias.add(setKeyCriteria(key).in(array));
     }

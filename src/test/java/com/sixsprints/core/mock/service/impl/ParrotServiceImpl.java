@@ -8,6 +8,7 @@ import com.sixsprints.core.mock.domain.inheritance.Parrot;
 import com.sixsprints.core.mock.repository.inheritance.GenericAnimalRepository;
 import com.sixsprints.core.mock.repository.inheritance.ParrotRepository;
 import com.sixsprints.core.mock.service.ParrotService;
+import com.sixsprints.core.mock.util.AnimalFieldData;
 
 @Service("parrot")
 public class ParrotServiceImpl extends AnimalAbstractService<Parrot> implements ParrotService {
@@ -22,7 +23,7 @@ public class ParrotServiceImpl extends AnimalAbstractService<Parrot> implements 
 
   @Override
   protected MetaData<Parrot> metaData() {
-    return MetaData.<Parrot>builder().classType(Parrot.class).build();
+    return MetaData.<Parrot>builder().classType(Parrot.class).fields(AnimalFieldData.fields()).build();
   }
 
 }

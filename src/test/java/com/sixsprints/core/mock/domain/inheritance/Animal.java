@@ -24,4 +24,8 @@ public abstract class Animal extends AbstractMongoEntity {
 
   private String name;
 
+  private Long customId;
+
+  private int count;
+
 }

@@ -47,6 +47,11 @@ public class UserFieldData {
       .localizedDisplay(ImmutableMap.<Locale, String>of(Locale.ENGLISH, "Gender", Locale.JAPANESE, "JapanGender"))
       .build());
 
+    fields.add(FieldDto.builder().name("customId").sequence(i++)
+      .dataType(DataType.NUMBER)
+      .localizedDisplay(ImmutableMap.<Locale, String>of(Locale.ENGLISH, "CustomID", Locale.JAPANESE, "CustomIDGender"))
+      .build());
+
     return fields;
   }
 

@@ -37,4 +37,6 @@ public class User extends AbstractMongoEntity {
 
   private Gender gender;
 
+  private Long customId;
+
 }

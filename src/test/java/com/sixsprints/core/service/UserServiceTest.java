@@ -25,6 +25,7 @@ import com.sixsprints.core.mock.domain.Role;
 import com.sixsprints.core.mock.domain.User;
 import com.sixsprints.core.mock.domain.embedded.Address;
 import com.sixsprints.core.mock.dto.UserDto;
+import com.sixsprints.core.mock.enums.Gender;
 import com.sixsprints.core.mock.service.UserService;
 import com.sixsprints.core.transformer.UserMapper;
 
@@ -118,13 +119,15 @@ public class UserServiceTest extends ApplicationTests {
 
   private User user(int i) {
     Address address = Address.builder().city("city" + i).state("state" + i).country("country" + i).build();
-    return User.builder().email("email" + i + "@gmail.com").name("Name" + i).flag(true)
+    return User.builder().email("email" + i + "@gmail.com").name("Name" + i)
+      .gender(Gender.values()[i % Gender.values().length]).flag(true).customId(Long.valueOf(i))
+      .roleName(i == 1 ? "ADMIN" : "USER")
       .address(address).build();
   }
 
   private User userWithNullAddress(int i) {
     Address address = Address.builder().city("city" + i).build();
-    return User.builder().email("email" + i + "@gmail.com").name("Name" + i).flag(true)
+    return User.builder().email("email" + i + "@gmail.com").name("Name" + i).flag(true).customId(Long.valueOf(i))
       .address(address).build();
   }
 
@@ -133,6 +136,7 @@ public class UserServiceTest extends ApplicationTests {
     assertThat(user.getEmail()).isEqualTo("email" + i + "@gmail.com");
     assertThat(user.getName()).isEqualTo("Name" + i);
     assertThat(user.getFlag()).isTrue();
+    assertThat(user.getCustomId()).isEqualTo(Long.valueOf(i));
   }
 
 }
