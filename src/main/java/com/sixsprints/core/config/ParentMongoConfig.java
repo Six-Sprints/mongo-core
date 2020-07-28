@@ -26,29 +26,15 @@ import com.sixsprints.core.repository.InheritanceAwareMongoRepositoryFactoryBean
 @EnableMongoRepositories(repositoryFactoryBeanClass = InheritanceAwareMongoRepositoryFactoryBean.class, basePackages = "com.sixsprints.core")
 public class ParentMongoConfig extends AbstractMongoClientConfiguration {
 
-  private String host;
-
-  private String database;
-
-  private Integer port;
-
   @Bean
   public MongoTransactionManager transactionManager(MongoDatabaseFactory dbFactory) {
     return new MongoTransactionManager(dbFactory);
   }
 
   @Override
-  protected String getDatabaseName() {
-    return getDatabase();
-  }
-
-  @Override
   @Bean
   public MongoClient mongoClient() {
-    StringBuilder connectionString = new StringBuilder("mongodb://").append(getHost()).append(":").append(getPort())
-      .append("/")
-      .append(getDatabase());
-    return MongoClients.create(connectionString.toString());
+    return MongoClients.create(uri());
   }
 
   @Override
@@ -72,16 +58,13 @@ public class ParentMongoConfig extends AbstractMongoClientConfiguration {
     return converters;
   }
 
-  protected String getHost() {
-    return host == null ? "localhost" : host;
+  protected String uri() {
+    return "mongodb://localhost/" + getDatabaseName();
   }
 
-  protected String getDatabase() {
-    return database == null ? "test-db" : database;
-  }
-
-  protected Integer getPort() {
-    return port == null ? 27017 : port;
+  @Override
+  protected String getDatabaseName() {
+    return "testdb";
   }
 
 }

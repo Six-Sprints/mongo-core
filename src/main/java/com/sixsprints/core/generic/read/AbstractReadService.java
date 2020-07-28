@@ -28,7 +28,6 @@ import org.supercsv.io.dozer.CsvDozerBeanWriter;
 import org.supercsv.io.dozer.ICsvDozerBeanWriter;
 import org.supercsv.prefs.CsvPreference;
 
-import com.google.common.collect.Lists;
 import com.sixsprints.core.domain.AbstractMongoEntity;
 import com.sixsprints.core.dto.FieldDto;
 import com.sixsprints.core.dto.FilterRequestDto;
@@ -166,12 +165,12 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
     FieldDto field = findField(column, metaData);
     if (field == null) {
       log.warn("Unable to find the column {} in meta data fields. Returning empty list", column);
-      return Lists.newArrayList();
+      return new ArrayList<>();
     }
     Class<?> classTypeFromField = getClassTypeFromField(field);
     if (classTypeFromField == null) {
       log.warn("Unable to determine the class type from field {} and column {}. Returning empty list", field, column);
-      return Lists.newArrayList();
+      return new ArrayList<>();
     }
 
     Query query = new Query().with(Sort.by(Direction.ASC, column));
@@ -492,7 +491,7 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
   }
 
   private void addSearchCriteria(SearchColumnFilter filter, List<Criteria> criterias) {
-    List<Criteria> searchCriteria = Lists.newArrayList();
+    List<Criteria> searchCriteria = new ArrayList<>();
     String quote = Pattern.quote(filter.getFilter());
 
     List<FieldDto> fields = buildSearchFields(filter);

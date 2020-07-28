@@ -4,12 +4,11 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.util.CollectionUtils;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
 import com.sixsprints.core.domain.AbstractMongoEntity;
 import com.sixsprints.core.dto.BulkUpdateInfo;
 import com.sixsprints.core.enums.UpdateAction;
@@ -37,14 +36,16 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity> exten
     throws EntityNotFoundException, EntityAlreadyExistsException {
 
     T entity = findOne(id);
-    BeanWrapperUtil.copyProperties(domain, entity, ImmutableList.<String>of(propChanged));
+    List<String> list = new ArrayList<>();
+    list.add(propChanged);
+    BeanWrapperUtil.copyProperties(domain, entity, list);
 
     return update(entity);
   }
 
   @Override
   public List<BulkUpdateInfo<T>> updateAll(List<T> list) {
-    List<BulkUpdateInfo<T>> updateInfo = Lists.newArrayList();
+    List<BulkUpdateInfo<T>> updateInfo = new ArrayList<>();
     if (CollectionUtils.isEmpty(list)) {
       return updateInfo;
     }

@@ -20,7 +20,6 @@ import org.supercsv.io.dozer.CsvDozerBeanReader;
 import org.supercsv.io.dozer.ICsvDozerBeanReader;
 import org.supercsv.prefs.CsvPreference;
 
-import com.google.common.collect.Lists;
 import com.sixsprints.core.domain.AbstractMongoEntity;
 import com.sixsprints.core.dto.FieldDto;
 import com.sixsprints.core.dto.ImportLogDetails;
@@ -57,7 +56,7 @@ public abstract class AbstractCreateService<T extends AbstractMongoEntity> exten
 
   @Override
   public List<T> saveAllWithHooks(List<T> entities) {
-    List<T> list = Lists.newArrayList();
+    List<T> list = new ArrayList<>();
     for (T entity : entities) {
       list.add(save(entity));
     }
@@ -97,7 +96,7 @@ public abstract class AbstractCreateService<T extends AbstractMongoEntity> exten
     String encoding = checkEncoding(bais, fields);
     List<DTO> data = new ArrayList<>();
     ICsvDozerBeanReader beanReader = null;
-    List<UploadError> errors = Lists.newArrayList();
+    List<UploadError> errors = new ArrayList<>();
     List<String> unknownErrors = new ArrayList<>();
     String[] firstLine;
     try {
