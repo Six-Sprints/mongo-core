@@ -67,7 +67,9 @@ public abstract class AbstractAuthenticationInterceptor<T extends AbstractMongoE
 
   protected void postProcessor(T user) {
     ApplicationContext.setCurrentUser(user);
-    MDC.put(USER, user.getSlug());
+    if (user != null) {
+      MDC.put(USER, user.getSlug());
+    }
   }
 
   protected void throwException(Authenticated authAnnotation, String message) throws NotAuthenticatedException {
