@@ -12,13 +12,11 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.catalina.connector.RequestFacade;
-import org.springframework.stereotype.Component;
 
 import com.sixsprints.core.utils.ApplicationContext;
 
 import lombok.extern.slf4j.Slf4j;
 
-@Component
 @Slf4j
 public class CorsFilter implements Filter {
 

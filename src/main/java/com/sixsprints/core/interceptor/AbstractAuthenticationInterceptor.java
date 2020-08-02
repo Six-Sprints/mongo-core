@@ -57,9 +57,11 @@ public abstract class AbstractAuthenticationInterceptor<T extends AbstractMongoE
 
   protected abstract String auhtTokenKey();
 
-  protected abstract void checkUserPermissions(T user, Authenticated authAnnotation);
+  protected abstract void checkUserPermissions(T user, Authenticated authAnnotation)
+    throws NotAuthenticatedException, EntityNotFoundException;
 
-  protected abstract void checkIfTokenInvalid(T user, String token, Authenticated authAnnotation);
+  protected abstract void checkIfTokenInvalid(T user, String token, Authenticated authAnnotation)
+    throws NotAuthenticatedException;
 
   protected void postProcessor(T user) {
     ApplicationContext.setCurrentUser(user);
