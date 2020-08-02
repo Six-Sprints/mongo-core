@@ -135,14 +135,14 @@ public abstract class AbstractAuthenticationInterceptor<T extends AbstractMongoE
     Authenticated annotationMethod = method.getAnnotation(Authenticated.class);
 
     if (annotationMethod == null) {
-      return annotationClass;
+      return sanitize(annotationClass);
     }
 
     if (annotationClass == null) {
-      return annotationMethod;
+      return sanitize(annotationMethod);
     }
 
-    return new Authenticated() {
+    return sanitize(new Authenticated() {
 
       @Override
       public Class<? extends Annotation> annotationType() {
@@ -156,32 +156,50 @@ public abstract class AbstractAuthenticationInterceptor<T extends AbstractMongoE
 
       @Override
       public String entity() {
-        String result = StringUtils.isEmpty(annotationMethod.entity()) ? annotationClass.entity()
+        return StringUtils.isEmpty(annotationMethod.entity()) ? annotationClass.entity()
           : annotationMethod.entity();
-        if (StringUtils.isEmpty(result)) {
-          result = "ANY";
-        }
-        return result;
       }
 
       @Override
       public Restriction restriction() {
-        Restriction result = Restriction.NULL == annotationMethod.restriction() ? annotationClass.restriction()
+        return Restriction.NULL == annotationMethod.restriction() ? annotationClass.restriction()
           : annotationMethod.restriction();
-        if (result == Restriction.NULL) {
-          result = Restriction.NONE;
-        }
-        return result;
       }
 
       @Override
       public AccessPermission access() {
-        AccessPermission result = AccessPermission.NULL == annotationMethod.access() ? annotationClass.access()
+        return AccessPermission.NULL == annotationMethod.access() ? annotationClass.access()
           : annotationMethod.access();
-        if (result == AccessPermission.NULL) {
-          result = AccessPermission.ANY;
-        }
-        return result;
+      }
+    });
+  }
+
+  private Authenticated sanitize(Authenticated authenticated) {
+    return new Authenticated() {
+
+      @Override
+      public Class<? extends Annotation> annotationType() {
+        return Authenticated.class;
+      }
+
+      @Override
+      public boolean required() {
+        return authenticated.required();
+      }
+
+      @Override
+      public String entity() {
+        return StringUtils.isEmpty(authenticated.entity()) ? "ANY" : authenticated.entity();
+      }
+
+      @Override
+      public Restriction restriction() {
+        return Restriction.NULL == authenticated.restriction() ? Restriction.NONE : authenticated.restriction();
+      }
+
+      @Override
+      public AccessPermission access() {
+        return AccessPermission.NULL == authenticated.access() ? AccessPermission.ANY : authenticated.access();
       }
     };
   }
