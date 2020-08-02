@@ -6,6 +6,7 @@ import java.lang.reflect.Method;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.slf4j.MDC;
 import org.springframework.util.StringUtils;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
@@ -24,6 +25,7 @@ import com.sixsprints.core.utils.AuthUtil;
 public abstract class AbstractAuthenticationInterceptor<T extends AbstractMongoEntity>
   extends HandlerInterceptorAdapter {
 
+  private static final String USER = "user";
   private GenericCrudService<T> userService;
 
   public AbstractAuthenticationInterceptor(GenericCrudService<T> userService) {
@@ -65,6 +67,7 @@ public abstract class AbstractAuthenticationInterceptor<T extends AbstractMongoE
 
   protected void postProcessor(T user) {
     ApplicationContext.setCurrentUser(user);
+    MDC.put(USER, user.getSlug());
   }
 
   protected void throwException(Authenticated authAnnotation, String message) throws NotAuthenticatedException {
