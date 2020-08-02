@@ -37,7 +37,7 @@ public class RequestUtils {
   }
 
   public static String getRequestId(String prefix) {
-    return String.format("%s-%s-%s", prefix, ThreadLocalRandom.current().nextFloat(),
+    return String.format("%s-%s-%s", prefix, ThreadLocalRandom.current().nextInt(100001, 999999),
       System.currentTimeMillis());
   }
 

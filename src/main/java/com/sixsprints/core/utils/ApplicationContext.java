@@ -30,4 +30,9 @@ public class ApplicationContext {
     return requestContext;
   }
 
+  public static void clear() {
+    userData.remove();
+    requestData.remove();
+  }
+
 }
