@@ -11,8 +11,7 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.catalina.connector.RequestFacade;
-
+import com.sixsprints.core.dto.RequestContext;
 import com.sixsprints.core.utils.ApplicationContext;
 
 import lombok.extern.slf4j.Slf4j;
@@ -45,9 +44,11 @@ public class CorsFilter implements Filter {
         "Origin, X-Requested-With, Content-Type, Accept, X-CSRF-TOKEN, X-AUTH-TOKEN");
     }
     chain.doFilter(req, res);
-    RequestFacade request = (RequestFacade) req;
+
+    RequestContext request = ApplicationContext.getCurrentRequest();
+
     log.info("Response time taken for request {} {} {} {} milliseconds",
-      ApplicationContext.getCurrentRequest().getRequestId(), request.getMethod(), request.getRequestURI(),
+      request.getRequestId(), request.getHttpMethod(), request.getSelfUrl(),
       System.currentTimeMillis() - startTime);
   }
 

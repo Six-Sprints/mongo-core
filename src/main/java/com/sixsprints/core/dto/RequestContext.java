@@ -12,7 +12,7 @@ import lombok.ToString;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@ToString
+@ToString(exclude = {"headersMap", "parametersMap"})
 public class RequestContext {
 
   private String requestId;
