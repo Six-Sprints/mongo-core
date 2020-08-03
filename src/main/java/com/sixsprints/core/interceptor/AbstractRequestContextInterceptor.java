@@ -35,7 +35,7 @@ public abstract class AbstractRequestContextInterceptor extends HandlerIntercept
       .userAgent(request.getHeader("User-Agent"))
       .httpMethod(request.getMethod())
       .headersMap(RequestUtils.getHeadersMap(request))
-      .parametersMap(request.getParameterMap())
+      .parametersMap(RequestUtils.getParamsMap(request))
       .build();
     ApplicationContext.setCurrentRequest(requestContext);
     MDC.put(REQUEST_ID, requestContext.getRequestId());

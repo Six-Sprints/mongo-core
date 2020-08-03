@@ -41,8 +41,8 @@ public class RequestUtils {
       System.currentTimeMillis());
   }
 
-  public static Map<String, String[]> getHeadersMap(HttpServletRequest request) {
-    Map<String, String[]> headersMap = new LinkedHashMap<>();
+  public static Map<String, List<String>> getHeadersMap(HttpServletRequest request) {
+    Map<String, List<String>> headersMap = new LinkedHashMap<>();
     Enumeration<String> headerNames = request.getHeaderNames();
     while (headerNames.hasMoreElements()) {
       String header = headerNames.nextElement();
@@ -51,12 +51,36 @@ public class RequestUtils {
     return headersMap;
   }
 
-  public static String[] enumerationToString(Enumeration<String> enumeration) {
+  public static Map<String, List<String>> getParamsMap(HttpServletRequest request) {
+    Map<String, List<String>> headersMap = new LinkedHashMap<>();
+    Map<String, String[]> parameterMap = request.getParameterMap();
+
+    if (parameterMap != null && !parameterMap.isEmpty()) {
+      for (String key : parameterMap.keySet()) {
+        String[] value = parameterMap.get(key);
+        headersMap.put(key, toList(value));
+      }
+    }
+    return headersMap;
+  }
+
+  private static List<String> toList(String[] value) {
+    if (value == null || value.length == 0) {
+      return new ArrayList<>();
+    }
+    List<String> list = new ArrayList<>();
+    for (String val : value) {
+      list.add(val);
+    }
+    return list;
+  }
+
+  public static List<String> enumerationToString(Enumeration<String> enumeration) {
     List<String> headers = new ArrayList<>();
     while (enumeration.hasMoreElements()) {
       headers.add(enumeration.nextElement());
     }
-    return headers.toArray(new String[headers.size()]);
+    return headers;
   }
 
   public static String getRemoteAddress(HttpServletRequest request) {

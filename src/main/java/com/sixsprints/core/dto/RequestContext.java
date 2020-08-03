@@ -1,5 +1,6 @@
 package com.sixsprints.core.dto;
 
+import java.util.List;
 import java.util.Map;
 
 import lombok.AllArgsConstructor;
@@ -12,7 +13,7 @@ import lombok.ToString;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@ToString(exclude = {"headersMap", "parametersMap"})
+@ToString
 public class RequestContext {
 
   private String requestId;
@@ -37,8 +38,8 @@ public class RequestContext {
 
   private String httpMethod;
 
-  private Map<String, String[]> headersMap;
+  private Map<String, List<String>> headersMap;
 
-  private Map<String, String[]> parametersMap;
+  private Map<String, List<String>> parametersMap;
 
 }
