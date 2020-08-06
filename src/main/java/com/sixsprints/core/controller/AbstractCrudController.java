@@ -56,6 +56,13 @@ public abstract class AbstractCrudController<T extends AbstractMongoEntity, DTO>
     return RestUtil.successResponse(service.patchUpdate(domain.getId(), domain, propChanged));
   }
 
+  @PutMapping("/update")
+  @Authenticated(access = AccessPermission.UPDATE)
+  public ResponseEntity<?> update(@RequestBody @Validated DTO dto) throws BaseException {
+    T domain = mapper.toDomain(dto);
+    return RestUtil.successResponse(service.update(domain.getId(), domain));
+  }
+
   @PostMapping
   @Authenticated(access = AccessPermission.CREATE)
   public ResponseEntity<RestResponse<DTO>> add(@RequestBody @Validated DTO dto)
