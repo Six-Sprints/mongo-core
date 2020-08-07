@@ -9,7 +9,7 @@ import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
+import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.util.CollectionUtils;
 
 import com.sixsprints.core.annotation.AuditCsvImport;
@@ -23,8 +23,6 @@ import com.sixsprints.core.exception.EntityAlreadyExistsException;
 import com.sixsprints.core.exception.EntityInvalidException;
 import com.sixsprints.core.exception.EntityNotFoundException;
 import com.sixsprints.core.generic.create.AbstractCreateService;
-import com.sixsprints.core.service.ImportLogService;
-import com.sixsprints.core.transformer.ImportLogDetailsMapper;
 import com.sixsprints.core.utils.BeanWrapperUtil;
 
 import lombok.extern.slf4j.Slf4j;
@@ -33,13 +31,8 @@ import lombok.extern.slf4j.Slf4j;
 public abstract class AbstractUpdateService<T extends AbstractMongoEntity> extends AbstractCreateService<T>
   implements GenericUpdateService<T> {
 
-  @Lazy
   @Autowired
-  private ImportLogService importLogService;
-
-  @Lazy
-  @Autowired
-  private ImportLogDetailsMapper mapper;
+  private MongoTemplate mongo;
 
   @Override
   public T update(String id, T domain) throws EntityNotFoundException, EntityAlreadyExistsException {
@@ -87,7 +80,6 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity> exten
       log.debug("@AuditCsvImport annotation not present. Ignoring saving the csv log in the database.");
       return;
     }
-
     if (importWrapper == null) {
       return;
     }
@@ -103,7 +95,7 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity> exten
       entityName = metaData.getClassType().getSimpleName();
     }
     importLogDetails.setEntity(entityName);
-    importLogService.save(mapper.toDomain(importLogDetails));
+    mongo.insert(importLogDetails);
   }
 
   protected BulkUpdateInfo<T> saveOneWhileBulkImport(T domain) {
