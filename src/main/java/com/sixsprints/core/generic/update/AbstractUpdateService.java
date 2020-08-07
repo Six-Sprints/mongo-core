@@ -9,7 +9,7 @@ import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.MongoOperations;
 import org.springframework.util.CollectionUtils;
 
 import com.sixsprints.core.annotation.AuditCsvImport;
@@ -32,7 +32,7 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity> exten
   implements GenericUpdateService<T> {
 
   @Autowired
-  private MongoTemplate mongo;
+  private MongoOperations mongo;
 
   @Override
   public T update(String id, T domain) throws EntityNotFoundException, EntityAlreadyExistsException {
