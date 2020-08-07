@@ -17,7 +17,7 @@ public class ImportResponseWrapper<T> {
 
   private List<T> data;
 
-  private ImportLogDetails importLogDetails;
+  private ImportLogDetailsDto importLogDetails;
 
   private String[] firstLine;
 

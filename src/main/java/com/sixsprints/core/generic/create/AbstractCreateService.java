@@ -22,7 +22,7 @@ import org.supercsv.prefs.CsvPreference;
 
 import com.sixsprints.core.domain.AbstractMongoEntity;
 import com.sixsprints.core.dto.FieldDto;
-import com.sixsprints.core.dto.ImportLogDetails;
+import com.sixsprints.core.dto.ImportLogDetailsDto;
 import com.sixsprints.core.dto.ImportResponseWrapper;
 import com.sixsprints.core.dto.UploadError;
 import com.sixsprints.core.enums.UploadErrorType;
@@ -144,7 +144,7 @@ public abstract class AbstractCreateService<T extends AbstractMongoEntity> exten
 
     Collections.sort(errors);
 
-    ImportLogDetails log = ImportLogDetails.builder().errors(errors).unknownErrors(unknownErrors)
+    ImportLogDetailsDto log = ImportLogDetailsDto.builder().errors(errors).unknownErrors(unknownErrors)
       .errorRowCount(errorSize)
       .successRowCount(data.size()).warningRowCount(errors.size() - errorSize)
       .totalRowCount(errorSize + unknownErrors.size() + data.size())

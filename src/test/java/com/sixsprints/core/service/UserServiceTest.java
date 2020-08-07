@@ -17,7 +17,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.sixsprints.core.ApplicationTests;
 import com.sixsprints.core.dto.BulkUpdateInfo;
-import com.sixsprints.core.dto.ImportLogDetails;
+import com.sixsprints.core.dto.ImportLogDetailsDto;
 import com.sixsprints.core.dto.ImportResponseWrapper;
 import com.sixsprints.core.enums.UpdateAction;
 import com.sixsprints.core.exception.BaseException;
@@ -103,7 +103,7 @@ public class UserServiceTest extends ApplicationTests {
 
     InputStream stream = this.getClass().getResourceAsStream(fileName);
     ImportResponseWrapper<UserDto> dataFromStream = userService.importData(stream, Locale.ENGLISH);
-    ImportLogDetails log = dataFromStream.getImportLogDetails();
+    ImportLogDetailsDto log = dataFromStream.getImportLogDetails();
 
     assertThat(log.getTotalRowCount()).isEqualTo(9);
     assertThat(log.getSuccessRowCount()).isEqualTo(4);

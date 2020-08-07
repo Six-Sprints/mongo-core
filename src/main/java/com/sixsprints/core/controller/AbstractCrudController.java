@@ -19,6 +19,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.sixsprints.core.annotation.Authenticated;
 import com.sixsprints.core.domain.AbstractMongoEntity;
+import com.sixsprints.core.dto.BulkUpdateInfo;
 import com.sixsprints.core.dto.FieldDto;
 import com.sixsprints.core.dto.FilterRequestDto;
 import com.sixsprints.core.dto.ImportResponseWrapper;
@@ -110,7 +111,8 @@ public abstract class AbstractCrudController<T extends AbstractMongoEntity, DTO>
   public ResponseEntity<?> upload(@RequestParam(value = "file", required = true) MultipartFile file,
     Locale locale) throws IOException, BaseException {
     ImportResponseWrapper<DTO> importResponseWrapper = service.importData(file.getInputStream(), locale);
-    service.updateAll(mapper.toDomain(importResponseWrapper.getData()));
+    List<BulkUpdateInfo<T>> updateInfo = service.updateAll(mapper.toDomain(importResponseWrapper.getData()));
+    service.saveImportLogs(importResponseWrapper, updateInfo);
     return RestUtil.successResponse(importResponseWrapper.getImportLogDetails());
   }
 
