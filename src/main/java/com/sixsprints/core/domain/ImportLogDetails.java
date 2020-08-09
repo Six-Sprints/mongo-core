@@ -1,21 +1,23 @@
-package com.sixsprints.core.dto;
+package com.sixsprints.core.domain;
 
 import java.util.List;
 
+import com.sixsprints.core.dto.UploadError;
+
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 @Data
-@Builder
+@SuperBuilder
 @AllArgsConstructor
 @NoArgsConstructor
-public class ImportLogDetailsDto {
+@EqualsAndHashCode(callSuper = true)
+public class ImportLogDetails extends AbstractMongoEntity {
 
-  private String id;
-
-  private String slug;
+  private static final long serialVersionUID = 1L;
 
   private String entity;
 
