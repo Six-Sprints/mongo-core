@@ -1,5 +1,6 @@
 package com.sixsprints.core.dto;
 
+import java.util.Date;
 import java.util.List;
 
 import lombok.AllArgsConstructor;
@@ -16,6 +17,10 @@ public class ImportLogDetailsDto {
   private String id;
 
   private String slug;
+  
+  private Date dateCreated;
+  
+  private String createdBy;
 
   private String entity;
 
