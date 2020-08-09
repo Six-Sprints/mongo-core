@@ -32,6 +32,7 @@ import com.sixsprints.core.exception.EntityInvalidException;
 import com.sixsprints.core.generic.delete.AbstractDeleteService;
 import com.sixsprints.core.utils.CellProcessorUtil;
 import com.sixsprints.core.utils.FieldMappingUtil;
+import com.sixsprints.core.utils.FieldUtil;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -92,7 +93,7 @@ public abstract class AbstractCreateService<T extends AbstractMongoEntity> exten
     IOUtils.copy(inputStream, baos);
     byte[] bytes = baos.toByteArray();
     ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
-    List<FieldDto> fields = metaData().getFields();
+    List<FieldDto> fields = FieldUtil.fields(metaData().getFields(), locale);
     String encoding = checkEncoding(bais, fields);
     List<DTO> data = new ArrayList<>();
     ICsvDozerBeanReader beanReader = null;

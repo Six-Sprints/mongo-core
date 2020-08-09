@@ -51,6 +51,7 @@ import com.sixsprints.core.utils.AppConstants;
 import com.sixsprints.core.utils.CellProcessorUtil;
 import com.sixsprints.core.utils.DateUtil;
 import com.sixsprints.core.utils.FieldMappingUtil;
+import com.sixsprints.core.utils.FieldUtil;
 import com.sixsprints.core.utils.InheritanceMongoUtil;
 
 import lombok.extern.slf4j.Slf4j;
@@ -212,7 +213,7 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
 
     ICsvDozerBeanWriter beanWriter = null;
     try {
-      List<FieldDto> fields = metaData().getFields();
+      List<FieldDto> fields = FieldUtil.fields(metaData().getFields(), locale);
       String mappings[] = exportMappings(fields);
 
       beanWriter = new CsvDozerBeanWriter(writer, CsvPreference.STANDARD_PREFERENCE);

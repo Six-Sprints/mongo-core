@@ -6,9 +6,9 @@ import com.sixsprints.core.service.ImportLogDetailsService;
 import com.sixsprints.core.transformer.ImportLogDetailsMapper;
 
 public abstract class AbstractImportLogDetailsController
-  extends AbstractCrudController<ImportLogDetails, ImportLogDetailsDto> {
+  extends AbstractReadController<ImportLogDetails, ImportLogDetailsDto> {
 
-  protected ImportLogDetailsMapper mapper;;
+  protected ImportLogDetailsMapper mapper;
 
   public AbstractImportLogDetailsController(ImportLogDetailsService service) {
     super(service, ImportLogDetailsMapper.INSTANCE);
