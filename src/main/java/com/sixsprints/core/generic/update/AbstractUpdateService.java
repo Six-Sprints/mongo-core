@@ -114,6 +114,8 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity> exten
       if (!fromDb.getActive()) {
         delete(fromDb);
       } else {
+        preUpdate(fromDb, domain);
+
         Boolean active = domain.getActive();
         domain.copyEntityFrom(fromDb);
         domain.setActive(active);
@@ -129,7 +131,6 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity> exten
           return bulkImportInfo(fromDb, UpdateAction.IGNORE);
         }
 
-        preUpdate(fromDb);
         fromDb = save(fromDb);
         postUpdate(fromDb);
         return bulkImportInfo(fromDb, UpdateAction.UPDATE);
@@ -176,7 +177,7 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity> exten
       }
       delete(fromDB);
     }
-    preUpdate(domain);
+    preUpdate(fromDB, domain);
     save(domain);
     postUpdate(domain);
     return domain;
