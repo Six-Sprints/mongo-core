@@ -37,7 +37,8 @@ public class UserServiceTest extends ApplicationTests {
   @Autowired
   private MongoOperations mongo;
 
-  private UserMapper userMapper = UserMapper.INSTANCE;
+  @Autowired
+  private UserMapper userMapper;
 
   @Test
   public void testSave() {

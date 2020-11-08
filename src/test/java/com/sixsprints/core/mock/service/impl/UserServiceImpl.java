@@ -20,6 +20,9 @@ public class UserServiceImpl extends AbstractCrudService<User> implements UserSe
   @Autowired
   private UserRepository userRepository;
 
+  @Autowired
+  private UserMapper userMapper;
+
   @Override
   protected GenericRepository<User> repository() {
     return userRepository;
@@ -50,9 +53,10 @@ public class UserServiceImpl extends AbstractCrudService<User> implements UserSe
     }
   }
 
+  // Required to properly ignore non-null values of the embedded objects.
   @Override
   protected void copyNonNullValues(User source, User target) {
-    UserMapper.INSTANCE.copyNonNull(source, target);
+    userMapper.copyNonNull(source, target);
   }
 
 }

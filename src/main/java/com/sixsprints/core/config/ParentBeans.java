@@ -2,6 +2,10 @@ package com.sixsprints.core.config;
 
 import java.time.LocalTime;
 
+import javax.validation.Validation;
+import javax.validation.Validator;
+import javax.validation.ValidatorFactory;
+
 import org.joda.time.DateTimeZone;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -30,6 +34,13 @@ public class ParentBeans {
     SimpleModule module = module();
     mapper.registerModule(module);
     return mapper;
+  }
+
+  @Bean
+  public Validator validator() {
+    ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
+    Validator validator = factory.getValidator();
+    return validator;
   }
 
   protected SimpleModule module() {
