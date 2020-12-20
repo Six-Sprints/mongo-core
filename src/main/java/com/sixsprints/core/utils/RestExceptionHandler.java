@@ -18,8 +18,6 @@ import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.context.request.WebRequest;
-import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import com.sixsprints.core.exception.BaseException;
 import com.sixsprints.core.exception.BaseRuntimeException;
@@ -29,7 +27,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @ControllerAdvice
-public abstract class RestExceptionHandler extends ResponseEntityExceptionHandler {
+public abstract class RestExceptionHandler {
 
   private MessageSourceService messageSourceService;
 
@@ -38,29 +36,30 @@ public abstract class RestExceptionHandler extends ResponseEntityExceptionHandle
   }
 
   @ExceptionHandler(value = { BaseException.class })
-  protected ResponseEntity<?> handleBaseException(BaseException ex, WebRequest request, Locale locale) {
+  protected ResponseEntity<?> handleBaseException(BaseException ex, HttpServletRequest request, Locale locale) {
     log.error(getErrorMessage(ex.getMessage(), ex.getArguments(), Locale.ENGLISH));
     return RestUtil.errorResponse(ex.getData(), getErrorMessage(ex.getMessage(), ex.getArguments(), locale),
       ex.getHttpStatus());
   }
 
   @ExceptionHandler(value = { BaseRuntimeException.class })
-  protected ResponseEntity<?> handleBaseRuntimeException(BaseRuntimeException ex, WebRequest request, Locale locale) {
+  protected ResponseEntity<?> handleBaseRuntimeException(BaseRuntimeException ex, HttpServletRequest request,
+    Locale locale) {
     log.error(getErrorMessage(ex.getMessage(), ex.getArguments(), Locale.ENGLISH));
     return RestUtil.errorResponse(ex.getData(), getErrorMessage(ex.getMessage(), ex.getArguments(), locale),
       ex.getHttpStatus());
   }
 
   @ExceptionHandler(value = { Exception.class })
-  protected ResponseEntity<?> handleUnknownException(Exception ex, WebRequest request, Locale locale) {
+  protected ResponseEntity<?> handleUnknownException(Exception ex, HttpServletRequest request, Locale locale) {
     log.error(getErrorMessage(ex.getMessage()), ex);
     String errorMessage = getErrorMessage(messageSourceService.genericError(), locale);
     return RestUtil.errorResponse(null, errorMessage, BaseException.DEFAULT_HTTP_STATUS);
   }
 
   @ExceptionHandler(ConstraintViolationException.class)
-  public ResponseEntity<?> handleConstraintViolationException(HttpServletRequest request,
-    ConstraintViolationException ex, Locale locale) {
+  public ResponseEntity<?> handleConstraintViolationException(ConstraintViolationException ex,
+    HttpServletRequest request, Locale locale) {
     ConstraintViolation<?> next = ex.getConstraintViolations().iterator().next();
     String field = getLastElement(next.getPropertyPath().iterator());
     String error = "Request Parameter anomaly. " + field + " is invalid. " + next.getMessage();
@@ -69,8 +68,8 @@ public abstract class RestExceptionHandler extends ResponseEntityExceptionHandle
   }
 
   @ExceptionHandler(MethodArgumentNotValidException.class)
-  public ResponseEntity<?> handleMethodArgumentNotValid(HttpServletRequest request,
-    MethodArgumentNotValidException ex, Locale locale) {
+  public ResponseEntity<?> handleMethodArgumentNotValid(MethodArgumentNotValidException ex, HttpServletRequest request,
+    Locale locale) {
     ObjectError objectError = ex.getBindingResult().getAllErrors().get(0);
     String field = "";
     if (objectError instanceof FieldError) {
