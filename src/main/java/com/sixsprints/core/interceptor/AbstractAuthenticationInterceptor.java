@@ -9,7 +9,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.slf4j.MDC;
 import org.springframework.util.StringUtils;
 import org.springframework.web.method.HandlerMethod;
-import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
+import org.springframework.web.servlet.AsyncHandlerInterceptor;
 
 import com.sixsprints.core.annotation.Authenticated;
 import com.sixsprints.core.domain.AbstractMongoEntity;
@@ -23,7 +23,7 @@ import com.sixsprints.core.utils.ApplicationContext;
 import com.sixsprints.core.utils.AuthUtil;
 
 public abstract class AbstractAuthenticationInterceptor<T extends AbstractMongoEntity>
-  extends HandlerInterceptorAdapter {
+  implements AsyncHandlerInterceptor {
 
   private static final String USER = "user";
   private GenericCrudService<T> userService;
@@ -45,7 +45,7 @@ public abstract class AbstractAuthenticationInterceptor<T extends AbstractMongoE
     }
     Authenticated annotation = mergeAnnotationData(method);
     String token = httpServletRequest.getHeader(auhtTokenKey());
-    if (StringUtils.isEmpty(token)) {
+    if (!StringUtils.hasText(token)) {
       token = httpServletRequest.getParameter(auhtTokenKey());
     }
     T user = checkUser(annotation, token);
@@ -128,7 +128,7 @@ public abstract class AbstractAuthenticationInterceptor<T extends AbstractMongoE
   }
 
   private Boolean checkIfTokenEmpty(Authenticated authAnnotation, String token) throws NotAuthenticatedException {
-    if (StringUtils.isEmpty(token)) {
+    if (!StringUtils.hasText(token)) {
       throwException(authAnnotation, tokenEmptyErrorMessage());
       return true;
     }
@@ -161,8 +161,7 @@ public abstract class AbstractAuthenticationInterceptor<T extends AbstractMongoE
 
       @Override
       public String entity() {
-        return StringUtils.isEmpty(annotationMethod.entity()) ? annotationClass.entity()
-          : annotationMethod.entity();
+        return StringUtils.hasText(annotationMethod.entity()) ? annotationMethod.entity() : annotationClass.entity();
       }
 
       @Override
@@ -194,7 +193,7 @@ public abstract class AbstractAuthenticationInterceptor<T extends AbstractMongoE
 
       @Override
       public String entity() {
-        return StringUtils.isEmpty(authenticated.entity()) ? "ANY" : authenticated.entity();
+        return StringUtils.hasText(authenticated.entity()) ? authenticated.entity() : "ANY";
       }
 
       @Override

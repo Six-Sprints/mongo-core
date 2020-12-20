@@ -2,19 +2,16 @@ package com.sixsprints.core;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit4.SpringRunner;
 
 import com.sixsprints.core.domain.AbstractMongoEntity;
 
-@RunWith(SpringRunner.class)
 @SpringBootTest
 @ActiveProfiles("test")
 public class ApplicationTests {
@@ -26,12 +23,12 @@ public class ApplicationTests {
   public void contextLoads() {
   }
 
-  @Before
+  @BeforeEach
   public void before() {
     mongo.getDb().drop();
   }
 
-  @After
+  @AfterEach
   public void after() {
     mongo.getDb().drop();
   }

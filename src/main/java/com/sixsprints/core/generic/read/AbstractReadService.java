@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Pattern;
 
+import org.apache.commons.lang3.ObjectUtils;
 import org.joda.time.DateTime;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.Page;
@@ -338,7 +339,7 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
       int size = values.size();
       Object[] array = new Object[size];
 
-      long count = values.stream().filter(val -> StringUtils.isEmpty(val) || val.equals(AppConstants.BLANK_STRING))
+      long count = values.stream().filter(val -> ObjectUtils.isEmpty(val) || val.equals(AppConstants.BLANK_STRING))
         .count();
       if (count > 0) {
         array = new String[size + 1];
@@ -346,7 +347,7 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
       }
 
       for (Object val : values) {
-        array[i++] = StringUtils.isEmpty(val) || val.toString().equals(AppConstants.BLANK_STRING) ? null : val;
+        array[i++] = ObjectUtils.isEmpty(val) || val.toString().equals(AppConstants.BLANK_STRING) ? null : val;
       }
       criterias.add(setKeyCriteria(key).in(array));
     }
@@ -354,7 +355,7 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
 
   private void addNumberFilter(List<Criteria> criterias, String key, NumberColumnFilter numberFilter) {
     Criteria criteria = setKeyCriteria(key);
-    if (!StringUtils.isEmpty(numberFilter.getType())) {
+    if (StringUtils.hasText(numberFilter.getType())) {
       numberCriteria(numberFilter.getType(), numberFilter.getFilter(), numberFilter.getFilterTo(), criteria);
     } else {
       Criteria criteria1 = setKeyCriteria(key);

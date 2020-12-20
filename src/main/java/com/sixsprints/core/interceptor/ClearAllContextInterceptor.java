@@ -5,12 +5,12 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.slf4j.MDC;
 import org.springframework.stereotype.Component;
-import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
+import org.springframework.web.servlet.AsyncHandlerInterceptor;
 
 import com.sixsprints.core.utils.ApplicationContext;
 
 @Component
-public class ClearAllContextInterceptor extends HandlerInterceptorAdapter {
+public class ClearAllContextInterceptor implements AsyncHandlerInterceptor {
 
   @Override
   public boolean preHandle(HttpServletRequest request, HttpServletResponse httpServletResponse, Object handler)

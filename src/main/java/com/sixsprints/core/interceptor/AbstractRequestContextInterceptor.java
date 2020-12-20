@@ -6,7 +6,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.slf4j.MDC;
-import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
+import org.springframework.web.servlet.AsyncHandlerInterceptor;
 
 import com.sixsprints.core.dto.RequestContext;
 import com.sixsprints.core.utils.ApplicationContext;
@@ -15,7 +15,7 @@ import com.sixsprints.core.utils.RequestUtils;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public abstract class AbstractRequestContextInterceptor extends HandlerInterceptorAdapter {
+public abstract class AbstractRequestContextInterceptor implements AsyncHandlerInterceptor {
 
   private static final String REQUEST_ID = "request";
 

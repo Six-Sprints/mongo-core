@@ -75,7 +75,7 @@ public abstract class RestExceptionHandler extends ResponseEntityExceptionHandle
       String errorMessage = messageSourceService().messageSource().getMessage(key, args.toArray(), locale);
       return errorMessage;
     } catch (Exception ex) {
-      return StringUtils.isEmpty(key) ? ex.getMessage() : key;
+      return StringUtils.hasText(key) ? key : ex.getMessage();
     }
   }
 

@@ -44,7 +44,7 @@ public class FieldMappingUtil {
     Optional<FieldDto> fieldDto = fields.stream().filter(field -> match(field.getName(), mapping)).findFirst();
     if (fieldDto.isPresent()) {
       if (fieldDto.get().getLocalizedDisplay() == null || fieldDto.get().getLocalizedDisplay().isEmpty()
-        || StringUtils.isEmpty(fieldDto.get().getLocalizedDisplay().get(locale))) {
+        || !StringUtils.hasText(fieldDto.get().getLocalizedDisplay().get(locale))) {
         return fieldDto.get().getDisplayName();
       }
       return fieldDto.get().getLocalizedDisplay().get(locale);

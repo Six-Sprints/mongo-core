@@ -104,7 +104,7 @@ public abstract class GenericAbstractService<T extends AbstractMongoEntity> exte
   }
 
   protected boolean isNew(T entity) {
-    return StringUtils.isEmpty(entity.getId());
+    return !StringUtils.hasText(entity.getId());
   }
 
   protected void validatePageAndSize(Integer pageNumber, Integer pageSize) throws BaseRuntimeException {
@@ -124,7 +124,7 @@ public abstract class GenericAbstractService<T extends AbstractMongoEntity> exte
   }
 
   private boolean shouldOverwriteSlug(T entity) {
-    return isNew(entity) && StringUtils.isEmpty(entity.getSlug());
+    return isNew(entity) && !StringUtils.hasText(entity.getSlug());
   }
 
 }
