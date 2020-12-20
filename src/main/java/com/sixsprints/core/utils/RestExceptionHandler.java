@@ -1,15 +1,20 @@
 
 package com.sixsprints.core.utils;
 
-import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 
-import org.springframework.http.HttpHeaders;
+import javax.servlet.http.HttpServletRequest;
+import javax.validation.ConstraintViolation;
+import javax.validation.ConstraintViolationException;
+import javax.validation.Path.Node;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.FieldError;
+import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -26,7 +31,11 @@ import lombok.extern.slf4j.Slf4j;
 @ControllerAdvice
 public abstract class RestExceptionHandler extends ResponseEntityExceptionHandler {
 
-  protected abstract MessageSourceService messageSourceService();
+  private MessageSourceService messageSourceService;
+
+  public RestExceptionHandler(MessageSourceService messageSourceService) {
+    this.messageSourceService = messageSourceService;
+  }
 
   @ExceptionHandler(value = { BaseException.class })
   protected ResponseEntity<?> handleBaseException(BaseException ex, WebRequest request, Locale locale) {
@@ -45,34 +54,47 @@ public abstract class RestExceptionHandler extends ResponseEntityExceptionHandle
   @ExceptionHandler(value = { Exception.class })
   protected ResponseEntity<?> handleUnknownException(Exception ex, WebRequest request, Locale locale) {
     log.error(getErrorMessage(ex.getMessage()), ex);
-    String errorMessage = getErrorMessage(messageSourceService().genericError(), locale);
+    String errorMessage = getErrorMessage(messageSourceService.genericError(), locale);
     return RestUtil.errorResponse(null, errorMessage, BaseException.DEFAULT_HTTP_STATUS);
   }
 
-  @Override
-  protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex, HttpHeaders headers,
-    HttpStatus status, WebRequest request) {
-    String violation = convertConstraintViolation(ex);
-    return new ResponseEntity<Object>(RestResponse.builder().message(violation).status(false).build(),
-      HttpStatus.BAD_REQUEST);
+  @ExceptionHandler(ConstraintViolationException.class)
+  public ResponseEntity<?> handleConstraintViolationException(HttpServletRequest request,
+    ConstraintViolationException ex, Locale locale) {
+    ConstraintViolation<?> next = ex.getConstraintViolations().iterator().next();
+    String field = getLastElement(next.getPropertyPath().iterator());
+    String error = "Request Parameter anomaly. " + field + " is invalid. " + next.getMessage();
+    log.error(error);
+    return RestUtil.errorResponse(null, error, HttpStatus.BAD_REQUEST);
   }
 
-  protected String convertConstraintViolation(MethodArgumentNotValidException ex) {
-    List<FieldError> fieldErrors = ex.getBindingResult().getFieldErrors();
-    List<String> errorMessages = new ArrayList<String>();
-    for (FieldError c : fieldErrors) {
-      log.error(c.getDefaultMessage());
-      errorMessages.add(getErrorMessage(c.getDefaultMessage(), messageSourceService().defaultLocale()));
+  @ExceptionHandler(MethodArgumentNotValidException.class)
+  public ResponseEntity<?> handleMethodArgumentNotValid(HttpServletRequest request,
+    MethodArgumentNotValidException ex, Locale locale) {
+    ObjectError objectError = ex.getBindingResult().getAllErrors().get(0);
+    String field = "";
+    if (objectError instanceof FieldError) {
+      field = ((FieldError) objectError).getField();
     }
-    if (errorMessages.size() == 1) {
-      return errorMessages.get(0);
+    String code = objectError.getCode();
+    boolean isEmpty = "NotNull".equalsIgnoreCase(code) || "NotEmpty".equalsIgnoreCase(code);
+    String errorDescription = isEmpty ? "not entered." : "invalid. " + field + " " + objectError.getDefaultMessage();
+    String error = "Request Parameter anomaly. " + field + " is " + errorDescription;
+    log.error(error);
+    return RestUtil.errorResponse(null, error, HttpStatus.BAD_REQUEST);
+  }
+
+  private String getLastElement(final Iterator<Node> itr) {
+    Node lastElement = itr.next();
+    while (itr.hasNext()) {
+      lastElement = itr.next();
     }
-    return errorMessages.toString();
+    return lastElement.getName();
   }
 
   protected String getErrorMessage(String key, List<Object> args, Locale locale) {
     try {
-      String errorMessage = messageSourceService().messageSource().getMessage(key, args.toArray(), locale);
+      String errorMessage = messageSourceService.messageSource().getMessage(key, args.toArray(), locale);
       return errorMessage;
     } catch (Exception ex) {
       return StringUtils.hasText(key) ? key : ex.getMessage();
