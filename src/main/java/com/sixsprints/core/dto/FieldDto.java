@@ -23,6 +23,8 @@ public class FieldDto implements Comparable<FieldDto> {
 
   private String name;
 
+  private String filterColumnName;
+
   private int sequence;
 
   private DataType dataType;
