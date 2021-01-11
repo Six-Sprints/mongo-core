@@ -19,6 +19,7 @@ import com.sixsprints.core.ApplicationTests;
 import com.sixsprints.core.dto.BulkUpdateInfo;
 import com.sixsprints.core.dto.ImportLogDetailsDto;
 import com.sixsprints.core.dto.ImportResponseWrapper;
+import com.sixsprints.core.dto.KeyLabelDto;
 import com.sixsprints.core.enums.UpdateAction;
 import com.sixsprints.core.exception.BaseException;
 import com.sixsprints.core.mock.domain.Role;
@@ -98,7 +99,8 @@ public class UserServiceTest extends ApplicationTests {
   @Test
   public void shouldImportFromCsv() throws IOException, BaseException {
 
-    mongo.save(Role.builder().name("ADMIN").build(), "role");
+    mongo.save(Role.builder().name("ADMIN").slug("R1").build(), "role");
+    mongo.save(Role.builder().name("USER").slug("R2").build(), "role");
 
     String fileName = "/test.csv";
 
@@ -112,6 +114,23 @@ public class UserServiceTest extends ApplicationTests {
 
   }
 
+  @Test
+  public void shouldFetchRoleValues() {
+
+    mongo.save(Role.builder().name("ADMIN").slug("R1").build(), "role");
+    mongo.save(Role.builder().name("USER").slug("R2").build(), "role");
+
+    for (int i = 1; i <= 10; i++) {
+      userService.save(user(i));
+    }
+    List<KeyLabelDto> list = userService.distinctColumnValues("roleSlug", null);
+    assertThat(list.size()).isEqualTo(3);
+    assertThat(list.get(1).getLabel()).isEqualTo("ADMIN");
+    assertThat(list.get(1).getKey()).isEqualTo("R1");
+    assertThat(list.get(2).getLabel()).isEqualTo("USER");
+    assertThat(list.get(2).getKey()).isEqualTo("R2");
+  }
+
   private String fileName() {
     String currentUsersHomeDir = System.getProperty("user.home");
     String otherFolder = currentUsersHomeDir + File.separator + "Desktop" + File.separator + "test.csv";
@@ -122,7 +141,7 @@ public class UserServiceTest extends ApplicationTests {
     Address address = Address.builder().city("city" + i).state("state" + i).country("country" + i).build();
     return User.builder().email("email" + i + "@gmail.com").name("Name" + i)
       .gender(Gender.values()[i % Gender.values().length]).flag(true).customId(Long.valueOf(i))
-      .roleName(i == 1 ? "ADMIN" : "USER")
+      .roleSlug(i == 1 ? "R1" : "R2")
       .address(address).build();
   }
 

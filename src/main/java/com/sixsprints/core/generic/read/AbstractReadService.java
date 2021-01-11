@@ -32,6 +32,7 @@ import org.supercsv.prefs.CsvPreference;
 import com.sixsprints.core.domain.AbstractMongoEntity;
 import com.sixsprints.core.dto.FieldDto;
 import com.sixsprints.core.dto.FilterRequestDto;
+import com.sixsprints.core.dto.KeyLabelDto;
 import com.sixsprints.core.dto.MetaData;
 import com.sixsprints.core.dto.PageDto;
 import com.sixsprints.core.dto.filter.BooleanColumnFilter;
@@ -49,6 +50,7 @@ import com.sixsprints.core.exception.EntityNotFoundException;
 import com.sixsprints.core.generic.GenericAbstractService;
 import com.sixsprints.core.transformer.GenericTransformer;
 import com.sixsprints.core.utils.AppConstants;
+import com.sixsprints.core.utils.BeanWrapperUtil;
 import com.sixsprints.core.utils.CellProcessorUtil;
 import com.sixsprints.core.utils.DateUtil;
 import com.sixsprints.core.utils.FieldMappingUtil;
@@ -164,7 +166,7 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
   }
 
   @Override
-  public List<Object> distinctColumnValues(String column, FilterRequestDto filterRequestDto) {
+  public List<KeyLabelDto> distinctColumnValues(String column, FilterRequestDto filterRequestDto) {
     MetaData<T> metaData = metaData();
 
     FieldDto field = findField(column, metaData);
@@ -183,12 +185,40 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
     List<?> list = mongo.getCollection(mongo.getCollectionName(metaData().getClassType()))
       .distinct(column, query.getQueryObject(), classTypeFromField).into(new ArrayList<>());
 
-    List<Object> result = new ArrayList<>();
-    result.add(AppConstants.BLANK_STRING);
+    List<KeyLabelDto> result = new ArrayList<>();
+    result.add(KeyLabelDto.builder()
+      .key("")
+      .label(AppConstants.BLANK_STRING)
+      .build());
 
-    list.forEach(i -> result.add(i));
-    result.remove("");
+    if (!CollectionUtils.isEmpty(list) && DataType.AUTO_COMPLETE.equals(field.getDataType())) {
+      Query joinQuery = new Query().with(Sort.by(Direction.ASC, field.getJoinColumnName()));
+      joinQuery.fields().include(field.getJoinColumnName(), SLUG).exclude("_id");
+      joinQuery.addCriteria(Criteria.where(SLUG).in(list));
 
+      List<?> joinedValues = mongo.find(joinQuery, field.getJoinCollectionClass());
+
+      joinedValues.forEach(item -> {
+        if (ObjectUtils.isNotEmpty(item)) {
+          result.add(KeyLabelDto.builder()
+            .key(BeanWrapperUtil.getValue(item, SLUG))
+            .label(BeanWrapperUtil.getValue(item, field.getJoinColumnName()))
+            .build());
+        }
+      });
+
+    } else {
+
+      list.forEach(i -> {
+        if (ObjectUtils.isNotEmpty(i)) {
+          result.add(KeyLabelDto.builder()
+            .key(i)
+            .label(i)
+            .build());
+        }
+      });
+
+    }
     return result;
   }
 

@@ -33,7 +33,7 @@ public class User extends AbstractMongoEntity {
   private Address address;
 
   @Indexed
-  private String roleName;
+  private String roleSlug;
 
   private Gender gender;
 

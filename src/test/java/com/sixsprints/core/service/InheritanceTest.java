@@ -62,7 +62,8 @@ public class InheritanceTest extends ApplicationTests {
     Assertions.assertThat(animalService.distinctColumnValues("customId", null).size()).isEqualTo(3);
     Assertions.assertThat(parrotService.distinctColumnValues("customId", null).size()).isEqualTo(2);
     Assertions.assertThat(tigerService.distinctColumnValues("customId", null).size()).isEqualTo(2);
-    Assertions.assertThat(animalService.distinctColumnValues("customId", null).get(1).getClass()).isEqualTo(Long.class);
+    Assertions.assertThat(animalService.distinctColumnValues("customId", null).get(1).getKey().getClass())
+      .isEqualTo(Long.class);
 
     List<Animal> filteredAnimals = animalService.filterAll(FilterRequestDto.builder()
       .filterModel(ImmutableMap.<String, ColumnFilter>builder()

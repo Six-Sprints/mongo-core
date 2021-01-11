@@ -10,6 +10,7 @@ import org.springframework.data.domain.Pageable;
 
 import com.sixsprints.core.domain.AbstractMongoEntity;
 import com.sixsprints.core.dto.FilterRequestDto;
+import com.sixsprints.core.dto.KeyLabelDto;
 import com.sixsprints.core.exception.BaseException;
 import com.sixsprints.core.exception.EntityNotFoundException;
 import com.sixsprints.core.transformer.GenericTransformer;
@@ -42,7 +43,7 @@ public interface GenericReadService<T extends AbstractMongoEntity> {
 
   List<T> filterAll(FilterRequestDto filters);
 
-  List<?> distinctColumnValues(String column, FilterRequestDto filterRequestDto);
+  List<KeyLabelDto> distinctColumnValues(String column, FilterRequestDto filterRequestDto);
 
   <E> void exportData(GenericTransformer<T, E> transformer,
     FilterRequestDto filterRequestDto, PrintWriter writer, Locale locale)

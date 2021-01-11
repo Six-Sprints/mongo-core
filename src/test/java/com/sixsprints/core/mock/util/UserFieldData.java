@@ -8,6 +8,7 @@ import java.util.Locale;
 import com.google.common.collect.ImmutableMap;
 import com.sixsprints.core.dto.FieldDto;
 import com.sixsprints.core.enums.DataType;
+import com.sixsprints.core.mock.domain.Role;
 import com.sixsprints.core.mock.enums.Gender;
 
 public class UserFieldData {
@@ -37,8 +38,9 @@ public class UserFieldData {
       .dataType(DataType.DATE)
       .localizedDisplay(ImmutableMap.<Locale, String>of(Locale.ENGLISH, "Date", Locale.JAPANESE, "メール")).build());
 
-    fields.add(FieldDto.builder().name("roleName").sequence(i++)
-      .dataType(DataType.AUTO_COMPLETE).collectionName("role").columnName("name")
+    fields.add(FieldDto.builder().name("roleSlug").sequence(i++)
+      .dataType(DataType.AUTO_COMPLETE).joinCollectionName("role").joinColumnName("name")
+      .joinCollectionClass(Role.class)
       .localizedDisplay(ImmutableMap.<Locale, String>of(Locale.ENGLISH, "Role Name", Locale.JAPANESE, "JapanRoleName"))
       .build());
 

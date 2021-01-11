@@ -39,9 +39,11 @@ public class FieldDto implements Comparable<FieldDto> {
 
   private Map<Locale, String> localizedDisplay;
 
-  private String collectionName;
+  private String joinCollectionName;
 
-  private String columnName;
+  private String joinColumnName;
+
+  private Class<?> joinCollectionClass;
 
   private Class<? extends Enum<?>> enumClass;
 

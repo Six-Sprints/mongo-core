@@ -61,7 +61,7 @@ public class CellProcessorUtil {
     switch (field.getDataType()) {
     case AUTO_COMPLETE:
     case SELECT:
-      return new ParseMasterDataValue(field.getCollectionName(), field.getColumnName(), mongo);
+      return new ParseMasterDataValue(field.getJoinCollectionName(), field.getJoinColumnName(), mongo);
     case BOOLEAN:
       return new ParseBoolean();
     case DATE:
