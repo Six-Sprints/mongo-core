@@ -1,7 +1,6 @@
 package com.sixsprints.core.domain;
 
 import java.io.Serializable;
-import java.util.Date;
 
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
@@ -42,10 +41,10 @@ public class AbstractMongoEntity implements Serializable {
   protected Boolean active = Boolean.TRUE;
 
   @CreatedDate
-  protected Date dateCreated;
+  protected Long dateCreated;
 
   @LastModifiedDate
-  protected Date dateModified;
+  protected Long dateModified;
 
   @CreatedBy
   private String createdBy;

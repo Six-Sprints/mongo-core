@@ -1,7 +1,5 @@
 package com.sixsprints.core.mock.dto;
 
-import java.util.Date;
-
 import com.sixsprints.core.mock.domain.embedded.Address;
 import com.sixsprints.core.mock.enums.Gender;
 
@@ -24,12 +22,12 @@ public class UserDto {
 
   private Address address;
 
-  protected Date dateCreated;
+  protected Long dateCreated;
 
   private String roleName;
-  
+
   private Gender gender;
-  
+
   private Long customId;
 
 }

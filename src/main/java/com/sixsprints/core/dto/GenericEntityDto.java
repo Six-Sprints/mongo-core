@@ -1,7 +1,5 @@
 package com.sixsprints.core.dto;
 
-import java.util.Date;
-
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -19,9 +17,9 @@ public class GenericEntityDto {
 
   private String slug;
 
-  private Date dateCreated;
+  private Long dateCreated;
 
-  private Date dateModified;
+  private Long dateModified;
 
   private String createdBy;
 

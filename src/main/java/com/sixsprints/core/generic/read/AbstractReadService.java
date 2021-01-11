@@ -11,7 +11,7 @@ import java.util.Optional;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.ObjectUtils;
-import org.joda.time.DateTime;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -63,6 +63,9 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
 
   private static final String IGNORE_CASE_FLAG = "i";
   private static final String SLUG = "slug";
+
+  @Autowired
+  private DateUtil dateUtil;
 
   @Override
   public Page<T> findAll(Pageable page) {
@@ -419,36 +422,33 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
 
   private void exactDateCriteria(String type, Long filterEpoch, Long filterToEpoch, Criteria criteria) {
 
-    DateTime filter = DateUtil.instance().build().initDateFromLong(filterEpoch);
-    DateTime filterTo = DateUtil.instance().build().initDateFromLong(filterToEpoch);
-
     switch (type) {
     case AppConstants.EQUALS:
-      criteria.is(filter);
+      criteria.is(filterEpoch);
       break;
 
     case AppConstants.NOT_EQUAL:
-      criteria.ne(filter);
+      criteria.ne(filterEpoch);
       break;
 
     case AppConstants.LESS_THAN:
-      criteria.lt(filter);
+      criteria.lt(filterEpoch);
       break;
 
     case AppConstants.LESS_THAN_OR_EQUAL:
-      criteria.lte(filter);
+      criteria.lte(filterEpoch);
       break;
 
     case AppConstants.GREATER_THAN:
-      criteria.gt(filter);
+      criteria.gt(filterEpoch);
       break;
 
     case AppConstants.GREATER_THAN_OR_EQUAL:
-      criteria.gte(filter);
+      criteria.gte(filterEpoch);
       break;
 
     case AppConstants.IN_RANGE:
-      criteria.lte(filterTo).gte(filter);
+      criteria.lte(filterToEpoch).gte(filterEpoch);
       break;
     }
   }
@@ -459,34 +459,39 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
       exactDateCriteria(type, filter, filterTo, criteria);
       return criteria;
     }
+
+    Long filterEOD = dateUtil.endOfDay(filter).getMillis();
+    Long filterSOD = dateUtil.startOfDay(filter).getMillis();
+    Long filterToEOD = filterTo != null ? dateUtil.endOfDay(filterTo).getMillis() : 0;
+
     switch (type) {
     case AppConstants.EQUALS:
-      criteria.lte(DateUtil.instance().build().endOfDay(filter)).gte(DateUtil.instance().build().startOfDay(filter));
+      criteria.lte(filterEOD).gte(filterSOD);
       break;
 
     case AppConstants.NOT_EQUAL:
       return new Criteria().orOperator(
-        new Criteria(criteria2.getKey()).lt(DateUtil.instance().build().startOfDay(filter)),
-        new Criteria(criteria2.getKey()).gt(DateUtil.instance().build().endOfDay(filter)));
+        new Criteria(criteria2.getKey()).lt(filterSOD),
+        new Criteria(criteria2.getKey()).gt(filterEOD));
 
     case AppConstants.LESS_THAN:
-      criteria.lt(DateUtil.instance().build().startOfDay(filter));
+      criteria.lt(filterSOD);
       break;
 
     case AppConstants.LESS_THAN_OR_EQUAL:
-      criteria.lte(DateUtil.instance().build().endOfDay(filter));
+      criteria.lte(filterEOD);
       break;
 
     case AppConstants.GREATER_THAN:
-      criteria.gt(DateUtil.instance().build().endOfDay(filter));
+      criteria.gt(filterEOD);
       break;
 
     case AppConstants.GREATER_THAN_OR_EQUAL:
-      criteria.gte(DateUtil.instance().build().startOfDay(filter));
+      criteria.gte(filterSOD);
       break;
 
     case AppConstants.IN_RANGE:
-      criteria.lte(DateUtil.instance().build().endOfDay(filterTo)).gte(DateUtil.instance().build().startOfDay(filter));
+      criteria.lte(filterToEOD).gte(filterSOD);
       break;
     }
     return criteria;
