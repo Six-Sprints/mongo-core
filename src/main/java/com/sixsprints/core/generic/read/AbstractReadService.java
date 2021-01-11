@@ -234,7 +234,8 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
     if (CollectionUtils.isEmpty(fields)) {
       return null;
     }
-    return fields.stream().filter(f -> f.getName().equals(column)).findFirst().orElse(null);
+    return fields.stream().filter(f -> f.getName().equals(column) || column.equals(f.getFilterColumnName())).findFirst()
+      .orElse(null);
   }
 
   @Override
