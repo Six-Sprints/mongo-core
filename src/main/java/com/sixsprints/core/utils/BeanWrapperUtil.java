@@ -25,6 +25,11 @@ public class BeanWrapperUtil {
     return wrap.getPropertyValue(prop);
   }
 
+  public static void setValue(Object obj, String prop, Object value) {
+    BeanWrapper wrap = PropertyAccessorFactory.forBeanPropertyAccess(obj);
+    wrap.setPropertyValue(prop, value);
+  }
+
   public static void copyNonNullProperties(Object src, Object target) {
     BeanUtils.copyProperties(src, target, getNullPropertyNames(src));
   }
