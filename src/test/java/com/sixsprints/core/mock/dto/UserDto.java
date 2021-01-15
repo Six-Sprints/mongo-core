@@ -24,7 +24,7 @@ public class UserDto {
 
   protected Long dateCreated;
 
-  private String roleName;
+  private String roleSlug;
 
   private Gender gender;
 
