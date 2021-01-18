@@ -45,6 +45,8 @@ public class FieldDto implements Comparable<FieldDto> {
 
   private String joinColumnName;
 
+  private String joinColumnNameForDB;
+
   private Class<?> joinCollectionClass;
 
   private Class<? extends Enum<?>> enumClass;
