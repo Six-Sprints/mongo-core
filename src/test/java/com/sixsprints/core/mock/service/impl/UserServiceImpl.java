@@ -7,6 +7,7 @@ import com.sixsprints.core.dto.MetaData;
 import com.sixsprints.core.dto.SlugFormatter;
 import com.sixsprints.core.mock.domain.User;
 import com.sixsprints.core.mock.dto.UserDto;
+import com.sixsprints.core.mock.dto.UserExcelDto;
 import com.sixsprints.core.mock.repository.UserRepository;
 import com.sixsprints.core.mock.service.UserService;
 import com.sixsprints.core.mock.util.UserFieldData;
@@ -31,7 +32,10 @@ public class UserServiceImpl extends AbstractCrudService<User> implements UserSe
   @Override
   protected MetaData<User> metaData() {
     return MetaData.<User>builder()
-      .classType(User.class).dtoClassType(UserDto.class)
+      .classType(User.class)
+      .dtoClassType(UserDto.class)
+      .exportDataClassType(UserExcelDto.class)
+      .importDataClassType(UserExcelDto.class)
       .fields(UserFieldData.fields())
       .build();
   }

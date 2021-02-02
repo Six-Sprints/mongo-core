@@ -2,6 +2,8 @@ package com.sixsprints.core.domain;
 
 import java.util.List;
 
+import org.springframework.data.mongodb.core.mapping.Document;
+
 import com.sixsprints.core.dto.UploadError;
 
 import lombok.AllArgsConstructor;
@@ -15,6 +17,7 @@ import lombok.experimental.SuperBuilder;
 @AllArgsConstructor
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
+@Document(collection = "importlogdetails")
 public class ImportLogDetails extends AbstractMongoEntity {
 
   private static final long serialVersionUID = 1L;

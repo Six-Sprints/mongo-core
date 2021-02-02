@@ -4,7 +4,10 @@ import static org.springframework.data.mongodb.core.FindAndModifyOptions.options
 import static org.springframework.data.mongodb.core.query.Criteria.where;
 import static org.springframework.data.mongodb.core.query.Query.query;
 
+import java.util.ArrayList;
 import java.util.List;
+
+import javax.validation.Validator;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoOperations;
@@ -23,6 +26,9 @@ import com.sixsprints.core.exception.EntityInvalidException;
 import com.sixsprints.core.exception.EntityNotFoundException;
 import com.sixsprints.core.repository.GenericRepository;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public abstract class GenericAbstractService<T extends AbstractMongoEntity> extends ServiceHook<T> {
 
   private static final String SEQ = "seq";
@@ -32,6 +38,9 @@ public abstract class GenericAbstractService<T extends AbstractMongoEntity> exte
   @Autowired
   protected MongoOperations mongo;
 
+  @Autowired
+  protected Validator validator;
+
   protected abstract GenericRepository<T> repository();
 
   protected abstract MetaData<T> metaData();
@@ -39,8 +48,10 @@ public abstract class GenericAbstractService<T extends AbstractMongoEntity> exte
   protected SlugFormatter slugFromatter(T entity) {
     String className = entity.getClass().getSimpleName().toLowerCase();
     String prefix = className.replaceAll("[aeiou]", "");
-    return SlugFormatter.builder().collection(className)
-      .prefix(prefix.substring(0, Math.min(3, prefix.length())).toUpperCase()).build();
+    return SlugFormatter.builder()
+      .collection(className)
+      .prefix(prefix.substring(0, Math.min(3, prefix.length())).toUpperCase())
+      .build();
   }
 
   protected abstract T findDuplicate(T entity);
@@ -84,7 +95,6 @@ public abstract class GenericAbstractService<T extends AbstractMongoEntity> exte
         entity.setSequence(nextSequence);
       }
     }
-
   }
 
   protected EntityAlreadyExistsException alreadyExistsException(T domain) {
@@ -95,12 +105,17 @@ public abstract class GenericAbstractService<T extends AbstractMongoEntity> exte
     return EntityNotFoundException.childBuilder().build();
   }
 
-  protected boolean isInvalid(T domain) {
-    return false;
+  protected List<String> checkValidity(T domain) {
+    return new ArrayList<>();
   }
 
   protected EntityInvalidException invalidException(T domain) {
     return EntityInvalidException.childBuilder().build();
+  }
+
+  protected EntityInvalidException validationException(List<String> errors) {
+    return EntityInvalidException.childBuilder().data(errors)
+      .error("Entity is invalid. Please check the error(s) and rectify.").build();
   }
 
   protected boolean isNew(T entity) {
@@ -110,7 +125,7 @@ public abstract class GenericAbstractService<T extends AbstractMongoEntity> exte
   protected void validatePageAndSize(Integer pageNumber, Integer pageSize) throws BaseRuntimeException {
     if ((pageNumber == null) || (pageSize == null) || (pageNumber < 0) || (pageSize < 0)) {
       throw BaseRuntimeException.builder().httpStatus(HttpStatus.BAD_REQUEST)
-        .error("Page number or Page size is not valid")
+        .error("Page number or page size is not valid")
         .build();
     }
   }
@@ -120,11 +135,32 @@ public abstract class GenericAbstractService<T extends AbstractMongoEntity> exte
     if (slugFromatter.getMinimumSequenceNumber() != null) {
       nextSequence += slugFromatter.getMinimumSequenceNumber();
     }
-    return buffer.append(nextSequence).toString();
+    return buffer
+      .append(org.apache.commons.lang3.StringUtils.leftPad(nextSequence.toString(), slugPaddingLength(),
+        slugPaddingCharacter()))
+      .toString();
+  }
+
+  protected String slugPaddingCharacter() {
+    return "0";
+  }
+
+  protected int slugPaddingLength() {
+    return 8;
   }
 
   private boolean shouldOverwriteSlug(T entity) {
     return isNew(entity) && !StringUtils.hasText(entity.getSlug());
+  }
+
+  protected String entityName() {
+    MetaData<T> metaData = metaData();
+    if (StringUtils.hasText(metaData.getEntityName())) {
+      return metaData.getEntityName();
+    }
+    log.warn(
+      "Entity name is not set for this class. Defaulting to classname. Please consider providing the entityName in the metaData() for this class.");
+    return metaData.getClassType().getSimpleName();
   }
 
 }

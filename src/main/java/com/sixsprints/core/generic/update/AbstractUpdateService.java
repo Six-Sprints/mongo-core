@@ -2,31 +2,45 @@ package com.sixsprints.core.generic.update;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
-import org.apache.commons.lang3.StringUtils;
+import javax.validation.ConstraintViolation;
+import javax.validation.Path.Node;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
 import com.sixsprints.core.annotation.AuditCsvImport;
 import com.sixsprints.core.domain.AbstractMongoEntity;
 import com.sixsprints.core.dto.BulkUpdateInfo;
+import com.sixsprints.core.dto.IGenericExcelImport;
 import com.sixsprints.core.dto.ImportLogDetailsDto;
-import com.sixsprints.core.dto.ImportResponseWrapper;
-import com.sixsprints.core.dto.MetaData;
+import com.sixsprints.core.enums.ImportOperation;
 import com.sixsprints.core.enums.UpdateAction;
+import com.sixsprints.core.exception.BaseException;
 import com.sixsprints.core.exception.EntityAlreadyExistsException;
 import com.sixsprints.core.exception.EntityInvalidException;
 import com.sixsprints.core.exception.EntityNotFoundException;
 import com.sixsprints.core.generic.create.AbstractCreateService;
 import com.sixsprints.core.service.ImportLogDetailsService;
+import com.sixsprints.core.transformer.GenericMapper;
 import com.sixsprints.core.transformer.ImportLogDetailsMapper;
 import com.sixsprints.core.utils.BeanWrapperUtil;
 
+import cn.afterturn.easypoi.excel.ExcelImportUtil;
+import cn.afterturn.easypoi.excel.entity.ImportParams;
+import cn.afterturn.easypoi.excel.entity.result.ExcelImportResult;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -57,20 +71,21 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity> exten
   }
 
   @Override
-  public List<BulkUpdateInfo<T>> updateAll(List<T> list) {
+  @Transactional
+  public List<BulkUpdateInfo<T>> bulkUpsert(List<T> list) {
     List<BulkUpdateInfo<T>> updateInfo = new ArrayList<>();
     if (CollectionUtils.isEmpty(list)) {
       return updateInfo;
     }
     for (T domain : list) {
-      updateInfo.add(saveOneWhileBulkImport(domain));
+      updateInfo.add(upsertOneWhileBulkImport(domain));
     }
     return updateInfo;
   }
 
   @Override
-  public T saveOrUpdate(T domain) throws EntityInvalidException {
-    BulkUpdateInfo<T> updateInfo = saveOneWhileBulkImport(domain);
+  public T upsert(T domain) throws EntityInvalidException {
+    BulkUpdateInfo<T> updateInfo = upsertOneWhileBulkImport(domain);
     if (UpdateAction.INVALID.equals(updateInfo.getUpdateAction())) {
       throw invalidException(domain);
     }
@@ -78,63 +93,245 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity> exten
   }
 
   @Override
-  public <V> void saveImportLogs(ImportResponseWrapper<V> importWrapper, List<BulkUpdateInfo<T>> bulkUpdateInfo) {
+  public <V> void saveImportLogs(Map<ImportOperation, ImportLogDetailsDto> importResponseWrapper,
+    List<ImportLogDetailsDto> collection) {
+
     if (!this.getClass().isAnnotationPresent(AuditCsvImport.class)) {
       log.debug("@AuditCsvImport annotation not present. Ignoring saving the csv log in the database.");
       return;
     }
-    if (importWrapper == null) {
+    if (CollectionUtils.isEmpty(collection)) {
       return;
     }
-    ImportLogDetailsDto importLogDetails = importWrapper.getImportLogDetails();
-    if (importLogDetails == null) {
-      return;
-    }
-    MetaData<T> metaData = metaData();
-    String entityName = metaData.getEntityName();
-    if (StringUtils.isBlank(entityName)) {
-      log.warn(
-        "Entity name is not set for this class. Defaulting to classname. Please consider providing the entityName in the metaData() for this class.");
-      entityName = metaData.getClassType().getSimpleName();
-    }
-    importLogDetails.setEntity(entityName);
-    importLogDetailsService.save(ImportLogDetailsMapper.INSTANCE.toDomain(importLogDetails));
+    final String entityName = entityName();
+    collection.forEach(col -> col.setEntity(entityName));
+    importLogDetailsService.saveAll(ImportLogDetailsMapper.INSTANCE.toDomain(collection));
+
   }
 
-  protected BulkUpdateInfo<T> saveOneWhileBulkImport(T domain) {
-    if (isInvalid(domain)) {
-      return bulkImportInfo(null, UpdateAction.INVALID);
-    }
-    return saveOrOverwrite(domain);
+  @Override
+  @Transactional
+  public <DTO extends IGenericExcelImport> Map<ImportOperation, ImportLogDetailsDto> importData(
+    InputStream inputStream, GenericMapper<T, DTO> importMapper) throws Exception {
+    List<DTO> result = importDataPreview(inputStream);
+    return performImport(importMapper, result);
   }
 
-  protected BulkUpdateInfo<T> saveOrOverwrite(T domain) {
+  @Override
+  @Transactional
+  public <DTO extends IGenericExcelImport> Map<ImportOperation, ImportLogDetailsDto> importData(List<DTO> data,
+    GenericMapper<T, DTO> importMapper) throws BaseException {
+    return performImport(importMapper, data);
+  }
+
+  @Override
+  public <DTO extends IGenericExcelImport> List<DTO> importDataPreview(InputStream inputStream) throws Exception {
+    return importDataPreview(inputStream, new ImportParams());
+  }
+
+  @Override
+  public <DTO extends IGenericExcelImport> List<DTO> importDataPreview(InputStream inputStream, ImportParams params)
+    throws Exception {
+
+    @SuppressWarnings("unchecked")
+    Class<DTO> classType = (Class<DTO>) metaData().getImportDataClassType();
+    log.info("Import request received for {}", classType.getSimpleName());
+    ExcelImportResult<DTO> result = ExcelImportUtil.<DTO>importExcelMore(inputStream, classType, params);
+    List<DTO> list = result.getList();
+    if (CollectionUtils.isEmpty(list)) {
+      return new ArrayList<>();
+    }
+    return list;
+  }
+
+  protected <DTO extends IGenericExcelImport> Map<ImportOperation, ImportLogDetailsDto> performImport(
+    GenericMapper<T, DTO> importMapper, List<DTO> data) throws EntityInvalidException {
+
+    validateImportData(data, importMapper);
+
+    Map<ImportOperation, ImportLogDetailsDto> result = new HashMap<>();
+
+    List<DTO> upsertList = data.stream()
+      .filter(item -> ImportOperation.UPSERT.equals(item.getOperation()))
+      .collect(Collectors.toList());
+
+    List<DTO> deleteList = data.stream()
+      .filter(item -> ImportOperation.DELETE.equals(item.getOperation()))
+      .collect(Collectors.toList());
+
+    if (!CollectionUtils.isEmpty(upsertList)) {
+      result.put(ImportOperation.UPSERT,
+        processImportForUpsert(importMapper, upsertList));
+    }
+
+    if (!CollectionUtils.isEmpty(deleteList)) {
+      result.put(ImportOperation.DELETE,
+        processImportForDelete(importMapper, deleteList));
+    }
+
+    return result;
+
+  }
+
+  protected <DTO extends IGenericExcelImport> void validateImportData(List<DTO> data,
+    GenericMapper<T, DTO> importMapper) throws EntityInvalidException {
+    Map<String, List<Long>> duplicates = findDuplicateSerialNumbers(data);
+
+    if (!duplicates.isEmpty()) {
+      throw validationException(toErrorString(duplicates));
+    }
+
+    List<String> errors = new ArrayList<>();
+
+    for (DTO dto : data) {
+      Set<ConstraintViolation<DTO>> validate = validator.validate(dto);
+      errors.addAll(constraintMessages(validate));
+    }
+
+    if (!errors.isEmpty()) {
+      throw validationException(errors);
+    }
+
+    for (DTO dto : data) {
+      List<String> errorList = checkValidity(importMapper.toDomain(dto));
+      errorList = addPrefix(serialNumberError(dto.getSerialNo()), errorList);
+      errors.addAll(errorList);
+    }
+
+    if (!errors.isEmpty()) {
+      throw validationException(errors);
+    }
+
+  }
+
+  protected <DTO extends IGenericExcelImport> String serialNumberError(Long serialNumber) {
+    return "S.No. " + serialNumber + ": ";
+  }
+
+  private List<String> addPrefix(String prefix, List<String> errorList) {
+
+    List<String> errors = new ArrayList<>();
+    for (String error : errorList) {
+      errors.add(prefix + error);
+    }
+    return errors;
+
+  }
+
+  private List<String> toErrorString(Map<String, List<Long>> map) {
+    List<String> errors = new ArrayList<>();
+    for (String key : map.keySet()) {
+      errors.add(duplicateRowError(map.get(key)));
+    }
+    return errors;
+  }
+
+  protected String duplicateRowError(List<Long> rows) {
+    return "Row numbers " + rows + " are duplicate.";
+  }
+
+  private <DTO extends IGenericExcelImport> List<String> constraintMessages(
+    Set<ConstraintViolation<DTO>> violations) {
+
+    List<String> errors = new ArrayList<>();
+    for (ConstraintViolation<DTO> violation : violations) {
+      String error = violation.getMessage();
+      String fieldName = getLastElement(violation.getPropertyPath().iterator());
+      DTO dto = violation.getRootBean();
+      errors.add(serialNumberError(dto.getSerialNo()) + fieldName + " " + error);
+    }
+
+    return errors;
+  }
+
+  private String getLastElement(final Iterator<Node> itr) {
+    Node lastElement = itr.next();
+    while (itr.hasNext()) {
+      lastElement = itr.next();
+    }
+    return lastElement.getName();
+  }
+
+  private <DTO extends IGenericExcelImport> Map<String, List<Long>> findDuplicateSerialNumbers(List<DTO> data) {
+    Map<String, List<Long>> duplicates = new HashMap<>();
+    Map<String, List<Long>> map = new HashMap<>();
+    for (DTO dto : data) {
+      Long serialNo = dto.getSerialNo();
+      List<Long> list = map.get(dataImportKey(dto));
+      if (list == null) {
+        list = new ArrayList<>();
+      }
+      list.add(serialNo);
+      map.put(dataImportKey(dto), list);
+    }
+
+    for (String key : map.keySet()) {
+      if (map.get(key).size() > 1) {
+        duplicates.put(key, map.get(key));
+      }
+    }
+
+    return duplicates;
+  }
+
+  protected <DTO extends IGenericExcelImport> String dataImportKey(DTO dto) {
+    return dto.getSerialNo() == null ? "" : dto.getSerialNo().toString();
+  }
+
+  protected <DTO extends IGenericExcelImport> ImportLogDetailsDto processImportForDelete(
+    GenericMapper<T, DTO> importMapper, List<DTO> deleteList) {
+    List<String> idsToDelete = deleteList.stream()
+      .map(item -> findDuplicate(importMapper.toDomain(item)))
+      .filter(item -> item != null)
+      .map(item -> item.getId())
+      .collect(Collectors.toList());
+    delete(idsToDelete);
+    return ImportLogDetailsDto.builder().build();
+  }
+
+  protected <DTO extends IGenericExcelImport> ImportLogDetailsDto processImportForUpsert(
+    GenericMapper<T, DTO> importMapper, List<DTO> upsertList) {
+    List<T> domains = importMapper.toDomain(upsertList);
+    List<BulkUpdateInfo<T>> bulkUpsert = bulkUpsert(domains);
+
+    return ImportLogDetailsDto.builder()
+      .totalRowCount(upsertList.size())
+      .successRowCount((int) bulkUpsert.stream()
+        .filter(item -> List.of(UpdateAction.CREATE, UpdateAction.UPDATE)
+          .contains(item.getUpdateAction()))
+        .count())
+      .build();
+  }
+
+  protected BulkUpdateInfo<T> upsertOneWhileBulkImport(T domain) {
+    List<String> errors = checkValidity(domain);
+    if (!CollectionUtils.isEmpty(errors)) {
+      return bulkImportInfo(domain, UpdateAction.INVALID);
+    }
+    return upsertOne(domain);
+  }
+
+  protected BulkUpdateInfo<T> upsertOne(T domain) {
     T fromDb = findDuplicate(domain);
     if (fromDb != null) {
-      if (!fromDb.getActive()) {
-        delete(fromDb);
+      preUpdate(fromDb, domain);
+      domain.copyEntityFrom(fromDb);
+
+      domain.setActive(Boolean.TRUE);
+      T copy = clone(fromDb);
+      if (metaData().isIgnoreNullWhileBulkUpdate()) {
+        copyNonNullValues(domain, fromDb);
       } else {
-        preUpdate(fromDb, domain);
-
-        Boolean active = domain.getActive();
-        domain.copyEntityFrom(fromDb);
-        domain.setActive(active);
-
-        T copy = clone(fromDb);
-        if (metaData().isIgnoreNullWhileBulkUpdate()) {
-          copyNonNullValues(domain, fromDb);
-        } else {
-          fromDb = domain;
-        }
-
-        if (checkEquals(fromDb, copy)) {
-          return bulkImportInfo(fromDb, UpdateAction.IGNORE);
-        }
-
-        fromDb = save(fromDb);
-        postUpdate(fromDb);
-        return bulkImportInfo(fromDb, UpdateAction.UPDATE);
+        fromDb = domain;
       }
+
+      if (checkEquals(fromDb, copy)) {
+        return bulkImportInfo(fromDb, UpdateAction.IGNORE);
+      }
+
+      fromDb = save(fromDb);
+      postUpdate(fromDb);
+      return bulkImportInfo(fromDb, UpdateAction.UPDATE);
     }
     preCreate(domain);
     domain = save(domain);

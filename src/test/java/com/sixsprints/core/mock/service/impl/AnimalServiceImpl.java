@@ -23,7 +23,10 @@ public class AnimalServiceImpl extends AnimalAbstractService<Animal> implements 
 
   @Override
   protected MetaData<Animal> metaData() {
-    return MetaData.<Animal>builder().classType(Animal.class).fields(AnimalFieldData.fields()).build();
+    return MetaData.<Animal>builder()
+      .classType(Animal.class)
+      .fields(AnimalFieldData.fields())
+      .build();
   }
 
 }

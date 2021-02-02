@@ -37,7 +37,7 @@ public abstract class RestExceptionHandler {
 
   @ExceptionHandler(value = { BaseException.class })
   protected ResponseEntity<?> handleBaseException(BaseException ex, HttpServletRequest request, Locale locale) {
-    log.error(getErrorMessage(ex.getMessage(), ex.getArguments(), Locale.ENGLISH));
+    log.error(getErrorMessage(ex.getMessage(), ex.getArguments(), Locale.ENGLISH), ex);
     return RestUtil.errorResponse(ex.getData(), getErrorMessage(ex.getMessage(), ex.getArguments(), locale),
       ex.getHttpStatus());
   }
@@ -45,7 +45,7 @@ public abstract class RestExceptionHandler {
   @ExceptionHandler(value = { BaseRuntimeException.class })
   protected ResponseEntity<?> handleBaseRuntimeException(BaseRuntimeException ex, HttpServletRequest request,
     Locale locale) {
-    log.error(getErrorMessage(ex.getMessage(), ex.getArguments(), Locale.ENGLISH));
+    log.error(getErrorMessage(ex.getMessage(), ex.getArguments(), Locale.ENGLISH), ex);
     return RestUtil.errorResponse(ex.getData(), getErrorMessage(ex.getMessage(), ex.getArguments(), locale),
       ex.getHttpStatus());
   }

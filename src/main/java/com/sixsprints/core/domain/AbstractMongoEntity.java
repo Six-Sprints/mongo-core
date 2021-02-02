@@ -27,6 +27,8 @@ public class AbstractMongoEntity implements Serializable {
 
   private static final long serialVersionUID = 1L;
 
+  public static final String ID = "id";
+
   @Id
   protected String id;
 

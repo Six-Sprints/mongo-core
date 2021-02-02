@@ -23,7 +23,10 @@ public class ParrotServiceImpl extends AnimalAbstractService<Parrot> implements 
 
   @Override
   protected MetaData<Parrot> metaData() {
-    return MetaData.<Parrot>builder().classType(Parrot.class).fields(AnimalFieldData.fields()).build();
+    return MetaData.<Parrot>builder()
+      .classType(Parrot.class)
+      .fields(AnimalFieldData.fields())
+      .build();
   }
 
 }

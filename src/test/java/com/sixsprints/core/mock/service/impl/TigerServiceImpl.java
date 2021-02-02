@@ -23,7 +23,10 @@ public class TigerServiceImpl extends AnimalAbstractService<Tiger> implements Ti
 
   @Override
   protected MetaData<Tiger> metaData() {
-    return MetaData.<Tiger>builder().classType(Tiger.class).fields(AnimalFieldData.fields()).build();
+    return MetaData.<Tiger>builder()
+      .classType(Tiger.class)
+      .fields(AnimalFieldData.fields())
+      .build();
   }
 
 }

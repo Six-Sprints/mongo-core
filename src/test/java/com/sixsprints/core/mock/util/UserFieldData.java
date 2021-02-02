@@ -40,7 +40,7 @@ public class UserFieldData {
 
     fields.add(FieldDto.builder().name("roleSlug").sequence(i++)
       .dataType(DataType.AUTO_COMPLETE).joinCollectionName("role").joinColumnName("name")
-      .joinCollectionClass(Role.class)
+      .joinCollectionClass(Role.class).joinColumnNameForDB("name")
       .localizedDisplay(ImmutableMap.<Locale, String>of(Locale.ENGLISH, "Role Name", Locale.JAPANESE, "JapanRoleName"))
       .build());
 

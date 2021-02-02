@@ -2,13 +2,19 @@
 package com.sixsprints.core.transformer;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 
 import com.sixsprints.core.dto.PageDto;
+import com.sixsprints.core.utils.DateUtil;
 
-public abstract class GenericTransformer<ENTITY, DTO> {
+public abstract class GenericMapper<ENTITY, DTO> {
+
+  @Autowired
+  protected DateUtil dateUtil;
 
   public abstract DTO toDto(ENTITY entity);
 
@@ -66,4 +72,22 @@ public abstract class GenericTransformer<ENTITY, DTO> {
     pageDto.setTotalPages(page.getTotalPages());
     return pageDto;
   }
+
+  protected String epochToString(Long epoch) {
+    return epoch == null ? null
+      : dateUtil.dateToString(dateUtil.initDateFromLong(epoch).toDate());
+  }
+
+  protected Date epochToDate(Long epoch) {
+    return epoch == null ? null : dateUtil.initDateFromLong(epoch).toDate();
+  }
+
+  protected Long dateToEpoch(Date date) {
+    return date == null ? null : dateUtil.initDateFromDate(date).getMillis();
+  }
+
+  protected Long dateStringToEpoch(String date) {
+    return date == null ? null : dateUtil.stringToDate(date).getMillis();
+  }
+
 }

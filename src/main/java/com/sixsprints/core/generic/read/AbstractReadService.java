@@ -1,16 +1,17 @@
 package com.sixsprints.core.generic.read;
 
 import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.OutputStream;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.ObjectUtils;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.Page;
@@ -24,17 +25,13 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.http.HttpStatus;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
-import org.supercsv.cellprocessor.ift.CellProcessor;
-import org.supercsv.io.dozer.CsvDozerBeanWriter;
-import org.supercsv.io.dozer.ICsvDozerBeanWriter;
-import org.supercsv.prefs.CsvPreference;
 
 import com.sixsprints.core.domain.AbstractMongoEntity;
+import com.sixsprints.core.dto.ExportData;
 import com.sixsprints.core.dto.FieldDto;
 import com.sixsprints.core.dto.FilterRequestDto;
 import com.sixsprints.core.dto.KeyLabelDto;
 import com.sixsprints.core.dto.MetaData;
-import com.sixsprints.core.dto.PageDto;
 import com.sixsprints.core.dto.filter.BooleanColumnFilter;
 import com.sixsprints.core.dto.filter.ColumnFilter;
 import com.sixsprints.core.dto.filter.DateColumnFilter;
@@ -46,17 +43,20 @@ import com.sixsprints.core.dto.filter.SortModel;
 import com.sixsprints.core.enums.DataType;
 import com.sixsprints.core.exception.BaseException;
 import com.sixsprints.core.exception.BaseRuntimeException;
+import com.sixsprints.core.exception.EntityInvalidException;
 import com.sixsprints.core.exception.EntityNotFoundException;
 import com.sixsprints.core.generic.GenericAbstractService;
-import com.sixsprints.core.transformer.GenericTransformer;
+import com.sixsprints.core.transformer.GenericMapper;
 import com.sixsprints.core.utils.AppConstants;
 import com.sixsprints.core.utils.BeanWrapperUtil;
-import com.sixsprints.core.utils.CellProcessorUtil;
 import com.sixsprints.core.utils.DateUtil;
-import com.sixsprints.core.utils.FieldMappingUtil;
-import com.sixsprints.core.utils.FieldUtil;
+import com.sixsprints.core.utils.ExcelDefaultStyles;
 import com.sixsprints.core.utils.InheritanceMongoUtil;
 
+import cn.afterturn.easypoi.excel.ExcelExportUtil;
+import cn.afterturn.easypoi.excel.entity.ExportParams;
+import cn.afterturn.easypoi.excel.entity.TemplateExportParams;
+import cn.afterturn.easypoi.excel.entity.enmus.ExcelType;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -239,76 +239,81 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
   }
 
   @Override
-  public <DTO> void exportData(GenericTransformer<T, DTO> transformer,
-    FilterRequestDto filterRequestDto, PrintWriter writer, Locale locale) throws IOException, BaseException {
+  public <DTO> void exportData(GenericMapper<T, DTO> mapper, FilterRequestDto filterRequestDto, OutputStream writer)
+    throws IOException, BaseException {
 
+    MetaData<T> metaData = metaData();
+    if (metaData == null || metaData.getExportDataClassType() == null) {
+      String error = "Consider defining metaData::exportDataClassType for " + this.getClass().getSimpleName();
+      log.error(error);
+      throw EntityInvalidException
+        .childBuilder().error(error)
+        .build();
+    }
     if (filterRequestDto == null) {
       filterRequestDto = FilterRequestDto.builder().build();
     }
-
-    ICsvDozerBeanWriter beanWriter = null;
+    List<T> data = filterAll(filterRequestDto);
+    Workbook workbook = null;
     try {
-      List<FieldDto> fields = FieldUtil.fields(metaData().getFields(), locale);
-      String mappings[] = exportMappings(fields);
-
-      beanWriter = new CsvDozerBeanWriter(writer, CsvPreference.STANDARD_PREFERENCE);
-      beanWriter.configureBeanMapping(metaData().getDtoClassType(), mappings);
-      writeHeader(beanWriter, fields, mappings, locale);
-
-      // STREAMING IN BATCHES OF 750 or overriden defaultBatchSize() method.
-      filterRequestDto.setPage(0);
-      filterRequestDto.setSize(defaultBatchSize());
-
-      PageDto<DTO> pages = transformer.pageEntityToPageDtoDto(filter(filterRequestDto));
-
-      int totalPages = pages.getTotalPages();
-      CellProcessor[] exportProcessors = cellProcessors(fields);
-
-      for (int i = 0; i < totalPages; i++) {
-        List<DTO> dtos = pages.getContent();
-        for (final DTO dto : dtos) {
-          beanWriter.write(dto, exportProcessors);
-          writer.flush();
-        }
-        if (i + 1 == totalPages) {
-          continue;
-        }
-        filterRequestDto.setPage(i + 1);
-        pages = transformer.pageEntityToPageDtoDto(filter(filterRequestDto));
-      }
-
+      workbook = createWorkbook(mapper, data);
+      workbook.write(writer);
     } finally {
-
-      if (beanWriter != null) {
-        beanWriter.close();
+      if (workbook != null) {
+        workbook.close();
       }
       if (writer != null) {
         writer.close();
       }
     }
+  }
+
+  protected <DTO> Workbook createWorkbook(GenericMapper<T, DTO> mapper, List<T> data) {
+    MetaData<T> metaData = metaData();
+    String fileName = metaData.getExportTemplatePath();
+
+    if (StringUtils.hasText(fileName)) {
+      TemplateExportParams params = new TemplateExportParams(fileName);
+      transformTemplateExportParams(params);
+      return ExcelExportUtil.exportExcel(params, fetchMapDataForExcelDownload(mapper, data));
+    }
+    ExportParams simpleParams = new ExportParams();
+    simpleParams.setSheetName(entityName());
+    simpleParams.setType(ExcelType.XSSF);
+    simpleParams.setStyle(ExcelDefaultStyles.class);
+    simpleParams.setTitleHeight((short) 6);
+    simpleParams.setHeight((short) 6);
+    transformSimpleExportParams(simpleParams);
+    return ExcelExportUtil.exportExcel(simpleParams, metaData.getExportDataClassType(), mapper.toDto(data));
+  }
+
+  protected void transformSimpleExportParams(ExportParams simpleParams) {
 
   }
 
-  protected int defaultBatchSize() {
-    return 750;
+  protected void transformTemplateExportParams(TemplateExportParams params) {
+
   }
 
-  private CellProcessor[] cellProcessors(List<FieldDto> fields) {
-    Map<String, CellProcessor> map = exportCellProcessors(fields);
-    return CellProcessorUtil.exportProcessors(fields, map);
+  protected <DTO> Map<String, Object> fetchMapDataForExcelDownload(GenericMapper<T, DTO> mapper, List<T> data) {
+    return objectToMap(ExportData.<DTO>builder()
+      .data(mapper.toDto(data))
+      .build());
   }
 
-  protected Map<String, CellProcessor> exportCellProcessors(List<FieldDto> fields) {
-    return new HashMap<>();
-  }
-
-  protected void writeHeader(ICsvDozerBeanWriter beanWriter, List<FieldDto> fields, String[] mappings,
-    Locale locale) throws IOException {
-    beanWriter.writeHeader(FieldMappingUtil.createHeaders(mappings, fields, locale));
-  }
-
-  protected String[] exportMappings(List<FieldDto> fields) {
-    return FieldMappingUtil.genericMappings(fields);
+  protected static Map<String, Object> objectToMap(Object obj) {
+    Map<String, Object> map = new HashMap<>();
+    try {
+      Class<?> clazz = obj.getClass();
+      for (Field field : clazz.getDeclaredFields()) {
+        field.setAccessible(true);
+        String fieldName = field.getName();
+        Object value = field.get(obj);
+        map.put(fieldName, value);
+      }
+    } catch (IllegalAccessException e) {
+    }
+    return map;
   }
 
   protected Pageable pageable(int page, int size) {
@@ -597,7 +602,7 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
 
   private void checkFilterRequestDto(FilterRequestDto filterRequestDto) {
     if (filterRequestDto == null) {
-      throw BaseRuntimeException.builder().error("page number and page size can't be null")
+      throw BaseRuntimeException.builder().error("Page number and page size can't be null")
         .httpStatus(HttpStatus.BAD_REQUEST).build();
     }
   }

@@ -3,6 +3,7 @@ package com.sixsprints.core.dto;
 import java.util.List;
 
 import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Direction;
 
 import com.sixsprints.core.domain.AbstractMongoEntity;
 
@@ -21,7 +22,14 @@ public class MetaData<T extends AbstractMongoEntity> {
 
   private Class<?> dtoClassType;
 
-  private Sort defaultSort;
+  private Class<?> exportDataClassType;
+
+  private Class<?> importDataClassType;
+
+  private String exportTemplatePath;
+
+  @Builder.Default
+  private Sort defaultSort = Sort.by(Direction.DESC, AbstractMongoEntity.ID);
 
   private List<FieldDto> fields;
 
@@ -29,9 +37,5 @@ public class MetaData<T extends AbstractMongoEntity> {
 
   @Builder.Default
   private boolean ignoreNullWhileBulkUpdate = Boolean.TRUE;
-  
-  public List<FieldDto> getFields() {
-    return fields;
-  }
 
 }
