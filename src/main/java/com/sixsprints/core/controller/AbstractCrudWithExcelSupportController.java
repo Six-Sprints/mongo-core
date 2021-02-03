@@ -32,7 +32,7 @@ import com.sixsprints.core.utils.RestResponse;
 import com.sixsprints.core.utils.RestUtil;
 
 public abstract class AbstractCrudWithExcelSupportController<T extends AbstractMongoEntity, DTO, EI extends IGenericExcelImport, EE>
-  extends AbstractReadController<T, DTO> {
+  extends AbstractCrudController<T, DTO> {
 
   @Autowired
   private DateUtil dateUtil;
