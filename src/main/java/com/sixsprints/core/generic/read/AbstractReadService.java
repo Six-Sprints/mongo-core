@@ -2,14 +2,11 @@ package com.sixsprints.core.generic.read;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
+import com.sixsprints.core.dto.filter.*;
 import org.joda.time.DateTime;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.Page;
@@ -33,14 +30,6 @@ import com.sixsprints.core.dto.FieldDto;
 import com.sixsprints.core.dto.FilterRequestDto;
 import com.sixsprints.core.dto.MetaData;
 import com.sixsprints.core.dto.PageDto;
-import com.sixsprints.core.dto.filter.BooleanColumnFilter;
-import com.sixsprints.core.dto.filter.ColumnFilter;
-import com.sixsprints.core.dto.filter.DateColumnFilter;
-import com.sixsprints.core.dto.filter.ExactMatchColumnFilter;
-import com.sixsprints.core.dto.filter.NumberColumnFilter;
-import com.sixsprints.core.dto.filter.SearchColumnFilter;
-import com.sixsprints.core.dto.filter.SetColumnFilter;
-import com.sixsprints.core.dto.filter.SortModel;
 import com.sixsprints.core.enums.DataType;
 import com.sixsprints.core.exception.BaseException;
 import com.sixsprints.core.exception.BaseRuntimeException;
@@ -62,6 +51,7 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
 
   private static final String IGNORE_CASE_FLAG = "i";
   private static final String SLUG = "slug";
+  private static final String SEARCH_STRING_SEPARATOR = "\\|\\|\\|"; // seperated by |||
 
   @Override
   public Page<T> findAll(Pageable page) {
@@ -326,6 +316,8 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
       addDateFilter(criterias, key, (DateColumnFilter) filter);
     } else if (filter instanceof SearchColumnFilter) {
       addSearchCriteria((SearchColumnFilter) filter, criterias);
+    } else if (filter instanceof MultiSearchColumnFilter) {
+      addMultiSearchCriteria((MultiSearchColumnFilter) filter, criterias);
     } else if (filter instanceof ExactMatchColumnFilter) {
       addExactMatchCriteria(criterias, key, (ExactMatchColumnFilter) filter);
     }
@@ -516,13 +508,50 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
 
   }
 
+  private void addMultiSearchCriteria(MultiSearchColumnFilter filter, List<Criteria> criterias) {
+    List<Criteria> searchCriteria = new ArrayList<>();
+    List<String> quotes = Arrays.stream(filter.getFilter().split(SEARCH_STRING_SEPARATOR))
+            .map(Pattern::quote).collect(Collectors.toList());
+
+    List<FieldDto> fields = buildMultipleSearchFields(filter);
+
+    if (CollectionUtils.isEmpty(fields)) {
+      return;
+    }
+
+    if (!filter.isSlugExcludedFromSearch() && !fields.contains(FieldDto.builder().name(SLUG).build())) {
+      for (String quote: quotes) {
+        searchCriteria.add(setKeyCriteria(SLUG).regex(quote, IGNORE_CASE_FLAG));
+      }
+    }
+    for (FieldDto field : fields) {
+      if (field.getDataType().isSearchable()) {
+        for (String quote: quotes) {
+          searchCriteria.add(setKeyCriteria(field.getName()).regex(quote, IGNORE_CASE_FLAG));
+        }
+      }
+    }
+    if (!searchCriteria.isEmpty()) {
+      criterias.add(new Criteria().orOperator(searchCriteria.toArray(new Criteria[searchCriteria.size()])));
+    }
+
+  }
+
   private List<FieldDto> buildSearchFields(SearchColumnFilter filter) {
+    return buildSearchFields(filter.getFields());
+  }
+
+  private List<FieldDto> buildMultipleSearchFields(MultiSearchColumnFilter filter) {
+    return buildSearchFields(filter.getFields());
+  }
+
+  private List<FieldDto> buildSearchFields(List<String> filterFields) {
     List<FieldDto> fields = new ArrayList<>();
-    if (CollectionUtils.isEmpty(filter.getFields())) {
+    if (CollectionUtils.isEmpty(filterFields)) {
       return metaData().getFields();
     }
 
-    for (String fieldName : filter.getFields()) {
+    for (String fieldName : filterFields) {
       fields.add(FieldDto.builder().name(fieldName).dataType(DataType.TEXT).build());
     }
     return fields;

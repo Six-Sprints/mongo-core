@@ -12,6 +12,7 @@ import lombok.Data;
     @JsonSubTypes.Type(value = BooleanColumnFilter.class, name = "boolean"),
     @JsonSubTypes.Type(value = DateColumnFilter.class, name = "date"),
     @JsonSubTypes.Type(value = SearchColumnFilter.class, name = "text"),
+    @JsonSubTypes.Type(value = MultiSearchColumnFilter.class, name = "multipleText"),
     @JsonSubTypes.Type(value = ExactMatchColumnFilter.class, name = "exact") })
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Data
