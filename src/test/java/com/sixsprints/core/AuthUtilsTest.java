@@ -2,7 +2,8 @@ package com.sixsprints.core;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import com.sixsprints.core.exception.NotAuthorizedException;
 import com.sixsprints.core.utils.AuthUtil;
@@ -25,16 +26,21 @@ public class AuthUtilsTest {
     assertThat(DEFAULT_PAYLOAD).isEqualTo(AuthUtil.decodeToken(token));
   }
 
-  @Test(expected = NotAuthorizedException.class)
+  @Test
   public void shouldThrowExceptionBecauseOfWrongToken() throws NotAuthorizedException {
     AuthUtil.createToken(DEFAULT_PAYLOAD);
-    AuthUtil.decodeToken(RANDOM_TOKEN);
+    Assertions.assertThrows(NotAuthorizedException.class, () -> {
+      AuthUtil.decodeToken(RANDOM_TOKEN);
+    });
   }
 
-  @Test(expected = NotAuthorizedException.class)
+  @Test
   public void shouldThrowExceptionBecauseOfExpiredToken() throws NotAuthorizedException {
     String token = AuthUtil.createToken(DEFAULT_PAYLOAD, -1);
-    AuthUtil.decodeToken(token);
+    Assertions.assertThrows(NotAuthorizedException.class, () -> {
+      AuthUtil.decodeToken(token);
+    });
+
   }
 
 }

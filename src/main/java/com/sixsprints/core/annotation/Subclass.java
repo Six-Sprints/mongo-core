@@ -1,5 +1,5 @@
 
-package com.sixsprints.core.utils;
+package com.sixsprints.core.annotation;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;

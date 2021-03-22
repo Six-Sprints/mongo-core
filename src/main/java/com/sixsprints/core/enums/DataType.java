@@ -1,19 +1,28 @@
 package com.sixsprints.core.enums;
 
+import java.util.Date;
+
 public enum DataType {
 
-  NUMBER(false), TEXT(true), DATE(false), LINK(true), BOOLEAN(false), SELECT(true), AUTO_COMPLETE(true),
-  TEXT_AREA(true), IMAGE(false), EMAIL(true), ENUM(true);
+  NUMBER(false, Long.class), TEXT(true, String.class), DATE(false, Date.class), LINK(true, String.class),
+  BOOLEAN(false, Boolean.class), SELECT(true, String.class), AUTO_COMPLETE(true, String.class),
+  TEXT_AREA(true, String.class), IMAGE(false, String.class), EMAIL(true, String.class), ENUM(true, String.class);
 
   private boolean isSearchable;
+
+  private Class<?> classType;
 
   public boolean isSearchable() {
     return isSearchable;
   }
 
-  private DataType(boolean isSearchable) {
-    this.isSearchable = isSearchable;
+  public Class<?> getClassType() {
+    return classType;
+  }
 
+  private DataType(boolean isSearchable, Class<?> classType) {
+    this.isSearchable = isSearchable;
+    this.classType = classType;
   }
 
 }

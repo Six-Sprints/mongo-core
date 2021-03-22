@@ -58,6 +58,9 @@ public class ParseDateExport extends CellProcessorAdaptor {
       if (StringUtils.isNotBlank(pattern)) {
         instance = instance.datePattern(pattern);
       }
+      if (value instanceof Long) {
+        value = new Date((Long) value);
+      }
       return next.execute(instance.build().dateToString((Date) value), context);
     } catch (Exception ex) {
       if (throwException) {

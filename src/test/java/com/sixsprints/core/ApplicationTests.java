@@ -2,19 +2,18 @@ package com.sixsprints.core;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.apache.commons.lang3.StringUtils;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit4.SpringRunner;
 
 import com.sixsprints.core.domain.AbstractMongoEntity;
+import com.sixsprints.core.mock.init.ApplicationInit;
 
-@RunWith(SpringRunner.class)
 @SpringBootTest
 @ActiveProfiles("test")
 public class ApplicationTests {
@@ -22,16 +21,20 @@ public class ApplicationTests {
   @Autowired
   private MongoTemplate mongo;
 
+  @Autowired
+  private ApplicationInit appInit;
+
   @Test
   public void contextLoads() {
   }
 
-  @Before
+  @BeforeEach
   public void before() {
     mongo.getDb().drop();
+    appInit.init();
   }
 
-  @After
+  @AfterEach
   public void after() {
     mongo.getDb().drop();
   }
@@ -39,7 +42,7 @@ public class ApplicationTests {
   protected void entityAssert(AbstractMongoEntity entity, int i) {
     assertThat(entity).isNotEqualTo(null);
     assertThat(entity.getId()).isNotEqualTo(null);
-    assertThat(entity.getSlug()).isEqualTo("U" + i);
+    assertThat(entity.getSlug()).isEqualTo("U" + StringUtils.leftPad("" + i, 8, "0"));
     assertThat(entity.getSequence()).isEqualTo(i);
     assertThat(entity.getDateCreated()).isNotEqualTo(null);
     assertThat(entity.getDateModified()).isNotEqualTo(null);

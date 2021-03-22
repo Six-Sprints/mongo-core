@@ -10,7 +10,7 @@ public class ServiceHook<T extends AbstractMongoEntity> {
   protected void postSave(T entity) {
   }
 
-  protected void preUpdate(T entity) {
+  protected void preUpdate(T now, T toBe) {
   }
 
   protected void postUpdate(T entity) {

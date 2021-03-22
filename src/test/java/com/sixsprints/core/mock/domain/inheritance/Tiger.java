@@ -2,7 +2,7 @@ package com.sixsprints.core.mock.domain.inheritance;
 
 import org.springframework.data.mongodb.core.mapping.Document;
 
-import com.sixsprints.core.utils.Subclass;
+import com.sixsprints.core.annotation.Subclass;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

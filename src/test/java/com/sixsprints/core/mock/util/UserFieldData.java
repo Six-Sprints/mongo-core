@@ -8,6 +8,7 @@ import java.util.Locale;
 import com.google.common.collect.ImmutableMap;
 import com.sixsprints.core.dto.FieldDto;
 import com.sixsprints.core.enums.DataType;
+import com.sixsprints.core.mock.domain.Role;
 import com.sixsprints.core.mock.enums.Gender;
 
 public class UserFieldData {
@@ -37,14 +38,20 @@ public class UserFieldData {
       .dataType(DataType.DATE)
       .localizedDisplay(ImmutableMap.<Locale, String>of(Locale.ENGLISH, "Date", Locale.JAPANESE, "メール")).build());
 
-    fields.add(FieldDto.builder().name("roleName").sequence(i++)
-      .dataType(DataType.AUTO_COMPLETE).collectionName("role").columnName("name")
+    fields.add(FieldDto.builder().name("roleSlug").sequence(i++)
+      .dataType(DataType.AUTO_COMPLETE).joinCollectionName("role").joinColumnName("name")
+      .joinCollectionClass(Role.class).joinColumnNameForDB("name")
       .localizedDisplay(ImmutableMap.<Locale, String>of(Locale.ENGLISH, "Role Name", Locale.JAPANESE, "JapanRoleName"))
       .build());
 
     fields.add(FieldDto.builder().name("gender").sequence(i++)
       .dataType(DataType.ENUM).enumClass(Gender.class).allValues(Arrays.asList(Gender.values()))
       .localizedDisplay(ImmutableMap.<Locale, String>of(Locale.ENGLISH, "Gender", Locale.JAPANESE, "JapanGender"))
+      .build());
+
+    fields.add(FieldDto.builder().name("customId").sequence(i++)
+      .dataType(DataType.NUMBER)
+      .localizedDisplay(ImmutableMap.<Locale, String>of(Locale.ENGLISH, "CustomID", Locale.JAPANESE, "CustomIDGender"))
       .build());
 
     return fields;

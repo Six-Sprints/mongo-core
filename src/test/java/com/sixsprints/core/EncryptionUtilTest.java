@@ -2,7 +2,7 @@ package com.sixsprints.core;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.sixsprints.core.utils.EncryptionUtil;
 

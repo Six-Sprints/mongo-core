@@ -1,40 +1,37 @@
 package com.sixsprints.core.generic.read;
 
 import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.OutputStream;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Pattern;
 
+import org.apache.commons.lang3.ObjectUtils;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.http.HttpStatus;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
-import org.supercsv.cellprocessor.ift.CellProcessor;
-import org.supercsv.io.dozer.CsvDozerBeanWriter;
-import org.supercsv.io.dozer.ICsvDozerBeanWriter;
-import org.supercsv.prefs.CsvPreference;
 
-import com.google.common.collect.Lists;
-import com.mongodb.client.DistinctIterable;
-import com.mongodb.client.MongoCursor;
 import com.sixsprints.core.domain.AbstractMongoEntity;
+import com.sixsprints.core.dto.ExportData;
 import com.sixsprints.core.dto.FieldDto;
 import com.sixsprints.core.dto.FilterRequestDto;
+import com.sixsprints.core.dto.KeyLabelDto;
 import com.sixsprints.core.dto.MetaData;
-import com.sixsprints.core.dto.PageDto;
 import com.sixsprints.core.dto.filter.BooleanColumnFilter;
 import com.sixsprints.core.dto.filter.ColumnFilter;
 import com.sixsprints.core.dto.filter.DateColumnFilter;
@@ -43,22 +40,34 @@ import com.sixsprints.core.dto.filter.NumberColumnFilter;
 import com.sixsprints.core.dto.filter.SearchColumnFilter;
 import com.sixsprints.core.dto.filter.SetColumnFilter;
 import com.sixsprints.core.dto.filter.SortModel;
+import com.sixsprints.core.enums.DataType;
 import com.sixsprints.core.exception.BaseException;
 import com.sixsprints.core.exception.BaseRuntimeException;
+import com.sixsprints.core.exception.EntityInvalidException;
 import com.sixsprints.core.exception.EntityNotFoundException;
 import com.sixsprints.core.generic.GenericAbstractService;
-import com.sixsprints.core.transformer.GenericTransformer;
+import com.sixsprints.core.transformer.GenericMapper;
 import com.sixsprints.core.utils.AppConstants;
-import com.sixsprints.core.utils.CellProcessorUtil;
+import com.sixsprints.core.utils.BeanWrapperUtil;
 import com.sixsprints.core.utils.DateUtil;
-import com.sixsprints.core.utils.FieldMappingUtil;
+import com.sixsprints.core.utils.ExcelDefaultStyles;
 import com.sixsprints.core.utils.InheritanceMongoUtil;
 
+import cn.afterturn.easypoi.excel.ExcelExportUtil;
+import cn.afterturn.easypoi.excel.entity.ExportParams;
+import cn.afterturn.easypoi.excel.entity.TemplateExportParams;
+import cn.afterturn.easypoi.excel.entity.enmus.ExcelType;
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public abstract class AbstractReadService<T extends AbstractMongoEntity> extends GenericAbstractService<T>
   implements GenericReadService<T> {
 
   private static final String IGNORE_CASE_FLAG = "i";
   private static final String SLUG = "slug";
+
+  @Autowired
+  private DateUtil dateUtil;
 
   @Override
   public Page<T> findAll(Pageable page) {
@@ -157,97 +166,154 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
   }
 
   @Override
-  public List<String> distinctColumnValues(String column, FilterRequestDto filterRequestDto) {
+  public List<KeyLabelDto> distinctColumnValues(String column, FilterRequestDto filterRequestDto) {
     MetaData<T> metaData = metaData();
-    Query query = new Query();
-    query.addCriteria(buildCriteria(filterRequestDto, metaData));
-    DistinctIterable<String> iterable = mongo.getCollection(mongo.getCollectionName(metaData().getClassType()))
-      .distinct(column, query.getQueryObject(), String.class);
 
-    MongoCursor<String> cursor = iterable.iterator();
-    List<String> list = new ArrayList<>();
-    while (cursor.hasNext()) {
-      String next = cursor.next();
-      if (next != null)
-        list.add(next);
+    FieldDto field = findField(column, metaData);
+    if (field == null) {
+      log.warn("Unable to find the column {} in meta data fields. Returning empty list", column);
+      return new ArrayList<>();
     }
-    list.remove("");
-    list.add(AppConstants.BLANK_STRING);
-    Collections.sort(list);
-    return list;
+    Class<?> classTypeFromField = getClassTypeFromField(field);
+    if (classTypeFromField == null) {
+      log.warn("Unable to determine the class type from field {} and column {}. Returning empty list", field, column);
+      return new ArrayList<>();
+    }
+
+    Query query = new Query().with(Sort.by(Direction.ASC, column));
+    query.addCriteria(buildCriteria(filterRequestDto, metaData));
+    List<?> list = mongo.getCollection(mongo.getCollectionName(metaData().getClassType()))
+      .distinct(column, query.getQueryObject(), classTypeFromField).into(new ArrayList<>());
+
+    List<KeyLabelDto> result = new ArrayList<>();
+    result.add(KeyLabelDto.builder()
+      .key("")
+      .label(AppConstants.BLANK_STRING)
+      .build());
+
+    if (!CollectionUtils.isEmpty(list) && DataType.AUTO_COMPLETE.equals(field.getDataType())) {
+      Query joinQuery = new Query().with(Sort.by(Direction.ASC, field.getJoinColumnName()));
+      joinQuery.fields().include(field.getJoinColumnName(), SLUG).exclude("_id");
+      joinQuery.addCriteria(Criteria.where(SLUG).in(list));
+
+      List<?> joinedValues = mongo.find(joinQuery, field.getJoinCollectionClass());
+
+      joinedValues.forEach(item -> {
+        if (ObjectUtils.isNotEmpty(item)) {
+          result.add(KeyLabelDto.builder()
+            .key(BeanWrapperUtil.getValue(item, SLUG))
+            .label(BeanWrapperUtil.getValue(item, field.getJoinColumnName()))
+            .build());
+        }
+      });
+
+    } else {
+
+      list.forEach(i -> {
+        if (ObjectUtils.isNotEmpty(i)) {
+          result.add(KeyLabelDto.builder()
+            .key(i)
+            .label(i)
+            .build());
+        }
+      });
+
+    }
+    return result;
+  }
+
+  private Class<?> getClassTypeFromField(FieldDto field) {
+    if (field.getDataType() == null) {
+      return null;
+    }
+    return field.getDataType().getClassType();
+  }
+
+  private FieldDto findField(String column, MetaData<T> metaData) {
+    List<FieldDto> fields = metaData.getFields();
+    if (CollectionUtils.isEmpty(fields)) {
+      return null;
+    }
+    return fields.stream().filter(f -> f.getName().equals(column) || column.equals(f.getFilterColumnName())).findFirst()
+      .orElse(null);
   }
 
   @Override
-  public <DTO> void exportData(GenericTransformer<T, DTO> transformer,
-    FilterRequestDto filterRequestDto, PrintWriter writer, Locale locale) throws IOException, BaseException {
+  public <DTO> void exportData(GenericMapper<T, DTO> mapper, FilterRequestDto filterRequestDto, OutputStream writer)
+    throws IOException, BaseException {
 
+    MetaData<T> metaData = metaData();
+    if (metaData == null || metaData.getExportDataClassType() == null) {
+      String error = "Consider defining metaData::exportDataClassType for " + this.getClass().getSimpleName();
+      log.error(error);
+      throw EntityInvalidException
+        .childBuilder().error(error)
+        .build();
+    }
     if (filterRequestDto == null) {
       filterRequestDto = FilterRequestDto.builder().build();
     }
-
-    ICsvDozerBeanWriter beanWriter = null;
+    List<T> data = filterAll(filterRequestDto);
+    Workbook workbook = null;
     try {
-      List<FieldDto> fields = metaData().getFields();
-      String mappings[] = exportMappings(fields);
-
-      beanWriter = new CsvDozerBeanWriter(writer, CsvPreference.STANDARD_PREFERENCE);
-      beanWriter.configureBeanMapping(metaData().getDtoClassType(), mappings);
-      writeHeader(beanWriter, fields, mappings, locale);
-
-      // STREAMING IN BATCHES OF 750
-      filterRequestDto.setPage(0);
-      filterRequestDto.setSize(defaultBatchSize());
-
-      PageDto<DTO> pages = transformer.pageEntityToPageDtoDto(filter(filterRequestDto));
-
-      int totalPages = pages.getTotalPages();
-      CellProcessor[] exportProcessors = cellProcessors(fields);
-
-      for (int i = 0; i < totalPages; i++) {
-        List<DTO> dtos = pages.getContent();
-        for (final DTO dto : dtos) {
-          beanWriter.write(dto, exportProcessors);
-          writer.flush();
-        }
-        if (i + 1 == totalPages) {
-          continue;
-        }
-        filterRequestDto.setPage(i + 1);
-        pages = transformer.pageEntityToPageDtoDto(filter(filterRequestDto));
-      }
-
+      workbook = createWorkbook(mapper, data);
+      workbook.write(writer);
     } finally {
-
-      if (beanWriter != null) {
-        beanWriter.close();
+      if (workbook != null) {
+        workbook.close();
       }
       if (writer != null) {
         writer.close();
       }
     }
+  }
+
+  protected <DTO> Workbook createWorkbook(GenericMapper<T, DTO> mapper, List<T> data) {
+    MetaData<T> metaData = metaData();
+    String fileName = metaData.getExportTemplatePath();
+
+    if (StringUtils.hasText(fileName)) {
+      TemplateExportParams params = new TemplateExportParams(fileName);
+      transformTemplateExportParams(params);
+      return ExcelExportUtil.exportExcel(params, fetchMapDataForExcelDownload(mapper, data));
+    }
+    ExportParams simpleParams = new ExportParams();
+    simpleParams.setSheetName(entityName());
+    simpleParams.setType(ExcelType.XSSF);
+    simpleParams.setStyle(ExcelDefaultStyles.class);
+    simpleParams.setTitleHeight((short) 6);
+    simpleParams.setHeight((short) 6);
+    transformSimpleExportParams(simpleParams);
+    return ExcelExportUtil.exportExcel(simpleParams, metaData.getExportDataClassType(), mapper.toDto(data));
+  }
+
+  protected void transformSimpleExportParams(ExportParams simpleParams) {
 
   }
 
-  protected int defaultBatchSize() {
-    return 750;
+  protected void transformTemplateExportParams(TemplateExportParams params) {
+
   }
 
-  private CellProcessor[] cellProcessors(List<FieldDto> fields) {
-    Map<String, CellProcessor> map = exportCellProcessors(fields);
-    return CellProcessorUtil.exportProcessors(fields, map);
+  protected <DTO> Map<String, Object> fetchMapDataForExcelDownload(GenericMapper<T, DTO> mapper, List<T> data) {
+    return objectToMap(ExportData.<DTO>builder()
+      .data(mapper.toDto(data))
+      .build());
   }
 
-  protected Map<String, CellProcessor> exportCellProcessors(List<FieldDto> fields) {
-    return new HashMap<>();
-  }
-
-  protected void writeHeader(ICsvDozerBeanWriter beanWriter, List<FieldDto> fields, String[] mappings,
-    Locale locale) throws IOException {
-    beanWriter.writeHeader(FieldMappingUtil.createHeaders(mappings, fields, locale));
-  }
-
-  protected String[] exportMappings(List<FieldDto> fields) {
-    return FieldMappingUtil.genericMappings(fields);
+  protected static Map<String, Object> objectToMap(Object obj) {
+    Map<String, Object> map = new HashMap<>();
+    try {
+      Class<?> clazz = obj.getClass();
+      for (Field field : clazz.getDeclaredFields()) {
+        field.setAccessible(true);
+        String fieldName = field.getName();
+        Object value = field.get(obj);
+        map.put(fieldName, value);
+      }
+    } catch (IllegalAccessException e) {
+    }
+    return map;
   }
 
   protected Pageable pageable(int page, int size) {
@@ -299,7 +365,7 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
     } else if (filter instanceof DateColumnFilter) {
       addDateFilter(criterias, key, (DateColumnFilter) filter);
     } else if (filter instanceof SearchColumnFilter) {
-      addSearchCriteria(((SearchColumnFilter) filter).getFilter(), criterias);
+      addSearchCriteria((SearchColumnFilter) filter, criterias);
     } else if (filter instanceof ExactMatchColumnFilter) {
       addExactMatchCriteria(criterias, key, (ExactMatchColumnFilter) filter);
     }
@@ -308,19 +374,19 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
   private void addSetFilter(List<Criteria> criterias, String key, SetColumnFilter filter) {
     if (!CollectionUtils.isEmpty(filter.getValues())) {
       int i = 0;
-      List<String> values = filter.getValues();
+      List<?> values = filter.getValues();
       int size = values.size();
-      Object[] array = new String[size];
+      Object[] array = new Object[size];
 
-      long count = values.stream().filter(val -> StringUtils.isEmpty(val) || val.equals(AppConstants.BLANK_STRING))
+      long count = values.stream().filter(val -> ObjectUtils.isEmpty(val) || val.equals(AppConstants.BLANK_STRING))
         .count();
       if (count > 0) {
         array = new String[size + 1];
         array[i++] = "";
       }
 
-      for (String val : values) {
-        array[i++] = StringUtils.isEmpty(val) || val.equals(AppConstants.BLANK_STRING) ? null : val;
+      for (Object val : values) {
+        array[i++] = ObjectUtils.isEmpty(val) || val.toString().equals(AppConstants.BLANK_STRING) ? null : val;
       }
       criterias.add(setKeyCriteria(key).in(array));
     }
@@ -328,7 +394,7 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
 
   private void addNumberFilter(List<Criteria> criterias, String key, NumberColumnFilter numberFilter) {
     Criteria criteria = setKeyCriteria(key);
-    if (!StringUtils.isEmpty(numberFilter.getType())) {
+    if (StringUtils.hasText(numberFilter.getType())) {
       numberCriteria(numberFilter.getType(), numberFilter.getFilter(), numberFilter.getFilterTo(), criteria);
     } else {
       Criteria criteria1 = setKeyCriteria(key);
@@ -385,56 +451,99 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
 
   private void addDateFilter(List<Criteria> criterias, String key, DateColumnFilter filter) {
     Criteria criteria = setKeyCriteria(key);
-    criteria = dateCriteria(filter.getType(), filter.getFilter(), filter.getFilterTo(), criteria);
+    criteria = dateCriteria(filter.getType(), filter.getFilter(), filter.getFilterTo(), filter.isExactMatch(),
+      criteria);
     criterias.add(criteria);
   }
 
-  private Criteria dateCriteria(String type, Long filter, Long filterTo, Criteria criteria2) {
-    Criteria criteria = new Criteria(criteria2.getKey());
+  private void exactDateCriteria(String type, Long filterEpoch, Long filterToEpoch, Criteria criteria) {
+
     switch (type) {
     case AppConstants.EQUALS:
-      criteria.lte(DateUtil.instance().build().endOfDay(filter)).gte(DateUtil.instance().build().startOfDay(filter));
+      criteria.is(filterEpoch);
+      break;
+
+    case AppConstants.NOT_EQUAL:
+      criteria.ne(filterEpoch);
+      break;
+
+    case AppConstants.LESS_THAN:
+      criteria.lt(filterEpoch);
+      break;
+
+    case AppConstants.LESS_THAN_OR_EQUAL:
+      criteria.lte(filterEpoch);
+      break;
+
+    case AppConstants.GREATER_THAN:
+      criteria.gt(filterEpoch);
+      break;
+
+    case AppConstants.GREATER_THAN_OR_EQUAL:
+      criteria.gte(filterEpoch);
+      break;
+
+    case AppConstants.IN_RANGE:
+      criteria.lte(filterToEpoch).gte(filterEpoch);
+      break;
+    }
+  }
+
+  private Criteria dateCriteria(String type, Long filter, Long filterTo, boolean isExactMatch, Criteria criteria2) {
+    Criteria criteria = new Criteria(criteria2.getKey());
+    if (isExactMatch) {
+      exactDateCriteria(type, filter, filterTo, criteria);
+      return criteria;
+    }
+
+    Long filterEOD = dateUtil.endOfDay(filter).getMillis();
+    Long filterSOD = dateUtil.startOfDay(filter).getMillis();
+    Long filterToEOD = filterTo != null ? dateUtil.endOfDay(filterTo).getMillis() : 0;
+
+    switch (type) {
+    case AppConstants.EQUALS:
+      criteria.lte(filterEOD).gte(filterSOD);
       break;
 
     case AppConstants.NOT_EQUAL:
       return new Criteria().orOperator(
-        new Criteria(criteria2.getKey()).lt(DateUtil.instance().build().startOfDay(filter)),
-        new Criteria(criteria2.getKey()).gt(DateUtil.instance().build().endOfDay(filter)));
+        new Criteria(criteria2.getKey()).lt(filterSOD),
+        new Criteria(criteria2.getKey()).gt(filterEOD));
 
     case AppConstants.LESS_THAN:
-      criteria.lt(DateUtil.instance().build().startOfDay(filter));
+      criteria.lt(filterSOD);
       break;
 
     case AppConstants.LESS_THAN_OR_EQUAL:
-      criteria.lte(DateUtil.instance().build().endOfDay(filter));
+      criteria.lte(filterEOD);
       break;
 
     case AppConstants.GREATER_THAN:
-      criteria.gt(DateUtil.instance().build().endOfDay(filter));
+      criteria.gt(filterEOD);
       break;
 
     case AppConstants.GREATER_THAN_OR_EQUAL:
-      criteria.gte(DateUtil.instance().build().startOfDay(filter));
+      criteria.gte(filterSOD);
       break;
 
     case AppConstants.IN_RANGE:
-      criteria.lte(DateUtil.instance().build().endOfDay(filterTo)).gte(DateUtil.instance().build().startOfDay(filter));
+      criteria.lte(filterToEOD).gte(filterSOD);
       break;
     }
     return criteria;
   }
 
-  private void addSearchCriteria(String searchKey, List<Criteria> criterias) {
-    List<Criteria> searchCriteria = Lists.newArrayList();
-    String quote = Pattern.quote(searchKey);
+  private void addSearchCriteria(SearchColumnFilter filter, List<Criteria> criterias) {
+    List<Criteria> searchCriteria = new ArrayList<>();
+    String quote = Pattern.quote(filter.getFilter());
 
-    List<FieldDto> fields = metaData().getFields();
+    List<FieldDto> fields = buildSearchFields(filter);
 
     if (CollectionUtils.isEmpty(fields)) {
       return;
     }
 
-    if (!fields.contains(FieldDto.builder().name(SLUG).build())) {
+    if (!filter.isSlugExcludedFromSearch() && !fields.contains(FieldDto.builder().name(SLUG).build())) {
       searchCriteria.add(setKeyCriteria(SLUG).regex(quote, IGNORE_CASE_FLAG));
     }
     for (FieldDto field : fields) {
@@ -449,8 +558,42 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
 
   }
 
+  private List<FieldDto> buildSearchFields(SearchColumnFilter filter) {
+    List<FieldDto> fields = new ArrayList<>();
+    if (CollectionUtils.isEmpty(filter.getFields())) {
+      return metaData().getFields();
+    }
+
+    for (String fieldName : filter.getFields()) {
+      fields.add(FieldDto.builder().name(fieldName).dataType(DataType.TEXT).build());
+    }
+    return fields;
+  }
+
   private void addExactMatchCriteria(List<Criteria> criterias, String key, ExactMatchColumnFilter filter) {
-    criterias.add(setKeyCriteria(key).is(filter.getFilter()));
+    String type = filter.getType();
+
+    switch (type) {
+    case AppConstants.EQUALS:
+      criterias.add(setKeyCriteria(key).is(filter.getFilter()));
+      break;
+
+    case AppConstants.NOT_EQUAL:
+      criterias.add(setKeyCriteria(key).ne(filter.getFilter()));
+      break;
+
+    case AppConstants.EXISTS:
+      criterias.add(setKeyCriteria(key).exists(true));
+      break;
+
+    case AppConstants.DOES_NOT_EXIST:
+      criterias.add(setKeyCriteria(key).exists(false));
+      break;
+
+    default:
+      criterias.add(setKeyCriteria(key).is(filter.getFilter()));
+      break;
+    }
   }
 
   private Criteria setKeyCriteria(String key) {
@@ -459,7 +602,7 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
 
   private void checkFilterRequestDto(FilterRequestDto filterRequestDto) {
     if (filterRequestDto == null) {
-      throw BaseRuntimeException.builder().error("page number and page size can't be null")
+      throw BaseRuntimeException.builder().error("Page number and page size can't be null")
         .httpStatus(HttpStatus.BAD_REQUEST).build();
     }
   }

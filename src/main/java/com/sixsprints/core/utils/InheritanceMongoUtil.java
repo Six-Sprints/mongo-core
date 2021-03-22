@@ -3,6 +3,8 @@ package com.sixsprints.core.utils;
 import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.mongodb.core.query.Criteria;
 
+import com.sixsprints.core.annotation.Subclass;
+
 public class InheritanceMongoUtil {
 
   public static Criteria generate(Class<?> classType) {

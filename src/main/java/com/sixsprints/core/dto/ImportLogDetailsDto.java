@@ -11,7 +11,15 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class ImportLogDetails {
+public class ImportLogDetailsDto {
+
+  private String id;
+
+  private String slug;
+
+  private Long dateCreated;
+
+  private String createdBy;
 
   private String entity;
 

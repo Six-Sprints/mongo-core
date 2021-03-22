@@ -23,6 +23,8 @@ public class FieldDto implements Comparable<FieldDto> {
 
   private String name;
 
+  private String filterColumnName;
+
   private int sequence;
 
   private DataType dataType;
@@ -39,9 +41,13 @@ public class FieldDto implements Comparable<FieldDto> {
 
   private Map<Locale, String> localizedDisplay;
 
-  private String collectionName;
+  private String joinCollectionName;
 
-  private String columnName;
+  private String joinColumnName;
+
+  private String joinColumnNameForDB;
+
+  private Class<?> joinCollectionClass;
 
   private Class<? extends Enum<?>> enumClass;
 
