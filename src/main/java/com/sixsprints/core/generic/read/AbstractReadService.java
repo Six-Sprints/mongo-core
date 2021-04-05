@@ -322,6 +322,10 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
     return pageable;
   }
 
+  protected void preFilter(FilterRequestDto filterRequestDto) {
+
+  }
+
   private Sort buildSort(List<SortModel> sortModel, MetaData<T> meta) {
     Sort sort = Sort.unsorted();
     if (!CollectionUtils.isEmpty(sortModel)) {
@@ -336,6 +340,8 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
   }
 
   private Criteria buildCriteria(FilterRequestDto filterRequestDto, MetaData<T> meta) {
+
+    preFilter(filterRequestDto);
     List<Criteria> criterias = new ArrayList<>();
     Criteria criteria = InheritanceMongoUtil.generate(meta.getClassType());
     if (criteria != null) {
