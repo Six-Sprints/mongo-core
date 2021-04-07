@@ -79,7 +79,7 @@ public abstract class AbstractReadController<T extends AbstractMongoEntity, DTO>
     return fields;
   }
 
-  protected ArrayList<FieldDto> filterFields() {
+  protected List<FieldDto> filterFields() {
     return new ArrayList<>();
   }
 
