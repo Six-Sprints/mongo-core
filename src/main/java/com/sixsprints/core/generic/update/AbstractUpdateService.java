@@ -133,6 +133,8 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity> exten
   public <DTO extends IGenericExcelImport> List<DTO> importDataPreview(InputStream inputStream, ImportParams params)
     throws Exception {
 
+    transformImportParams(params);
+
     @SuppressWarnings("unchecked")
     Class<DTO> classType = (Class<DTO>) metaData().getImportDataClassType();
     log.info("Import request received for {}", classType.getSimpleName());
@@ -142,6 +144,10 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity> exten
       return new ArrayList<>();
     }
     return list;
+  }
+
+  protected void transformImportParams(ImportParams params) {
+
   }
 
   protected <DTO extends IGenericExcelImport> Map<ImportOperation, ImportLogDetailsDto> performImport(
