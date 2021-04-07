@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -37,7 +39,7 @@ public abstract class AbstractReadController<T extends AbstractMongoEntity, DTO>
   @GetMapping("/all/fields")
   @Authenticated(access = AccessPermission.READ)
   public ResponseEntity<RestResponse<List<FieldDto>>> fields(Locale locale) {
-    return RestUtil.successResponse(new ArrayList<>());
+    return RestUtil.successResponse(localise(filterFields()));
   }
 
   @GetMapping("/{slug}")
@@ -58,6 +60,27 @@ public abstract class AbstractReadController<T extends AbstractMongoEntity, DTO>
   public ResponseEntity<RestResponse<List<?>>> getDistinctValues(@RequestParam String column,
     @RequestBody FilterRequestDto filterRequestDto) {
     return RestUtil.successResponse(service.distinctColumnValues(column, filterRequestDto));
+  }
+
+  protected List<FieldDto> localise(List<FieldDto> fields) {
+
+    Locale locale = LocaleContextHolder.getLocale();
+    if (fields != null && !fields.isEmpty()) {
+      for (FieldDto dto : fields) {
+        String displayName = dto.getLocalizedDisplay().get(locale);
+        if (StringUtils.isNotBlank(displayName)) {
+          dto.setDisplayName(displayName);
+        } else {
+          dto.setDisplayName(dto.getLocalizedDisplay().get(Locale.ENGLISH));
+        }
+        dto.setLocalizedDisplay(null);
+      }
+    }
+    return fields;
+  }
+
+  protected ArrayList<FieldDto> filterFields() {
+    return new ArrayList<>();
   }
 
 }
