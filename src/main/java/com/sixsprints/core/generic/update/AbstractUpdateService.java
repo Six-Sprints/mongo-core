@@ -335,6 +335,10 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity> exten
         return bulkImportInfo(fromDb, UpdateAction.IGNORE);
       }
 
+      List<String> errors = checkValidityPreUpdate(domain);
+      if (!CollectionUtils.isEmpty(errors)) {
+        return bulkImportInfo(domain, UpdateAction.INVALID);
+      }
       fromDb = save(fromDb);
       postUpdate(fromDb);
       return bulkImportInfo(fromDb, UpdateAction.UPDATE);
@@ -343,6 +347,10 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity> exten
     domain = save(domain);
     postCreate(domain);
     return bulkImportInfo(domain, UpdateAction.CREATE);
+  }
+
+  protected List<String> checkValidityPreUpdate(T domain) {
+    return new ArrayList<>();
   }
 
   @SuppressWarnings("unchecked")
