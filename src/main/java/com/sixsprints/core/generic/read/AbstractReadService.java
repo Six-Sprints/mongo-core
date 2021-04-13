@@ -598,7 +598,7 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
     });
 
     if (!joinedSlugs.isEmpty()) {
-      return setKeyCriteria(field.getName()).in(joinedSlugs);
+      return setKeyCriteria(field.getJoinColumnNameLocal()).in(joinedSlugs);
     }
 
     return null;
