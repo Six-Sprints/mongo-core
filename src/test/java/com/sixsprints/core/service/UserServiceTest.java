@@ -12,14 +12,19 @@ import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.data.mongodb.core.MongoOperations;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.sixsprints.core.ApplicationTests;
 import com.sixsprints.core.dto.BulkUpdateInfo;
+import com.sixsprints.core.dto.FilterRequestDto;
 import com.sixsprints.core.dto.ImportLogDetailsDto;
 import com.sixsprints.core.dto.KeyLabelDto;
+import com.sixsprints.core.dto.filter.ColumnFilter;
+import com.sixsprints.core.dto.filter.SearchColumnFilter;
 import com.sixsprints.core.enums.ImportOperation;
 import com.sixsprints.core.enums.UpdateAction;
 import com.sixsprints.core.exception.BaseException;
@@ -125,6 +130,31 @@ public class UserServiceTest extends ApplicationTests {
     assertThat(list.get(1).getKey()).isEqualTo("R1");
     assertThat(list.get(2).getLabel()).isEqualTo("USER");
     assertThat(list.get(2).getKey()).isEqualTo("R2");
+  }
+
+  @Test
+  public void shouldFilterOnJoinColumns() {
+
+    mongo.save(Role.builder().name("ADMIN").slug("R1").build(), "role");
+    mongo.save(Role.builder().name("USER").slug("R2").build(), "role");
+
+    for (int i = 1; i <= 10; i++) {
+      userService.save(user(i));
+    }
+
+    Map<String, ColumnFilter> filterModel = ImmutableMap.<String, ColumnFilter>builder()
+      .put("_", SearchColumnFilter.builder().filter("ADMIN").build())
+      .build();
+
+    FilterRequestDto filters = FilterRequestDto.builder()
+      .page(0)
+      .size(10)
+      .filterModel(filterModel)
+      .build();
+    Page<User> users = userService.filter(filters);
+    List<User> list = users.getContent();
+    assertThat(list.size()).isEqualTo(1);
+    assertThat(list.get(0).getRoleSlug()).isEqualTo("R1");
   }
 
   private String fileName() {

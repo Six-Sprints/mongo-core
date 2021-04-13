@@ -5,9 +5,11 @@ import java.io.OutputStream;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.ObjectUtils;
@@ -362,6 +364,7 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
   }
 
   private void addCriteria(ColumnFilter filter, String key, List<Criteria> criterias) {
+
     if (filter instanceof SetColumnFilter) {
       addSetFilter(criterias, key, (SetColumnFilter) filter);
     } else if (filter instanceof NumberColumnFilter) {
@@ -540,31 +543,69 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
   }
 
   private void addSearchCriteria(SearchColumnFilter filter, List<Criteria> criterias) {
-    List<Criteria> searchCriteria = new ArrayList<>();
-    String quote = Pattern.quote(filter.getFilter());
 
+    List<Criteria> searchCriteria = new ArrayList<>();
+    String quote = transformFreeTextSearchInput(filter.getFilter());
     List<FieldDto> fields = buildSearchFields(filter);
 
     if (CollectionUtils.isEmpty(fields)) {
       return;
     }
 
+    for (FieldDto field : fields) {
+      if (field.getDataType().isSearchable()) {
+        Criteria criteria = null;
+        if (StringUtils.hasText(field.getJoinCollectionName())) {
+          criteria = resolveJoinValues(criterias, field, quote);
+        } else {
+          criteria = setKeyCriteria(field.getName()).regex(quote, IGNORE_CASE_FLAG);
+        }
+        if (criteria != null) {
+          searchCriteria.add(criteria);
+        }
+      }
+    }
+
     if (!filter.isSlugExcludedFromSearch() && !fields.contains(FieldDto.builder().name(SLUG).build())) {
       searchCriteria.add(setKeyCriteria(SLUG).regex(quote, IGNORE_CASE_FLAG));
     }
-    for (FieldDto field : fields) {
-      if (field.getDataType().isSearchable()) {
-        Criteria criteria = setKeyCriteria(field.getName()).regex(quote, IGNORE_CASE_FLAG);
-        searchCriteria.add(criteria);
-      }
-    }
+
     if (!searchCriteria.isEmpty()) {
       criterias.add(new Criteria().orOperator(searchCriteria.toArray(new Criteria[searchCriteria.size()])));
     }
 
   }
 
-  private List<FieldDto> buildSearchFields(SearchColumnFilter filter) {
+  protected String transformFreeTextSearchInput(String filter) {
+    return Pattern.quote(filter);
+  }
+
+  protected Criteria resolveJoinValues(List<Criteria> criterias, FieldDto field, String filter) {
+    Set<String> joinedSlugs = new HashSet<>();
+    Query joinQuery = new Query();
+    joinQuery.fields().include(SLUG).exclude("_id");
+    joinQuery.addCriteria(Criteria.where(field.getJoinColumnName()).regex(filter, IGNORE_CASE_FLAG));
+
+    List<?> joinedValues = mongo.find(joinQuery, field.getJoinCollectionClass());
+
+    joinedValues.forEach(item -> {
+      if (ObjectUtils.isNotEmpty(item)) {
+        Object value = BeanWrapperUtil.getValue(item, SLUG);
+        if (ObjectUtils.isNotEmpty(value)) {
+          joinedSlugs.add(value.toString());
+        }
+      }
+    });
+
+    if (!joinedSlugs.isEmpty()) {
+      return setKeyCriteria(field.getName()).in(joinedSlugs);
+    }
+
+    return null;
+
+  }
+
+  protected List<FieldDto> buildSearchFields(SearchColumnFilter filter) {
     List<FieldDto> fields = new ArrayList<>();
     if (CollectionUtils.isEmpty(filter.getFields())) {
       return metaData().getFields();
