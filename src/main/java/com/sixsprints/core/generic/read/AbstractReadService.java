@@ -397,7 +397,11 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
       for (Object val : values) {
         array[i++] = ObjectUtils.isEmpty(val) || val.toString().equals(AppConstants.BLANK_STRING) ? null : val;
       }
-      criterias.add(setKeyCriteria(key).in(array));
+      if (AppConstants.NOT_EQUAL.equals(filter.getType())) {
+        criterias.add(setKeyCriteria(key).nin(array));
+      } else {
+        criterias.add(setKeyCriteria(key).in(array));
+      }
     }
   }
 
