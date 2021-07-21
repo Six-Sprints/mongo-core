@@ -397,8 +397,18 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
       for (Object val : values) {
         array[i++] = ObjectUtils.isEmpty(val) || val.toString().equals(AppConstants.BLANK_STRING) ? null : val;
       }
-      criterias.add(setKeyCriteria(key).in(array));
+      criterias.add(setCriteriaOperator(filter, array, key));
     }
+  }
+
+  private Criteria setCriteriaOperator(SetColumnFilter filter, Object[] array, String key) {
+    Criteria crit = setKeyCriteria(key);
+    if (AppConstants.NOT_EQUAL.equals(filter.getType())) {
+      crit = crit.nin(array);
+    } else {
+      crit = crit.in(array);
+    }
+    return crit;
   }
 
   private void addNumberFilter(List<Criteria> criterias, String key, NumberColumnFilter numberFilter) {
