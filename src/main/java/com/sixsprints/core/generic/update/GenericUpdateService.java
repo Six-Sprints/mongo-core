@@ -19,11 +19,15 @@ import cn.afterturn.easypoi.excel.entity.ImportParams;
 
 public interface GenericUpdateService<T extends AbstractMongoEntity> {
 
-  T update(String id, T domain) throws EntityNotFoundException, EntityAlreadyExistsException;
+  T update(String id, T domain) throws EntityNotFoundException, EntityAlreadyExistsException, EntityInvalidException;
+
+  T patchUpdate(String id, T domain, String propChanged)
+    throws EntityNotFoundException, EntityAlreadyExistsException, EntityInvalidException;
+
+  T patchUpdate(String id, T domain, List<String> propsChanged)
+    throws EntityNotFoundException, EntityAlreadyExistsException, EntityInvalidException;
 
   T upsert(T domain) throws EntityInvalidException;
-
-  T patchUpdate(String id, T domain, String propChanged) throws EntityNotFoundException, EntityAlreadyExistsException;
 
   List<BulkUpdateInfo<T>> bulkUpsert(List<T> list);
 

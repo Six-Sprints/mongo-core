@@ -37,10 +37,9 @@ import com.sixsprints.core.service.ImportLogDetailsService;
 import com.sixsprints.core.transformer.GenericMapper;
 import com.sixsprints.core.transformer.ImportLogDetailsMapper;
 import com.sixsprints.core.utils.BeanWrapperUtil;
+import com.sixsprints.core.utils.excel.ExcelUtil;
 
-import cn.afterturn.easypoi.excel.ExcelImportUtil;
 import cn.afterturn.easypoi.excel.entity.ImportParams;
-import cn.afterturn.easypoi.excel.entity.result.ExcelImportResult;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -52,7 +51,8 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity> exten
   private ImportLogDetailsService importLogDetailsService;
 
   @Override
-  public T update(String id, T domain) throws EntityNotFoundException, EntityAlreadyExistsException {
+  public T update(String id, T domain)
+    throws EntityNotFoundException, EntityAlreadyExistsException, EntityInvalidException {
     T entity = findOne(id);
     domain.copyEntityFrom(entity);
     return update(domain);
@@ -60,13 +60,16 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity> exten
 
   @Override
   public T patchUpdate(String id, T domain, String propChanged)
-    throws EntityNotFoundException, EntityAlreadyExistsException {
+    throws EntityNotFoundException, EntityAlreadyExistsException, EntityInvalidException {
+    return patchUpdate(id, domain, List.of(propChanged));
+  }
+
+  @Override
+  public T patchUpdate(String id, T domain, List<String> propsChanged)
+    throws EntityNotFoundException, EntityAlreadyExistsException, EntityInvalidException {
 
     T entity = findOne(id);
-    List<String> list = new ArrayList<>();
-    list.add(propChanged);
-    BeanWrapperUtil.copyProperties(domain, entity, list);
-
+    BeanWrapperUtil.copyProperties(domain, entity, propsChanged);
     return update(entity);
   }
 
@@ -138,12 +141,8 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity> exten
     @SuppressWarnings("unchecked")
     Class<DTO> classType = (Class<DTO>) metaData().getImportDataClassType();
     log.info("Import request received for {}", classType.getSimpleName());
-    ExcelImportResult<DTO> result = ExcelImportUtil.<DTO>importExcelMore(inputStream, classType, params);
-    List<DTO> list = result.getList();
-    if (CollectionUtils.isEmpty(list)) {
-      return new ArrayList<>();
-    }
-    return list;
+
+    return ExcelUtil.importData(inputStream, params, classType);
   }
 
   protected void transformImportParams(ImportParams params) {
@@ -210,7 +209,7 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity> exten
 
   }
 
-  protected <DTO extends IGenericExcelImport> String serialNumberError(Long serialNumber) {
+  protected String serialNumberError(Long serialNumber) {
     return "S.No. " + serialNumber + ": ";
   }
 
@@ -380,7 +379,7 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity> exten
     BeanWrapperUtil.copyNonNullProperties(source, target);
   }
 
-  private T update(T domain) throws EntityAlreadyExistsException {
+  private T update(T domain) throws EntityAlreadyExistsException, EntityInvalidException {
     T fromDB = findDuplicate(domain);
     if (fromDB != null && !domain.getId().equals(fromDB.getId())) {
       if (fromDB.getActive()) {
@@ -389,6 +388,18 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity> exten
       delete(fromDB);
     }
     preUpdate(fromDB, domain);
+
+    List<String> errors = checkValidity(domain);
+
+    if (!CollectionUtils.isEmpty(errors)) {
+      throw validationException(errors);
+    }
+    List<String> updateErrors = checkValidityPreUpdate(domain);
+
+    if (!CollectionUtils.isEmpty(updateErrors)) {
+      throw validationException(updateErrors);
+    }
+
     save(domain);
     postUpdate(domain);
     return domain;
