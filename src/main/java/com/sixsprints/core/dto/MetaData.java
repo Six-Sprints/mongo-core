@@ -20,7 +20,9 @@ public class MetaData<T extends AbstractMongoEntity> {
 
   private Class<T> classType;
 
-  private Class<?> dtoClassType;
+  private Class<?> crudDtoClassType;
+
+  private Class<?> searchDtoClassType;
 
   private Class<?> exportDataClassType;
 

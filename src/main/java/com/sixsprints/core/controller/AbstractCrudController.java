@@ -19,45 +19,60 @@ import com.sixsprints.core.transformer.GenericMapper;
 import com.sixsprints.core.utils.RestResponse;
 import com.sixsprints.core.utils.RestUtil;
 
-public abstract class AbstractCrudController<T extends AbstractMongoEntity, DTO>
-  extends AbstractReadController<T, DTO> {
+/**
+ * 
+ * @param <T>  - Domain Class Type
+ * @param <SD> - Search DTO Class Type
+ * @param <CD> - CRUD DTO class Type
+ */
+public abstract class AbstractCrudController<T extends AbstractMongoEntity, SD, CD>
+  extends AbstractReadController<T, SD> {
 
-  private GenericCrudService<T> service;
+  private GenericCrudService<T> crudService;
 
-  private GenericMapper<T, DTO> mapper;
+  private GenericMapper<T, CD> crudMapper;
 
-  public AbstractCrudController(GenericCrudService<T> service, GenericMapper<T, DTO> mapper) {
-    super(service, mapper);
-    this.service = service;
-    this.mapper = mapper;
+  public AbstractCrudController(GenericCrudService<T> crudService, GenericMapper<T, SD> searchMapper,
+    GenericMapper<T, CD> crudMapper) {
+    super(crudService, searchMapper);
+    this.crudService = crudService;
+    this.crudMapper = crudMapper;
   }
 
   @PutMapping
   @Authenticated(access = AccessPermission.UPDATE)
-  public ResponseEntity<?> patch(@RequestBody @Validated DTO dto, @RequestParam String propChanged)
+  public ResponseEntity<?> patch(@RequestBody @Validated CD dto, @RequestParam String propChanged)
     throws BaseException {
-    T domain = mapper.toDomain(dto);
-    return RestUtil.successResponse(service.patchUpdate(domain.getId(), domain, propChanged));
+    T domain = crudMapper.toDomain(dto);
+    return RestUtil.successResponse(crudService.patchUpdate(domain.getId(), domain, propChanged));
+  }
+
+  @PutMapping("/patch/multi")
+  @Authenticated(access = AccessPermission.UPDATE)
+  public ResponseEntity<?> patchMulti(@RequestBody @Validated CD dto, @RequestParam List<String> propChanged)
+    throws BaseException {
+    T domain = crudMapper.toDomain(dto);
+    return RestUtil.successResponse(crudService.patchUpdate(domain.getId(), domain, propChanged));
   }
 
   @PutMapping("/update")
   @Authenticated(access = AccessPermission.UPDATE)
-  public ResponseEntity<?> update(@RequestBody @Validated DTO dto) throws BaseException {
-    T domain = mapper.toDomain(dto);
-    return RestUtil.successResponse(service.update(domain.getId(), domain));
+  public ResponseEntity<?> update(@RequestBody @Validated CD dto) throws BaseException {
+    T domain = crudMapper.toDomain(dto);
+    return RestUtil.successResponse(crudService.update(domain.getId(), domain));
   }
 
   @PostMapping
   @Authenticated(access = AccessPermission.CREATE)
-  public ResponseEntity<RestResponse<DTO>> add(@RequestBody @Validated DTO dto)
+  public ResponseEntity<RestResponse<CD>> add(@RequestBody @Validated CD dto)
     throws BaseException {
-    return RestUtil.successResponse(mapper.toDto(service.create(mapper.toDomain(dto))));
+    return RestUtil.successResponse(crudMapper.toDto(crudService.create(crudMapper.toDomain(dto))));
   }
 
   @PostMapping("/delete")
   @Authenticated(access = AccessPermission.DELETE)
   public ResponseEntity<?> delete(@RequestBody List<String> ids) throws EntityNotFoundException {
-    service.delete(ids);
+    crudService.delete(ids);
     return RestUtil.successResponse(null);
   }
 

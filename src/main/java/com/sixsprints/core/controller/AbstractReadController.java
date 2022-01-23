@@ -20,46 +20,52 @@ import com.sixsprints.core.dto.FilterRequestDto;
 import com.sixsprints.core.dto.PageDto;
 import com.sixsprints.core.enums.AccessPermission;
 import com.sixsprints.core.exception.EntityNotFoundException;
+import com.sixsprints.core.generic.read.GenericReadService;
 import com.sixsprints.core.service.GenericCrudService;
 import com.sixsprints.core.transformer.GenericMapper;
 import com.sixsprints.core.utils.RestResponse;
 import com.sixsprints.core.utils.RestUtil;
 
-public abstract class AbstractReadController<T extends AbstractMongoEntity, DTO> {
+/**
+ * 
+ * @param <T>  - Domain Class Type
+ * @param <SD> - Search DTO Class Type
+ */
+public abstract class AbstractReadController<T extends AbstractMongoEntity, SD> {
 
-  private GenericCrudService<T> service;
+  private GenericReadService<T> readService;
 
-  private GenericMapper<T, DTO> mapper;
+  private GenericMapper<T, SD> searchDtoMapper;
 
-  public AbstractReadController(GenericCrudService<T> service, GenericMapper<T, DTO> mapper) {
-    this.service = service;
-    this.mapper = mapper;
+  public AbstractReadController(GenericCrudService<T> service, GenericMapper<T, SD> searchDtoMapper) {
+    this.readService = service;
+    this.searchDtoMapper = searchDtoMapper;
   }
 
   @GetMapping("/all/fields")
   @Authenticated(access = AccessPermission.READ)
-  public ResponseEntity<RestResponse<List<FieldDto>>> fields(Locale locale) {
-    return RestUtil.successResponse(localise(filterFields()));
+  public ResponseEntity<RestResponse<List<FieldDto>>> fields() {
+    return RestUtil.successResponse(localise(searchDtoFields()));
   }
 
   @GetMapping("/{slug}")
   @Authenticated(access = AccessPermission.READ)
-  public ResponseEntity<RestResponse<DTO>> findBySlug(@PathVariable String slug)
+  public ResponseEntity<RestResponse<SD>> findBySlug(@PathVariable String slug)
     throws EntityNotFoundException {
-    return RestUtil.successResponse(mapper.toDto(service.findBySlug(slug)));
+    return RestUtil.successResponse(searchDtoMapper.toDto(readService.findBySlug(slug)));
   }
 
   @PostMapping("/search")
   @Authenticated(access = AccessPermission.READ)
-  public ResponseEntity<RestResponse<PageDto<DTO>>> filter(@RequestBody FilterRequestDto filterRequestDto) {
-    return RestUtil.successResponse(mapper.pageEntityToPageDtoDto(service.filter(filterRequestDto)));
+  public ResponseEntity<RestResponse<PageDto<SD>>> filter(@RequestBody FilterRequestDto filterRequestDto) {
+    return RestUtil.successResponse(searchDtoMapper.pageEntityToPageDtoDto(readService.filter(filterRequestDto)));
   }
 
   @PostMapping("/column/master")
   @Authenticated(access = AccessPermission.READ)
   public ResponseEntity<RestResponse<List<?>>> getDistinctValues(@RequestParam String column,
     @RequestBody FilterRequestDto filterRequestDto) {
-    return RestUtil.successResponse(service.distinctColumnValues(column, filterRequestDto));
+    return RestUtil.successResponse(readService.distinctColumnValues(column, filterRequestDto));
   }
 
   protected List<FieldDto> localise(List<FieldDto> fields) {
@@ -79,7 +85,7 @@ public abstract class AbstractReadController<T extends AbstractMongoEntity, DTO>
     return fields;
   }
 
-  protected List<FieldDto> filterFields() {
+  protected List<FieldDto> searchDtoFields() {
     return new ArrayList<>();
   }
 

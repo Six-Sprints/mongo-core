@@ -33,7 +33,7 @@ public class UserServiceImpl extends AbstractCrudService<User> implements UserSe
   protected MetaData<User> metaData() {
     return MetaData.<User>builder()
       .classType(User.class)
-      .dtoClassType(UserDto.class)
+      .crudDtoClassType(UserDto.class)
       .exportDataClassType(UserExcelDto.class)
       .importDataClassType(UserExcelDto.class)
       .fields(UserFieldData.fields())
