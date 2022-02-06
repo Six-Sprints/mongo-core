@@ -10,6 +10,7 @@ import java.util.List;
 import javax.validation.Validator;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.mongodb.core.MongoOperations;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.http.HttpStatus;
@@ -41,13 +42,19 @@ public abstract class GenericAbstractService<T extends AbstractMongoEntity> exte
   @Autowired
   protected Validator validator;
 
+  @Value("${slug.padding.character:0}")
+  private String slugPaddingCharacter;
+
+  @Value("${slug.padding.length:8}")
+  private int slugPaddingLength;
+
   protected abstract GenericRepository<T> repository();
 
   protected abstract MetaData<T> metaData();
 
   protected SlugFormatter slugFromatter(T entity) {
     String className = entity.getClass().getSimpleName().toLowerCase();
-    String prefix = className.replaceAll("[aeiou]", "");
+    String prefix = className.charAt(0) + className.substring(1).replaceAll("[aeiou]", "");
     return SlugFormatter.builder()
       .collection(className)
       .prefix(prefix.substring(0, Math.min(3, prefix.length())).toUpperCase())
@@ -71,7 +78,7 @@ public abstract class GenericAbstractService<T extends AbstractMongoEntity> exte
       SlugFormatter slugFromatter = slugFromatter(entity);
       if (slugFromatter != null && slugFromatter.getCollection() != null) {
         Long nextSequence = getNextSequence(slugFromatter.getCollection());
-        entity.setSlug(slug(nextSequence, slugFromatter));
+        entity.setSlug(slug(entity, nextSequence, slugFromatter));
         entity.setSequence(nextSequence);
       }
     }
@@ -91,7 +98,7 @@ public abstract class GenericAbstractService<T extends AbstractMongoEntity> exte
     for (T entity : entities) {
       if (shouldOverwriteSlug(entity)) {
         Long nextSequence = sequence - size + i++;
-        entity.setSlug(slug(nextSequence, slugFromatter(entity)));
+        entity.setSlug(slug(entity, nextSequence, slugFromatter(entity)));
         entity.setSequence(nextSequence);
       }
     }
@@ -130,7 +137,7 @@ public abstract class GenericAbstractService<T extends AbstractMongoEntity> exte
     }
   }
 
-  private String slug(Long nextSequence, SlugFormatter slugFromatter) {
+  protected String slug(T entity, Long nextSequence, SlugFormatter slugFromatter) {
     StringBuffer buffer = new StringBuffer(slugFromatter.getPrefix());
     if (slugFromatter.getMinimumSequenceNumber() != null) {
       nextSequence += slugFromatter.getMinimumSequenceNumber();
@@ -142,11 +149,11 @@ public abstract class GenericAbstractService<T extends AbstractMongoEntity> exte
   }
 
   protected String slugPaddingCharacter() {
-    return "0";
+    return slugPaddingCharacter;
   }
 
   protected int slugPaddingLength() {
-    return 8;
+    return slugPaddingLength;
   }
 
   private boolean shouldOverwriteSlug(T entity) {
