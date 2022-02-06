@@ -10,6 +10,7 @@ import javax.validation.ConstraintViolation;
 import javax.validation.ConstraintViolationException;
 import javax.validation.Path.Node;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
@@ -93,7 +94,11 @@ public abstract class RestExceptionHandler {
 
   protected String getErrorMessage(String key, List<Object> args, Locale locale) {
     try {
-      String errorMessage = messageSourceService.messageSource().getMessage(key, args.toArray(), locale);
+      Object[] arg = null;
+      if (!CollectionUtils.isEmpty(args)) {
+        arg = args.toArray();
+      }
+      String errorMessage = messageSourceService.messageSource().getMessage(key, arg, locale);
       return errorMessage;
     } catch (Exception ex) {
       return StringUtils.hasText(key) ? key : ex.getMessage();
