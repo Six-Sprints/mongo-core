@@ -23,6 +23,8 @@ import lombok.experimental.SuperBuilder;
 @ToString(callSuper = true)
 public class UserExcelDto extends GenericExcelImportDto {
 
+  private static final long serialVersionUID = 1L;
+
   @Email
   @NotBlank
   @Excel(name = "Email", fixedIndex = 2)
