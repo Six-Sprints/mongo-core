@@ -31,7 +31,7 @@ public class CorsFilter implements Filter {
     if (req instanceof HttpServletRequest && res instanceof HttpServletResponse) {
       HttpServletRequest request = (HttpServletRequest) req;
       HttpServletResponse response = (HttpServletResponse) res;
-      String origin = request.getHeader(varyHeader());
+      String origin = request.getHeader("Origin");
       if (origin == null) {
         origin = "";
       }
