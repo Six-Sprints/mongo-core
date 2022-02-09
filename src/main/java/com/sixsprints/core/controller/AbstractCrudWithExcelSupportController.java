@@ -33,8 +33,8 @@ import com.sixsprints.core.utils.DateUtil;
 import com.sixsprints.core.utils.RestResponse;
 import com.sixsprints.core.utils.RestUtil;
 
-public abstract class AbstractCrudWithExcelSupportController<T extends AbstractMongoEntity, SD, CD, EI extends IGenericExcelImport, EE>
-  extends AbstractCrudController<T, SD, CD> {
+public abstract class AbstractCrudWithExcelSupportController<T extends AbstractMongoEntity, SD, DD, CD, EI extends IGenericExcelImport, EE>
+  extends AbstractCrudController<T, SD, DD, CD> {
 
   @Autowired
   private DateUtil dateUtil;
@@ -46,8 +46,9 @@ public abstract class AbstractCrudWithExcelSupportController<T extends AbstractM
   private GenericMapper<T, EE> exportMapper;
 
   public AbstractCrudWithExcelSupportController(GenericCrudService<T> crudService, GenericMapper<T, SD> searchMapper,
-    GenericMapper<T, CD> crudMapper, GenericMapper<T, EI> importMapper, GenericMapper<T, EE> exportMapper) {
-    super(crudService, searchMapper, crudMapper);
+    GenericMapper<T, DD> detailMapper, GenericMapper<T, CD> crudMapper, GenericMapper<T, EI> importMapper,
+    GenericMapper<T, EE> exportMapper) {
+    super(crudService, searchMapper, detailMapper, crudMapper);
     this.crudService = crudService;
     this.importMapper = importMapper;
     this.exportMapper = exportMapper;
@@ -56,6 +57,10 @@ public abstract class AbstractCrudWithExcelSupportController<T extends AbstractM
   @PostMapping("/import/instant")
   @Authenticated(access = AccessPermission.UPDATE)
   public ResponseEntity<?> upload(@RequestParam(value = "file", required = true) MultipartFile file) throws Exception {
+
+    if (file.isEmpty()) {
+      throw fileNotUploadedException();
+    }
     Map<ImportOperation, ImportLogDetailsDto> importResponseWrapper = crudService.importData(file.getInputStream(),
       importMapper);
     crudService.saveImportLogs(importResponseWrapper, new ArrayList<>(importResponseWrapper.values()));
@@ -68,7 +73,7 @@ public abstract class AbstractCrudWithExcelSupportController<T extends AbstractM
     @RequestParam(value = "file", required = true) MultipartFile file) throws Exception {
 
     if (file.isEmpty()) {
-      throw new IllegalArgumentException();
+      throw fileNotUploadedException();
     }
     List<EI> list = crudService.importDataPreview(file.getInputStream());
     return RestUtil.successResponse(list);
@@ -96,41 +101,39 @@ public abstract class AbstractCrudWithExcelSupportController<T extends AbstractM
     return RestUtil.successResponse(localise(importDtoFields()));
   }
 
-  protected List<FieldDto> importDtoFields() {
-    return new ArrayList<>();
+  protected void setResponseForExcelDownload(HttpServletResponse response, String entityName) {
+    addDownloadHeaders(response, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", ".xlsx");
+  }
+
+  protected void setResponseForCsvDownload(HttpServletResponse response) {
+    addDownloadHeaders(response, "text/csv", ".csv");
+    response.setContentType("text/csv;charset=UTF-8");
+  }
+
+  protected void setResponseForZipFileDownload(HttpServletResponse response, String entityName) {
+    addDownloadHeaders(response, "application/zip", ".zip");
+  }
+
+  protected void addDownloadHeaders(HttpServletResponse response, String mediaType, String extension) {
+    response.addHeader(HttpHeaders.CONTENT_TYPE, MediaType.parseMediaType(mediaType).toString());
+    response.addHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + fileName(entityName()) + extension);
+    response.setHeader("Expires:", "0"); // eliminates browser caching
+  }
+
+  protected BaseException fileNotUploadedException() throws BaseException {
+    return BaseException.builder().build();
+  }
+
+  protected String fileName(String entityName) {
+    return entityName + "_" + dateUtil.dateToStringWithFormat(dateUtil.now().toDate(), "yyyyMMdd_HHmmss");
   }
 
   protected String entityName() {
     return "data";
   }
 
-  protected void setResponseForExcelDownload(HttpServletResponse response, String entityName) {
-    response.addHeader(HttpHeaders.CONTENT_TYPE, MediaType.parseMediaType(
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet").toString());
-    response.addHeader(HttpHeaders.CONTENT_DISPOSITION,
-      "attachment; filename=" + entityName + "_"
-        + dateUtil.dateToStringWithFormat(dateUtil.now().toDate(), "yyyyMMdd_HHmmss")
-        + ".xlsx");
-    response.setHeader("Expires:", "0"); // eliminates browser caching
-  }
-
-  protected void setResponseForCsvDownload(HttpServletResponse response, String entityName) {
-    response.addHeader(HttpHeaders.CONTENT_TYPE, MediaType.parseMediaType("text/csv").toString());
-    response.addHeader(HttpHeaders.CONTENT_DISPOSITION,
-      "attachment; filename=" + entityName + "_"
-        + dateUtil.dateToStringWithFormat(dateUtil.now().toDate(), "yyyyMMdd_HHmmss")
-        + ".csv");
-    response.setContentType("text/csv;charset=UTF-8");
-    response.setHeader("Expires:", "0"); // eliminates browser caching
-  }
-
-  protected void setResponseForZipFileDownload(HttpServletResponse response, String entityName) {
-    response.addHeader(HttpHeaders.CONTENT_TYPE, MediaType.parseMediaType("application/zip").toString());
-    response.addHeader(HttpHeaders.CONTENT_DISPOSITION,
-      "attachment; filename=" + entityName
-        + dateUtil.dateToStringWithFormat(dateUtil.now().toDate(), "yyyyMMdd_HHmmss")
-        + ".zip");
-    response.setHeader("Expires:", "0"); // eliminates browser caching
+  protected List<FieldDto> importDtoFields() {
+    return new ArrayList<>();
   }
 
 }
