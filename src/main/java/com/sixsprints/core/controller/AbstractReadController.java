@@ -30,16 +30,21 @@ import com.sixsprints.core.utils.RestUtil;
  * 
  * @param <T>  - Domain Class Type
  * @param <SD> - Search DTO Class Type
+ * @param <DD> - Detailed DTO Class Type
  */
-public abstract class AbstractReadController<T extends AbstractMongoEntity, SD> {
+public abstract class AbstractReadController<T extends AbstractMongoEntity, SD, DD> {
 
   private GenericReadService<T> readService;
 
   private GenericMapper<T, SD> searchDtoMapper;
 
-  public AbstractReadController(GenericCrudService<T> service, GenericMapper<T, SD> searchDtoMapper) {
+  private GenericMapper<T, DD> detailDtoMapper;
+
+  public AbstractReadController(GenericCrudService<T> service, GenericMapper<T, SD> searchDtoMapper,
+    GenericMapper<T, DD> detailDtoMapper) {
     this.readService = service;
     this.searchDtoMapper = searchDtoMapper;
+    this.detailDtoMapper = detailDtoMapper;
   }
 
   @GetMapping("/all/fields")
@@ -50,9 +55,9 @@ public abstract class AbstractReadController<T extends AbstractMongoEntity, SD> 
 
   @GetMapping("/{slug}")
   @Authenticated(access = AccessPermission.READ)
-  public ResponseEntity<RestResponse<SD>> findBySlug(@PathVariable String slug)
+  public ResponseEntity<RestResponse<DD>> findBySlug(@PathVariable String slug)
     throws EntityNotFoundException {
-    return RestUtil.successResponse(searchDtoMapper.toDto(readService.findBySlug(slug)));
+    return RestUtil.successResponse(detailDtoMapper.toDto(readService.findBySlug(slug)));
   }
 
   @PostMapping("/search")

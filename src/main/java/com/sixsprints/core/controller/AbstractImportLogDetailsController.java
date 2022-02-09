@@ -6,12 +6,12 @@ import com.sixsprints.core.service.ImportLogDetailsService;
 import com.sixsprints.core.transformer.ImportLogDetailsMapper;
 
 public abstract class AbstractImportLogDetailsController
-  extends AbstractReadController<ImportLogDetails, ImportLogDetailsDto> {
+  extends AbstractReadController<ImportLogDetails, ImportLogDetailsDto, ImportLogDetailsDto> {
 
   protected ImportLogDetailsMapper mapper;
 
   public AbstractImportLogDetailsController(ImportLogDetailsService service) {
-    super(service, ImportLogDetailsMapper.INSTANCE);
+    super(service, ImportLogDetailsMapper.INSTANCE, ImportLogDetailsMapper.INSTANCE);
     this.mapper = ImportLogDetailsMapper.INSTANCE;
   }
 

@@ -25,16 +25,16 @@ import com.sixsprints.core.utils.RestUtil;
  * @param <SD> - Search DTO Class Type
  * @param <CD> - CRUD DTO class Type
  */
-public abstract class AbstractCrudController<T extends AbstractMongoEntity, SD, CD>
-  extends AbstractReadController<T, SD> {
+public abstract class AbstractCrudController<T extends AbstractMongoEntity, SD, DD, CD>
+  extends AbstractReadController<T, SD, DD> {
 
   private GenericCrudService<T> crudService;
 
   private GenericMapper<T, CD> crudMapper;
 
   public AbstractCrudController(GenericCrudService<T> crudService, GenericMapper<T, SD> searchMapper,
-    GenericMapper<T, CD> crudMapper) {
-    super(crudService, searchMapper);
+    GenericMapper<T, DD> detailMapper, GenericMapper<T, CD> crudMapper) {
+    super(crudService, searchMapper, detailMapper);
     this.crudService = crudService;
     this.crudMapper = crudMapper;
   }
