@@ -9,7 +9,6 @@ import java.util.List;
 
 import javax.validation.Validator;
 
-import org.javers.common.collections.Arrays;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.i18n.LocaleContextHolder;
@@ -173,12 +172,8 @@ public abstract class GenericAbstractService<T extends AbstractMongoEntity> exte
     return metaData.getClassType().getSimpleName();
   }
 
-  protected String localisedMessage(String messageKey, Object... args) {
-    List<Object> arg = new ArrayList<>();
-    if (args != null) {
-      arg = Arrays.asList(args);
-    }
-    return MessageSourceUtil.resolveMessage(messageSourceService, messageKey, arg, LocaleContextHolder.getLocale());
+  protected String localisedMessage(String messageKey, List<Object> args) {
+    return MessageSourceUtil.resolveMessage(messageSourceService, messageKey, args, LocaleContextHolder.getLocale());
   }
 
   private boolean shouldOverwriteSlug(T entity) {
