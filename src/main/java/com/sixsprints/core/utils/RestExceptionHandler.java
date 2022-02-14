@@ -1,6 +1,7 @@
 
 package com.sixsprints.core.utils;
 
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
@@ -10,9 +11,9 @@ import javax.validation.ConstraintViolation;
 import javax.validation.ConstraintViolationException;
 import javax.validation.Path.Node;
 
-import org.apache.commons.collections.CollectionUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.ObjectError;
@@ -20,6 +21,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.sixsprints.core.exception.BaseException;
 import com.sixsprints.core.exception.BaseRuntimeException;
 import com.sixsprints.core.service.MessageSourceService;
@@ -63,7 +65,7 @@ public abstract class RestExceptionHandler {
     HttpServletRequest request, Locale locale) {
     ConstraintViolation<?> next = ex.getConstraintViolations().iterator().next();
     String field = getLastElement(next.getPropertyPath().iterator());
-    String error = "Request Parameter anomaly. " + field + " is invalid. " + next.getMessage();
+    String error = invalidFielErrorMessage(next, field);
     log.error(error);
     return RestUtil.errorResponse(null, error, HttpStatus.BAD_REQUEST);
   }
@@ -76,33 +78,22 @@ public abstract class RestExceptionHandler {
     if (objectError instanceof FieldError) {
       field = ((FieldError) objectError).getField();
     }
-    String code = objectError.getCode();
-    boolean isEmpty = "NotNull".equalsIgnoreCase(code) || "NotEmpty".equalsIgnoreCase(code);
-    String errorDescription = isEmpty ? "not entered." : "invalid. " + field + " " + objectError.getDefaultMessage();
-    String error = "Request Parameter anomaly. " + field + " is " + errorDescription;
-    log.error(error);
+    FieldError fieldError = (FieldError) objectError;
+    String error = fieldError.getDefaultMessage();
+    if (StringUtils.hasText(error)) {
+      error = getErrorMessage(error, List.of(), locale);
+    } else {
+      String code = objectError.getCode();
+      boolean isEmpty = "NotNull".equalsIgnoreCase(code) || "NotEmpty".equalsIgnoreCase(code);
+      String errorDescription = isEmpty ? "not entered." : "invalid. " + field + " " + objectError.getDefaultMessage();
+      error = "Request Parameter anomaly. " + field + " is " + errorDescription;
+      log.error(error);
+    }
     return RestUtil.errorResponse(null, error, HttpStatus.BAD_REQUEST);
   }
 
-  private String getLastElement(final Iterator<Node> itr) {
-    Node lastElement = itr.next();
-    while (itr.hasNext()) {
-      lastElement = itr.next();
-    }
-    return lastElement.getName();
-  }
-
   protected String getErrorMessage(String key, List<Object> args, Locale locale) {
-    try {
-      Object[] arg = null;
-      if (!CollectionUtils.isEmpty(args)) {
-        arg = args.toArray();
-      }
-      String errorMessage = messageSourceService.messageSource().getMessage(key, arg, locale);
-      return errorMessage;
-    } catch (Exception ex) {
-      return StringUtils.hasText(key) ? key : ex.getMessage();
-    }
+    return MessageSourceUtil.resolveMessage(messageSourceService, key, args, locale);
   }
 
   protected String getErrorMessage(String key, Locale locale) {
@@ -112,4 +103,42 @@ public abstract class RestExceptionHandler {
   protected String getErrorMessage(String key) {
     return getErrorMessage(key, Locale.ENGLISH);
   }
+
+  @ExceptionHandler(HttpMessageNotReadableException.class)
+  public ResponseEntity<?> handleConstraintVoilationException(HttpMessageNotReadableException exception,
+    HttpServletRequest request) {
+    String errorDetails = jsonInvalidErrorMessage(exception);
+
+    if (exception.getCause() instanceof InvalidFormatException) {
+      InvalidFormatException invalidFormatException = (InvalidFormatException) exception.getCause();
+      if (invalidFormatException.getTargetType().isEnum()) {
+        errorDetails = invalidEnumErrorMessage(invalidFormatException);
+      }
+    }
+    return RestUtil.errorResponse(null, errorDetails, HttpStatus.BAD_REQUEST);
+  }
+
+  protected String invalidEnumErrorMessage(InvalidFormatException invalidFormatException) {
+    return String.format("Invalid enum value: '%s' for the field: '%s'. The value must be one of: %s.",
+      invalidFormatException.getValue(),
+      invalidFormatException.getPath().get(invalidFormatException.getPath().size() - 1).getFieldName(),
+      Arrays.toString(invalidFormatException.getTargetType().getEnumConstants()));
+  }
+
+  protected String jsonInvalidErrorMessage(HttpMessageNotReadableException exception) {
+    return "Unacceptable Json " + exception.getMessage();
+  }
+
+  protected String invalidFielErrorMessage(ConstraintViolation<?> next, String field) {
+    return "Request Parameter anomaly. " + field + " is invalid. " + next.getMessage();
+  }
+
+  protected String getLastElement(final Iterator<Node> itr) {
+    Node lastElement = itr.next();
+    while (itr.hasNext()) {
+      lastElement = itr.next();
+    }
+    return lastElement.getName();
+  }
+
 }

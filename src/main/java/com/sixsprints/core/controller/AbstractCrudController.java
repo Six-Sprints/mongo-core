@@ -23,6 +23,7 @@ import com.sixsprints.core.utils.RestUtil;
  * 
  * @param <T>  - Domain Class Type
  * @param <SD> - Search DTO Class Type
+ * @param <DD> - Detailed DTO Class Type
  * @param <CD> - CRUD DTO class Type
  */
 public abstract class AbstractCrudController<T extends AbstractMongoEntity, SD, DD, CD>

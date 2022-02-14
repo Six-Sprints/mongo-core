@@ -9,8 +9,10 @@ import java.util.List;
 
 import javax.validation.Validator;
 
+import org.javers.common.collections.Arrays;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.mongodb.core.MongoOperations;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.http.HttpStatus;
@@ -26,6 +28,8 @@ import com.sixsprints.core.exception.EntityAlreadyExistsException;
 import com.sixsprints.core.exception.EntityInvalidException;
 import com.sixsprints.core.exception.EntityNotFoundException;
 import com.sixsprints.core.repository.GenericRepository;
+import com.sixsprints.core.service.MessageSourceService;
+import com.sixsprints.core.utils.MessageSourceUtil;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -47,6 +51,9 @@ public abstract class GenericAbstractService<T extends AbstractMongoEntity> exte
 
   @Value("${slug.padding.length:8}")
   private int slugPaddingLength;
+
+  @Autowired(required = false)
+  private MessageSourceService messageSourceService;
 
   protected abstract GenericRepository<T> repository();
 
@@ -156,10 +163,6 @@ public abstract class GenericAbstractService<T extends AbstractMongoEntity> exte
     return slugPaddingLength;
   }
 
-  private boolean shouldOverwriteSlug(T entity) {
-    return isNew(entity) && !StringUtils.hasText(entity.getSlug());
-  }
-
   protected String entityName() {
     MetaData<T> metaData = metaData();
     if (StringUtils.hasText(metaData.getEntityName())) {
@@ -168,6 +171,18 @@ public abstract class GenericAbstractService<T extends AbstractMongoEntity> exte
     log.warn(
       "Entity name is not set for this class. Defaulting to classname. Please consider providing the entityName in the metaData() for this class.");
     return metaData.getClassType().getSimpleName();
+  }
+
+  protected String localisedMessage(String messageKey, Object... args) {
+    List<Object> arg = new ArrayList<>();
+    if (args != null) {
+      arg = Arrays.asList(args);
+    }
+    return MessageSourceUtil.resolveMessage(messageSourceService, messageKey, arg, LocaleContextHolder.getLocale());
+  }
+
+  private boolean shouldOverwriteSlug(T entity) {
+    return isNew(entity) && !StringUtils.hasText(entity.getSlug());
   }
 
 }

@@ -31,56 +31,63 @@ public class CorsFilter implements Filter {
     if (req instanceof HttpServletRequest && res instanceof HttpServletResponse) {
       HttpServletRequest request = (HttpServletRequest) req;
       HttpServletResponse response = (HttpServletResponse) res;
-      String origin = request.getHeader("Origin");
-      if (origin == null) {
-        origin = "";
-      }
-      response.setHeader("Access-Control-Allow-Origin", allowOriginHeader(origin));
-      response.setHeader("Vary", varyHeader());
-      response.setHeader("Access-Control-Max-Age", maxAgeHeader());
-      response.setHeader("Access-Control-Allow-Credentials", allowCredentialsHeader());
-      response.setHeader("Access-Control-Allow-Methods", allowMethodsHeader());
-      response.setHeader("Access-Control-Allow-Headers", allowedHeaders());
+      response.setHeader("Access-Control-Allow-Origin", allowOriginHeader(request));
+      response.setHeader("Vary", varyHeader(request));
+      response.setHeader("Access-Control-Max-Age", maxAgeHeader(request));
+      response.setHeader("Access-Control-Allow-Credentials", allowCredentialsHeader(request));
+      response.setHeader("Access-Control-Allow-Methods", allowMethodsHeader(request));
+      response.setHeader("Access-Control-Allow-Headers", allowedHeaders(request));
       addMoreHeaders(response);
     }
     chain.doFilter(req, res);
     logRequest(startTime);
   }
 
+  protected String fetchOriginFromRequest(HttpServletRequest request) {
+    return fetchHeaderFromRequest(request, "Origin");
+  }
+
+  protected String allowedHeaders(HttpServletRequest request) {
+    return "Origin, X-Requested-With, Content-Type, Accept, X-CSRF-TOKEN, X-AUTH-TOKEN";
+  }
+
+  protected String allowMethodsHeader(HttpServletRequest request) {
+    return "PUT, POST, GET, OPTIONS, DELETE";
+  }
+
+  protected String allowCredentialsHeader(HttpServletRequest request) {
+    return "true";
+  }
+
+  protected String maxAgeHeader(HttpServletRequest request) {
+    return "3600";
+  }
+
+  protected String varyHeader(HttpServletRequest request) {
+    return "Origin";
+  }
+
   protected void addMoreHeaders(HttpServletResponse response) {
 
   }
 
+  protected String fetchHeaderFromRequest(HttpServletRequest request, String headerName) {
+    String header = request.getHeader(headerName);
+    if (header == null) {
+      header = "";
+    }
+    return header;
+  }
+
+  protected String allowOriginHeader(HttpServletRequest request) {
+    return fetchOriginFromRequest(request);
+  }
+
   protected void logRequest(Long startTime) {
     RequestContext request = ApplicationContext.getCurrentRequest();
-
     log.info("Response time taken for request {} {} {} {} milliseconds",
       request.getRequestId(), request.getHttpMethod(), request.getSelfUrl(),
       System.currentTimeMillis() - startTime);
-  }
-
-  protected String allowedHeaders() {
-    return "Origin, X-Requested-With, Content-Type, Accept, X-CSRF-TOKEN, X-AUTH-TOKEN";
-  }
-
-  protected String allowMethodsHeader() {
-    return "PUT, POST, GET, OPTIONS, DELETE";
-  }
-
-  protected String allowCredentialsHeader() {
-    return "true";
-  }
-
-  protected String maxAgeHeader() {
-    return "3600";
-  }
-
-  protected String varyHeader() {
-    return "Origin";
-  }
-
-  protected String allowOriginHeader(String origin) {
-    return origin;
   }
 
   @Override
