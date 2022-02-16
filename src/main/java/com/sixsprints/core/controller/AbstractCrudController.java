@@ -70,6 +70,13 @@ public abstract class AbstractCrudController<T extends AbstractMongoEntity, SD, 
     return RestUtil.successResponse(crudMapper.toDto(crudService.create(crudMapper.toDomain(dto))));
   }
 
+  @PutMapping("/upsert")
+  @Authenticated(access = AccessPermission.UPDATE)
+  public ResponseEntity<RestResponse<CD>> upsert(@RequestBody @Validated CD dto)
+    throws BaseException {
+    return RestUtil.successResponse(crudMapper.toDto(crudService.upsert(crudMapper.toDomain(dto))));
+  }
+
   @PostMapping("/delete")
   @Authenticated(access = AccessPermission.DELETE)
   public ResponseEntity<?> delete(@RequestBody List<String> ids) throws EntityNotFoundException {
