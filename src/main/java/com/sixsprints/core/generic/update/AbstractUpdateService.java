@@ -90,7 +90,7 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity> exten
   public T upsert(T domain) throws EntityInvalidException {
     BulkUpdateInfo<T> updateInfo = upsertOneWhileBulkImport(domain);
     if (UpdateAction.INVALID.equals(updateInfo.getUpdateAction())) {
-      throw invalidException(domain);
+      throw invalidException(domain, updateInfo.getErrors());
     }
     return updateInfo.getData();
   }
@@ -311,7 +311,7 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity> exten
   protected BulkUpdateInfo<T> upsertOneWhileBulkImport(T domain) {
     List<String> errors = checkValidity(domain);
     if (!CollectionUtils.isEmpty(errors)) {
-      return bulkImportInfo(domain, UpdateAction.INVALID);
+      return bulkImportInfo(domain, UpdateAction.INVALID, errors);
     }
     return upsertOne(domain);
   }
@@ -331,21 +331,21 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity> exten
       }
 
       if (checkEquals(fromDb, copy)) {
-        return bulkImportInfo(fromDb, UpdateAction.IGNORE);
+        return bulkImportInfo(fromDb, UpdateAction.IGNORE, null);
       }
 
       List<String> errors = checkValidityPreUpdate(domain);
       if (!CollectionUtils.isEmpty(errors)) {
-        return bulkImportInfo(domain, UpdateAction.INVALID);
+        return bulkImportInfo(domain, UpdateAction.INVALID, errors);
       }
       fromDb = save(fromDb);
       postUpdate(fromDb);
-      return bulkImportInfo(fromDb, UpdateAction.UPDATE);
+      return bulkImportInfo(fromDb, UpdateAction.UPDATE, null);
     }
     preCreate(domain);
     domain = save(domain);
     postCreate(domain);
-    return bulkImportInfo(domain, UpdateAction.CREATE);
+    return bulkImportInfo(domain, UpdateAction.CREATE, null);
   }
 
   protected List<String> checkValidityPreUpdate(T domain) {
@@ -405,8 +405,8 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity> exten
     return domain;
   }
 
-  private BulkUpdateInfo<T> bulkImportInfo(T fromDB, UpdateAction action) {
-    return BulkUpdateInfo.<T>builder().updateAction(action).data(fromDB).build();
+  private BulkUpdateInfo<T> bulkImportInfo(T fromDB, UpdateAction action, List<String> errors) {
+    return BulkUpdateInfo.<T>builder().updateAction(action).errors(errors).data(fromDB).build();
   }
 
 }

@@ -14,7 +14,6 @@ import javax.validation.Path.Node;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
-import org.springframework.util.StringUtils;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -79,16 +78,11 @@ public abstract class RestExceptionHandler {
       field = ((FieldError) objectError).getField();
     }
     FieldError fieldError = (FieldError) objectError;
-    String error = fieldError.getDefaultMessage();
-    if (StringUtils.hasText(error)) {
-      error = getErrorMessage(error, List.of(), locale);
-    } else {
-      String code = objectError.getCode();
-      boolean isEmpty = "NotNull".equalsIgnoreCase(code) || "NotEmpty".equalsIgnoreCase(code);
-      String errorDescription = isEmpty ? "not entered." : "invalid. " + field + " " + objectError.getDefaultMessage();
-      error = "Request Parameter anomaly. " + field + " is " + errorDescription;
-      log.error(error);
+    String error = getErrorMessage(fieldError.getDefaultMessage(), List.of(), locale);
+    if (error == null || error.equals(fieldError.getDefaultMessage())) {
+      error = "Request parameter anomaly. " + field + " " + fieldError.getDefaultMessage();
     }
+    log.error(error);
     return RestUtil.errorResponse(null, error, HttpStatus.BAD_REQUEST);
   }
 
@@ -126,11 +120,11 @@ public abstract class RestExceptionHandler {
   }
 
   protected String jsonInvalidErrorMessage(HttpMessageNotReadableException exception) {
-    return "Unacceptable Json " + exception.getMessage();
+    return "Request body is empty or malformed";
   }
 
   protected String invalidFielErrorMessage(ConstraintViolation<?> next, String field) {
-    return "Request Parameter anomaly. " + field + " is invalid. " + next.getMessage();
+    return "Request parameter anomaly. " + field + " is invalid. " + next.getMessage();
   }
 
   protected String getLastElement(final Iterator<Node> itr) {

@@ -122,8 +122,8 @@ public abstract class GenericAbstractService<T extends AbstractMongoEntity> exte
     return new ArrayList<>();
   }
 
-  protected EntityInvalidException invalidException(T domain) {
-    return EntityInvalidException.childBuilder().build();
+  protected EntityInvalidException invalidException(T domain, List<String> errors) {
+    return validationException(errors);
   }
 
   protected EntityInvalidException validationException(List<String> errors) {
