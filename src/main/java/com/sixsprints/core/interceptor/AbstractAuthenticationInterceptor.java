@@ -1,5 +1,6 @@
 package com.sixsprints.core.interceptor;
 
+import java.lang.StackWalker.Option;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 
@@ -38,8 +39,9 @@ public abstract class AbstractAuthenticationInterceptor<T extends AbstractMongoE
     if (!(handler instanceof HandlerMethod)) {
       return true;
     }
+
     Method method = ((HandlerMethod) handler).getMethod();
-    if (!(method.getDeclaringClass().isAnnotationPresent(Authenticated.class)
+    if (!(callingClass().isAnnotationPresent(Authenticated.class)
       || method.isAnnotationPresent(Authenticated.class))) {
       return true;
     }
@@ -136,7 +138,7 @@ public abstract class AbstractAuthenticationInterceptor<T extends AbstractMongoE
   }
 
   private Authenticated mergeAnnotationData(Method method) {
-    Authenticated annotationClass = method.getDeclaringClass().getAnnotation(Authenticated.class);
+    Authenticated annotationClass = callingClass().getAnnotation(Authenticated.class);
     Authenticated annotationMethod = method.getAnnotation(Authenticated.class);
 
     if (annotationMethod == null) {
@@ -176,6 +178,10 @@ public abstract class AbstractAuthenticationInterceptor<T extends AbstractMongoE
           : annotationMethod.access();
       }
     });
+  }
+
+  private Class<?> callingClass() {
+    return StackWalker.getInstance(Option.RETAIN_CLASS_REFERENCE).getCallerClass();
   }
 
   private Authenticated sanitize(Authenticated authenticated) {
