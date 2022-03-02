@@ -44,9 +44,9 @@ public abstract class AbstractAuthenticationInterceptor<T extends AbstractMongoE
       return true;
     }
     Authenticated annotation = mergeAnnotationData(method);
-    String token = httpServletRequest.getHeader(auhtTokenKey());
+    String token = httpServletRequest.getHeader(authTokenKey());
     if (!StringUtils.hasText(token)) {
-      token = httpServletRequest.getParameter(auhtTokenKey());
+      token = httpServletRequest.getParameter(authTokenKey());
     }
     T user = checkUser(annotation, token);
     checkRestriction(user, annotation.restriction());
@@ -57,7 +57,7 @@ public abstract class AbstractAuthenticationInterceptor<T extends AbstractMongoE
   protected void checkRestriction(T user, Restriction restriction) throws BaseException {
   }
 
-  protected abstract String auhtTokenKey();
+  protected abstract String authTokenKey();
 
   protected abstract void checkUserPermissions(T user, Authenticated authAnnotation)
     throws NotAuthenticatedException, EntityNotFoundException;
