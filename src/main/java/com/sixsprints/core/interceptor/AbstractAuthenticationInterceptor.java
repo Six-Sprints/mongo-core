@@ -193,7 +193,7 @@ public abstract class AbstractAuthenticationInterceptor<T extends AbstractMongoE
 
       @Override
       public String entity() {
-        return StringUtils.hasText(authenticated.entity()) ? authenticated.entity() : "ANY";
+        return StringUtils.hasText(authenticated.entity()) ? authenticated.entity() : "";
       }
 
       @Override
