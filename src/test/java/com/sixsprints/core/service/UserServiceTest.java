@@ -133,17 +133,30 @@ public class UserServiceTest extends ApplicationTests {
   }
 
   @Test
+  public void shouldFindDistinctColumnValues() {
+    mongo.save(Role.builder().name("ADMIN").group("READ_WRITE").slug("R1").build(), "role");
+    mongo.save(Role.builder().name("USER").group("READ_ONLY").slug("R2").build(), "role");
+
+    for (int i = 1; i <= 10; i++) {
+      userService.save(user(i));
+    }
+    List<KeyLabelDto> values = userService.distinctColumnValues("roleGroup", null);
+    assertThat(values.size()).isEqualTo(3);
+    assertThat(values.get(2).getKey()).isEqualTo("R1");
+  }
+
+  @Test
   public void shouldFilterOnJoinColumns() {
 
-    mongo.save(Role.builder().name("ADMIN").slug("R1").build(), "role");
-    mongo.save(Role.builder().name("USER").slug("R2").build(), "role");
+    mongo.save(Role.builder().name("ADMIN").group("READ_WRITE").slug("R1").build(), "role");
+    mongo.save(Role.builder().name("USER").group("READ_ONLY").slug("R2").build(), "role");
 
     for (int i = 1; i <= 10; i++) {
       userService.save(user(i));
     }
 
     Map<String, ColumnFilter> filterModel = ImmutableMap.<String, ColumnFilter>builder()
-      .put("_", SearchColumnFilter.builder().filter("ADMIN").build())
+      .put("_", SearchColumnFilter.builder().filter("READ_WRITE").build())
       .build();
 
     FilterRequestDto filters = FilterRequestDto.builder()

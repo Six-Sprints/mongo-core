@@ -182,10 +182,11 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
       return new ArrayList<>();
     }
 
+    String distinctColumn = StringUtils.hasText(field.getJoinColumnNameLocal()) ? field.getJoinColumnNameLocal() : column;
     Query query = new Query().with(Sort.by(Direction.ASC, column));
     query.addCriteria(buildCriteria(filterRequestDto, metaData));
     List<?> list = mongo.getCollection(mongo.getCollectionName(metaData().getClassType()))
-      .distinct(column, query.getQueryObject(), classTypeFromField).into(new ArrayList<>());
+      .distinct(distinctColumn, query.getQueryObject(), classTypeFromField).into(new ArrayList<>());
 
     List<KeyLabelDto> result = new ArrayList<>();
     result.add(KeyLabelDto.builder()
