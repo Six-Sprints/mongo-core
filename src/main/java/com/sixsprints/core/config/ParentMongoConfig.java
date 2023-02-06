@@ -27,7 +27,7 @@ import com.sixsprints.core.repository.InheritanceAwareMongoRepositoryFactoryBean
 public class ParentMongoConfig extends AbstractMongoClientConfiguration {
 
   @Bean
-  public MongoTransactionManager transactionManager(MongoDatabaseFactory dbFactory) {
+  protected MongoTransactionManager transactionManager(MongoDatabaseFactory dbFactory) {
     return new MongoTransactionManager(dbFactory);
   }
 

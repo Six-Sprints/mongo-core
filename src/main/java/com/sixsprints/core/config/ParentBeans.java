@@ -19,16 +19,16 @@ import jakarta.validation.Validator;
 import jakarta.validation.ValidatorFactory;
 
 @Configuration
-class ParentBeans {
+public class ParentBeans {
 
   @Bean
-  DateUtil dateUtil() {
+  protected DateUtil dateUtil() {
     return DateUtil.instance().timeZone(defaultTimeZone())
       .datePattern(defaultDateFormat()).shortDatePattern(defaultShortDateFormat()).build();
   }
 
   @Bean
-  ObjectMapper mapper() {
+  protected ObjectMapper mapper() {
     ObjectMapper mapper = new ObjectMapper();
     mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     mapper.setTimeZone(TimeZone.getTimeZone(defaultTimeZone()));
@@ -38,7 +38,7 @@ class ParentBeans {
   }
 
   @Bean
-  Validator validator() {
+  protected Validator validator() {
     ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
     Validator validator = factory.getValidator();
     return validator;
