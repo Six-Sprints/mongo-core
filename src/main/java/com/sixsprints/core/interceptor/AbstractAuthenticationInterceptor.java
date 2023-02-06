@@ -3,9 +3,6 @@ package com.sixsprints.core.interceptor;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import org.slf4j.MDC;
 import org.springframework.util.StringUtils;
 import org.springframework.web.method.HandlerMethod;
@@ -21,6 +18,9 @@ import com.sixsprints.core.exception.NotAuthenticatedException;
 import com.sixsprints.core.service.GenericCrudService;
 import com.sixsprints.core.utils.ApplicationContext;
 import com.sixsprints.core.utils.AuthUtil;
+
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 public abstract class AbstractAuthenticationInterceptor<T extends AbstractMongoEntity>
   implements AsyncHandlerInterceptor {

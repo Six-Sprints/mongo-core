@@ -2,9 +2,6 @@ package com.sixsprints.core.interceptor;
 
 import java.util.Date;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import org.slf4j.MDC;
 import org.springframework.web.servlet.AsyncHandlerInterceptor;
 
@@ -12,6 +9,8 @@ import com.sixsprints.core.dto.RequestContext;
 import com.sixsprints.core.utils.ApplicationContext;
 import com.sixsprints.core.utils.HttpRequestUtil;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j

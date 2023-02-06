@@ -13,9 +13,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import javax.validation.ConstraintViolation;
-import javax.validation.Path.Node;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,6 +37,8 @@ import com.sixsprints.core.utils.BeanWrapperUtil;
 import com.sixsprints.core.utils.excel.ExcelUtil;
 
 import cn.afterturn.easypoi.excel.entity.ImportParams;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Path.Node;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -189,6 +188,7 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity> exten
     List<String> errors = new ArrayList<>();
 
     for (DTO dto : data) {
+    	
       Set<ConstraintViolation<DTO>> validate = validator.validate(dto);
       errors.addAll(constraintMessages(validate));
     }

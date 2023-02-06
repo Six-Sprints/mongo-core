@@ -1,9 +1,10 @@
 
 package com.sixsprints.core.utils;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.Date;
-
-import org.joda.time.DateTime;
 
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
@@ -24,38 +25,31 @@ public class AuthUtil {
 
   private static final JWSHeader JWT_HEADER = new JWSHeader(JWSAlgorithm.HS256);
 
-  private static final String TOKEN_SECRET = "dV(\\2?TTG:p7N$-/";
-
-  private static final String ISSUER = "https://www.website.com";
-
-//  private static SecureRandom random = new SecureRandom();
-
-  private static byte[] sharedSecret = "f0jtXAnEq6bdLdjaV91CrXRsXu6oyvof".getBytes();
-
-//  static {
-//    random.nextBytes(sharedSecret);
-//  }
-
   public static String decodeToken(String authHeader) throws NotAuthorizedException {
     return xor(decode(authHeader).getSubject().getBytes());
   }
 
   public static String createToken(String subject) {
-    return createToken(subject, AppConstants.TOKEN_EXPIRY_IN_DAYS);
+    return createToken(subject, EnvConstants.TOKEN_EXPIRY_IN_DAYS);
   }
 
   public static String createToken(String subject, int expiryDays) {
+	  
+    LocalDateTime now = LocalDateTime.now();
+    ZonedDateTime zdt = now.atZone(ZoneId.systemDefault());
+    Date nowDate = Date.from(zdt.toInstant());
+  
     JWSSigner signer = null;
     try {
-      signer = new MACSigner(sharedSecret);
+      signer = new MACSigner(EnvConstants.SHARED_SECRET);
     } catch (KeyLengthException e) {
       log.error(e.getMessage(), e);
     }
     JWTClaimsSet claimsSet = new JWTClaimsSet.Builder()
       .subject(xor(subject.getBytes()))
-      .issuer(ISSUER)
-      .issueTime(DateTime.now().toDate())
-      .expirationTime(DateTime.now().plusDays(expiryDays).toDate())
+      .issuer(EnvConstants.ISSUER)
+      .issueTime(nowDate)
+      .expirationTime( Date.from(zdt.plusDays(expiryDays).toInstant()) )
       .build();
     SignedJWT signedJWT = new SignedJWT(JWT_HEADER, claimsSet);
     try {
@@ -71,7 +65,7 @@ public class AuthUtil {
     JWTClaimsSet claimsSet = null;
     try {
       jwtClaimsSet = SignedJWT.parse(authHeader);
-      JWSVerifier verifier = new MACVerifier(sharedSecret);
+      JWSVerifier verifier = new MACVerifier(EnvConstants.SHARED_SECRET);
       boolean verify = jwtClaimsSet.verify(verifier);
       if (!verify) {
         throw NotAuthorizedException.childBuilder().error("Unable to verify the token").build();
@@ -82,9 +76,11 @@ public class AuthUtil {
     }
 
     Date expiryDate = claimsSet.getExpirationTime();
-    Date now = DateTime.now().toDate();
+    LocalDateTime now = LocalDateTime.now();
+    ZonedDateTime zdt = now.atZone(ZoneId.systemDefault());
+    Date nowDate = Date.from(zdt.toInstant());
 
-    if (now.after(expiryDate)) {
+    if (nowDate.after(expiryDate)) {
       throw NotAuthorizedException.childBuilder().error("Token expired").build();
     }
     return claimsSet;
@@ -92,7 +88,7 @@ public class AuthUtil {
 
   private static String xor(final byte[] input) {
     final byte[] output = new byte[input.length];
-    final byte[] secret = TOKEN_SECRET.getBytes();
+    final byte[] secret = EnvConstants.TOKEN_SECRET.getBytes();
     int spos = 0;
     for (int pos = 0; pos < input.length; ++pos) {
       output[pos] = (byte) (input[pos] ^ secret[spos]);

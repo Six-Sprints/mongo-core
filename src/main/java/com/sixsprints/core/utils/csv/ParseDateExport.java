@@ -1,6 +1,6 @@
 package com.sixsprints.core.utils.csv;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 
 import org.apache.commons.lang3.StringUtils;
 import org.supercsv.cellprocessor.CellProcessorAdaptor;
@@ -59,9 +59,9 @@ public class ParseDateExport extends CellProcessorAdaptor {
         instance = instance.datePattern(pattern);
       }
       if (value instanceof Long) {
-        value = new Date((Long) value);
+        return next.execute(instance.build().epochToString((Long) value), context);
       }
-      return next.execute(instance.build().dateToString((Date) value), context);
+      return next.execute(instance.build().dateToString((LocalDateTime) value), context);
     } catch (Exception ex) {
       if (throwException) {
         throw new SuperCsvCellProcessorException(MESSAGE, context, this);

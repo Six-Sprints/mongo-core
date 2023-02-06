@@ -5,8 +5,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import javax.servlet.http.HttpServletResponse;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -32,6 +30,8 @@ import com.sixsprints.core.transformer.GenericMapper;
 import com.sixsprints.core.utils.DateUtil;
 import com.sixsprints.core.utils.RestResponse;
 import com.sixsprints.core.utils.RestUtil;
+
+import jakarta.servlet.http.HttpServletResponse;
 
 public abstract class AbstractCrudWithExcelSupportController<T extends AbstractMongoEntity, SD, DD, CD, EI extends IGenericExcelImport, EE>
   extends AbstractCrudController<T, SD, DD, CD> {
@@ -125,7 +125,7 @@ public abstract class AbstractCrudWithExcelSupportController<T extends AbstractM
   }
 
   protected String fileName(String entityName) {
-    return entityName + "_" + dateUtil.dateToStringWithFormat(dateUtil.now().toDate(), "yyyyMMdd_HHmmss");
+    return entityName + "_" + dateUtil.dateToStringWithFormat(dateUtil.now().toLocalDateTime(), "yyyyMMdd_HHmmss");
   }
 
   protected String entityName() {

@@ -1,12 +1,9 @@
 package com.sixsprints.core.config;
 
 import java.time.LocalTime;
+import java.time.ZoneId;
+import java.util.TimeZone;
 
-import javax.validation.Validation;
-import javax.validation.Validator;
-import javax.validation.ValidatorFactory;
-
-import org.joda.time.DateTimeZone;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -17,27 +14,31 @@ import com.fasterxml.jackson.datatype.jsr310.deser.LocalTimeDeserializer;
 import com.sixsprints.core.converters.LocalTimeSerializerAsString;
 import com.sixsprints.core.utils.DateUtil;
 
+import jakarta.validation.Validation;
+import jakarta.validation.Validator;
+import jakarta.validation.ValidatorFactory;
+
 @Configuration
-public class ParentBeans {
+class ParentBeans {
 
   @Bean
-  public DateUtil dateUtil() {
+  DateUtil dateUtil() {
     return DateUtil.instance().timeZone(defaultTimeZone())
       .datePattern(defaultDateFormat()).shortDatePattern(defaultShortDateFormat()).build();
   }
 
   @Bean
-  public ObjectMapper mapper() {
+  ObjectMapper mapper() {
     ObjectMapper mapper = new ObjectMapper();
     mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-    mapper.setTimeZone(defaultTimeZone().toTimeZone());
+    mapper.setTimeZone(TimeZone.getTimeZone(defaultTimeZone()));
     SimpleModule module = module();
     mapper.registerModule(module);
     return mapper;
   }
 
   @Bean
-  public Validator validator() {
+  Validator validator() {
     ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
     Validator validator = factory.getValidator();
     return validator;
@@ -50,7 +51,7 @@ public class ParentBeans {
     return module;
   }
 
-  protected DateTimeZone defaultTimeZone() {
+  protected ZoneId defaultTimeZone() {
     return DateUtil.DEFAULT_TIMEZONE;
   }
 

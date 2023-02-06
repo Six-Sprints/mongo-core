@@ -516,9 +516,9 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
       return criteria;
     }
 
-    Long filterEOD = dateUtil.endOfDay(filter).getMillis();
-    Long filterSOD = dateUtil.startOfDay(filter).getMillis();
-    Long filterToEOD = filterTo != null ? dateUtil.endOfDay(filterTo).getMillis() : 0;
+    Long filterEOD = dateUtil.endOfDay(filter).toInstant().toEpochMilli();
+    Long filterSOD = dateUtil.startOfDay(filter).toInstant().toEpochMilli();
+    Long filterToEOD = filterTo != null ? dateUtil.endOfDay(filterTo).toInstant().toEpochMilli() : 0;
 
     switch (type) {
     case AppConstants.EQUALS:

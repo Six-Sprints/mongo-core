@@ -7,8 +7,6 @@ import static org.springframework.data.mongodb.core.query.Query.query;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.validation.Validator;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.i18n.LocaleContextHolder;
@@ -30,6 +28,7 @@ import com.sixsprints.core.repository.GenericRepository;
 import com.sixsprints.core.service.MessageSourceService;
 import com.sixsprints.core.utils.MessageSourceUtil;
 
+import jakarta.validation.Validator;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
