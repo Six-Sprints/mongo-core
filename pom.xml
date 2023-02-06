@@ -16,7 +16,7 @@
 	<packaging>jar</packaging>
 	<description>Mongo Core Reusable Components</description>
 	<properties>
-		<java.version>11</java.version>
+		<java.version>17</java.version>
 		<nimbus.jwt.version>9.30.1</nimbus.jwt.version>
 		<javers.version>6.9.1</javers.version>
 		<mapstruct.version>1.5.3.Final</mapstruct.version>
