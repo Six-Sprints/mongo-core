@@ -6,9 +6,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 
-import javax.validation.ConstraintViolation;
-import javax.validation.ConstraintViolationException;
-import javax.validation.Path.Node;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.ConstraintViolationException;
+import jakarta.validation.Path.Node;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

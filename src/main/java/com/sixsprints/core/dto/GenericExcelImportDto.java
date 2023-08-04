@@ -2,7 +2,7 @@ package com.sixsprints.core.dto;
 
 import java.io.Serializable;
 
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 
 import com.sixsprints.core.enums.ImportOperation;
 
