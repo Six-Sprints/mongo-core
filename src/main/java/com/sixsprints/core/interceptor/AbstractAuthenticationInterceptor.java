@@ -9,6 +9,7 @@ import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.AsyncHandlerInterceptor;
 
 import com.sixsprints.core.annotation.Authenticated;
+import com.sixsprints.core.annotation.DontAuthenticate;
 import com.sixsprints.core.domain.AbstractMongoEntity;
 import com.sixsprints.core.enums.AccessPermission;
 import com.sixsprints.core.enums.Restriction;
@@ -39,8 +40,9 @@ public abstract class AbstractAuthenticationInterceptor<T extends AbstractMongoE
       return true;
     }
     Method method = ((HandlerMethod) handler).getMethod();
-    if (!(method.getDeclaringClass().isAnnotationPresent(Authenticated.class)
-      || method.isAnnotationPresent(Authenticated.class))) {
+    if (method.isAnnotationPresent(DontAuthenticate.class) ||
+      (!method.getDeclaringClass().isAnnotationPresent(Authenticated.class)
+        && !method.isAnnotationPresent(Authenticated.class))) {
       return true;
     }
     Authenticated annotation = mergeAnnotationData(method);
