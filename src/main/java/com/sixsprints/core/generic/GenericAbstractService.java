@@ -109,7 +109,7 @@ public abstract class GenericAbstractService<T extends AbstractMongoEntity> exte
     }
   }
 
-  protected EntityAlreadyExistsException alreadyExistsException(T domain) {
+  protected EntityAlreadyExistsException alreadyExistsException(T fromDb, T request) {
     return EntityAlreadyExistsException.childBuilder().build();
   }
 
@@ -126,7 +126,9 @@ public abstract class GenericAbstractService<T extends AbstractMongoEntity> exte
   }
 
   protected EntityInvalidException validationException(List<String> errors) {
-    return EntityInvalidException.childBuilder().data(errors)
+    return EntityInvalidException.childBuilder()
+      .data(errors.stream()
+        .map(err -> MessageSourceUtil.resolveMessage(messageSourceService, err, null, LocaleContextHolder.getLocale())))
       .error("Entity is invalid. Please check the error(s) and rectify.").build();
   }
 

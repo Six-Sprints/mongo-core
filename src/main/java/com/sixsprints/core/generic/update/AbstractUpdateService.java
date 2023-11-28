@@ -383,7 +383,7 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity> exten
     T fromDB = findDuplicate(domain);
     if (fromDB != null && !domain.getId().equals(fromDB.getId())) {
       if (fromDB.getActive()) {
-        throw alreadyExistsException(fromDB);
+        throw alreadyExistsException(fromDB, domain);
       }
       delete(fromDB);
     }

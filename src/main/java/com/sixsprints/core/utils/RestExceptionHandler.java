@@ -6,16 +6,13 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 
-import jakarta.validation.ConstraintViolation;
-import jakarta.validation.ConstraintViolationException;
-import jakarta.validation.Path.Node;
-
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
@@ -25,6 +22,9 @@ import com.sixsprints.core.exception.BaseRuntimeException;
 import com.sixsprints.core.service.MessageSourceService;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.ConstraintViolationException;
+import jakarta.validation.Path.Node;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -86,6 +86,26 @@ public abstract class RestExceptionHandler {
     return RestUtil.errorResponse(null, error, HttpStatus.BAD_REQUEST);
   }
 
+  @ExceptionHandler(HttpMessageNotReadableException.class)
+  public ResponseEntity<?> handleConstraintVoilationException(HttpMessageNotReadableException exception,
+    HttpServletRequest request) {
+    String errorDetails = jsonInvalidErrorMessage(exception);
+    
+    if (exception.getCause() instanceof InvalidFormatException) {
+      InvalidFormatException invalidFormatException = (InvalidFormatException) exception.getCause();
+      if (invalidFormatException.getTargetType().isEnum()) {
+        errorDetails = invalidEnumErrorMessage(invalidFormatException);
+      }
+    }
+    return RestUtil.errorResponse(null, errorDetails, HttpStatus.BAD_REQUEST);
+  }
+  
+  @ExceptionHandler(MissingServletRequestParameterException.class)
+  public ResponseEntity<?> handleMissingParameterException(MissingServletRequestParameterException ex) {
+    log.error(ex.getMessage(), ex);
+    return RestUtil.errorResponse(null, ex.getMessage(), HttpStatus.BAD_REQUEST);
+  }
+  
   protected String getErrorMessage(String key, List<Object> args, Locale locale) {
     return MessageSourceUtil.resolveMessage(messageSourceService, key, args, locale);
   }
@@ -98,19 +118,6 @@ public abstract class RestExceptionHandler {
     return getErrorMessage(key, Locale.ENGLISH);
   }
 
-  @ExceptionHandler(HttpMessageNotReadableException.class)
-  public ResponseEntity<?> handleConstraintVoilationException(HttpMessageNotReadableException exception,
-    HttpServletRequest request) {
-    String errorDetails = jsonInvalidErrorMessage(exception);
-
-    if (exception.getCause() instanceof InvalidFormatException) {
-      InvalidFormatException invalidFormatException = (InvalidFormatException) exception.getCause();
-      if (invalidFormatException.getTargetType().isEnum()) {
-        errorDetails = invalidEnumErrorMessage(invalidFormatException);
-      }
-    }
-    return RestUtil.errorResponse(null, errorDetails, HttpStatus.BAD_REQUEST);
-  }
 
   protected String invalidEnumErrorMessage(InvalidFormatException invalidFormatException) {
     return String.format("Invalid enum value: '%s' for the field: '%s'. The value must be one of: %s.",
