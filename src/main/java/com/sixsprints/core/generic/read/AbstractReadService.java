@@ -471,7 +471,8 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
 
   private void addDateFilter(List<Criteria> criterias, String key, DateColumnFilter filter) {
     Criteria criteria = setKeyCriteria(key);
-    criteria = dateCriteria(filter.getType(), filter.getFilter(), filter.getFilterTo(), filter.isExactMatch(),
+    Long dateTo = filter.getFilterTo() == null ? null : filter.getFilterTo().getTime();
+    criteria = dateCriteria(filter.getType(), filter.getFilter().getTime(), dateTo, filter.isExactMatch(),
       criteria);
     criterias.add(criteria);
   }

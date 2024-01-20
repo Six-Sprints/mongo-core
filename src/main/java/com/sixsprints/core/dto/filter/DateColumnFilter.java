@@ -1,5 +1,7 @@
 package com.sixsprints.core.dto.filter;
 
+import java.util.Date;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -15,9 +17,9 @@ public class DateColumnFilter extends ColumnFilter {
 
   private String type;
 
-  private Long filter;
+  private Date filter;
 
-  private Long filterTo;
+  private Date filterTo;
 
   @Builder.Default
   private boolean exactMatch = Boolean.FALSE;

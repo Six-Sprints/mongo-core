@@ -7,6 +7,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -24,6 +25,7 @@ import com.sixsprints.core.dto.FilterRequestDto;
 import com.sixsprints.core.dto.ImportLogDetailsDto;
 import com.sixsprints.core.dto.KeyLabelDto;
 import com.sixsprints.core.dto.filter.ColumnFilter;
+import com.sixsprints.core.dto.filter.DateColumnFilter;
 import com.sixsprints.core.dto.filter.SearchColumnFilter;
 import com.sixsprints.core.enums.ImportOperation;
 import com.sixsprints.core.enums.UpdateAction;
@@ -34,6 +36,7 @@ import com.sixsprints.core.mock.domain.embedded.Address;
 import com.sixsprints.core.mock.enums.Gender;
 import com.sixsprints.core.mock.service.UserService;
 import com.sixsprints.core.transformer.UserExcelMapper;
+import com.sixsprints.core.utils.AppConstants;
 
 public class UserServiceTest extends ApplicationTests {
 
@@ -146,6 +149,31 @@ public class UserServiceTest extends ApplicationTests {
   }
 
   @Test
+  public void shouldFilterOnDate() {
+    mongo.save(Role.builder().name("ADMIN").group("READ_WRITE").slug("R1").build(), "role");
+    mongo.save(Role.builder().name("USER").group("READ_ONLY").slug("R2").build(), "role");
+    for (int i = 1; i <= 10; i++) {
+      userService.save(user(i));
+    }
+
+    Map<String, ColumnFilter> filterModel = ImmutableMap.<String, ColumnFilter>builder()
+      .put("dateCreated", DateColumnFilter.builder()
+        .type(AppConstants.EQUALS)
+        .filter(new Date()).build())
+      .build();
+
+    FilterRequestDto filters = FilterRequestDto.builder()
+      .page(0)
+      .size(10)
+      .filterModel(filterModel)
+      .build();
+    Page<User> users = userService.filter(filters);
+    List<User> list = users.getContent();
+    assertThat(list.size()).isEqualTo(10);
+
+  }
+
+  @Test
   public void shouldFilterOnJoinColumns() {
 
     mongo.save(Role.builder().name("ADMIN").group("READ_WRITE").slug("R1").build(), "role");
@@ -181,7 +209,8 @@ public class UserServiceTest extends ApplicationTests {
     return User.builder().email("email" + i + "@gmail.com").name("Name" + i)
       .gender(Gender.values()[i % Gender.values().length]).flag(true).customId(Long.valueOf(i))
       .roleSlug(i == 1 ? "R1" : "R2")
-      .address(address).build();
+      .address(address)
+      .build();
   }
 
   private User userWithNullAddress(int i) {
