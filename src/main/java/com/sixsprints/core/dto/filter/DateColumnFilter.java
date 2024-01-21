@@ -17,9 +17,9 @@ public class DateColumnFilter extends ColumnFilter {
 
   private String type;
 
-  private Date filter;
+  private Date dateFrom;
 
-  private Date filterTo;
+  private Date dateTo;
 
   @Builder.Default
   private boolean exactMatch = Boolean.FALSE;

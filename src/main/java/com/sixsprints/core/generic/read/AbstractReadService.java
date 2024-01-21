@@ -182,7 +182,8 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
       return new ArrayList<>();
     }
 
-    String distinctColumn = StringUtils.hasText(field.getJoinColumnNameLocal()) ? field.getJoinColumnNameLocal() : column;
+    String distinctColumn = StringUtils.hasText(field.getJoinColumnNameLocal()) ? field.getJoinColumnNameLocal()
+      : column;
     Query query = new Query().with(Sort.by(Direction.ASC, column));
     query.addCriteria(buildCriteria(filterRequestDto, metaData));
     List<?> list = mongo.getCollection(mongo.getCollectionName(metaData().getClassType()))
@@ -471,8 +472,8 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
 
   private void addDateFilter(List<Criteria> criterias, String key, DateColumnFilter filter) {
     Criteria criteria = setKeyCriteria(key);
-    Long dateTo = filter.getFilterTo() == null ? null : filter.getFilterTo().getTime();
-    criteria = dateCriteria(filter.getType(), filter.getFilter().getTime(), dateTo, filter.isExactMatch(),
+    Long dateTo = filter.getDateTo() == null ? null : filter.getDateTo().getTime();
+    criteria = dateCriteria(filter.getType(), filter.getDateFrom().getTime(), dateTo, filter.isExactMatch(),
       criteria);
     criterias.add(criteria);
   }

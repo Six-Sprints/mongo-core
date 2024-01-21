@@ -159,7 +159,7 @@ public class UserServiceTest extends ApplicationTests {
     Map<String, ColumnFilter> filterModel = ImmutableMap.<String, ColumnFilter>builder()
       .put("dateCreated", DateColumnFilter.builder()
         .type(AppConstants.EQUALS)
-        .filter(new Date()).build())
+        .dateFrom(new Date()).build())
       .build();
 
     FilterRequestDto filters = FilterRequestDto.builder()
