@@ -193,24 +193,30 @@ public abstract class AbstractAuthenticationInterceptor<T extends AbstractMongoE
     AuthAnnotationDataDto data = new AuthAnnotationDataDto();
     Method[] methods = annotation.annotationType().getMethods();
     for (Method method : methods) {
-      ModuleDefinition module = fetchSpecificData(annotation, method, "module", ModuleDefinition.class);
-      PermissionDefinition permission = fetchSpecificData(annotation, method, "permission", PermissionDefinition.class);
-      Boolean required = fetchSpecificData(annotation, method, "required", Boolean.class);
 
-      if (module != null) {
+      String methodName = method.getName();
+
+      String name = "module";
+      if (name.equals(methodName)) {
+        ModuleDefinition module = fetchSpecificData(annotation, method, name, ModuleDefinition.class);
         data.setModule(module);
       }
 
-      if (permission != null) {
+      name = "permission";
+      if (name.equals(methodName)) {
+        PermissionDefinition permission = fetchSpecificData(annotation, method, "", PermissionDefinition.class);
         data.setPermission(permission);
       }
 
-      if (required != null) {
-        data.setRequired(required);
-      } else {
-        data.setRequired(true);
+      name = "required";
+      if (name.equals(methodName)) {
+        Boolean required = fetchSpecificData(annotation, method, "required", boolean.class);
+        if (required != null) {
+          data.setRequired(required);
+        } else {
+          data.setRequired(true);
+        }
       }
-
     }
     return data;
   }
