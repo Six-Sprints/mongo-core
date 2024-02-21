@@ -56,7 +56,7 @@ public abstract class AbstractAuthenticationInterceptor<T extends AbstractMongoE
     if (!StringUtils.hasText(token)) {
       token = httpServletRequest.getParameter(authTokenKey());
     }
-    T user = checkUser(token, annotationData.getRequired());
+    T user = checkUser(token, annotationData.isRequired());
     postProcessor(user);
     return true;
   }
@@ -163,7 +163,7 @@ public abstract class AbstractAuthenticationInterceptor<T extends AbstractMongoE
       AuthAnnotationDataDto.builder()
         .module(methodData.getModule() == null ? classData.getModule() : methodData.getModule())
         .permission(methodData.getPermission() == null ? classData.getPermission() : methodData.getPermission())
-        .required(methodData.getRequired() == null ? classData.getRequired() : methodData.getRequired())
+        .required(methodData.isRequired())
         .build());
   }
 
@@ -180,7 +180,7 @@ public abstract class AbstractAuthenticationInterceptor<T extends AbstractMongoE
     return AuthAnnotationDataDto.builder()
       .module(annotationData.getModule() == null ? BasicModuleEnum.ANY : annotationData.getModule())
       .permission(annotationData.getPermission() == null ? BasicPermissionEnum.ANY : annotationData.getPermission())
-      .required(annotationData.getRequired() == null ? true : annotationData.getRequired())
+      .required(annotationData.isRequired())
       .build();
   }
 

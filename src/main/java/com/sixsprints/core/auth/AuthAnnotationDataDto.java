@@ -15,6 +15,6 @@ public class AuthAnnotationDataDto {
 
   private PermissionDefinition permission;
 
-  private Boolean required;
+  private boolean required;
 
 }
