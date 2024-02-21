@@ -2,6 +2,7 @@ package com.sixsprints.core.controller;
 
 import java.util.List;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -9,9 +10,9 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import com.sixsprints.core.annotation.Authenticated;
+import com.sixsprints.core.auth.BasicAuth;
+import com.sixsprints.core.auth.BasicPermissionEnum;
 import com.sixsprints.core.domain.AbstractMongoEntity;
-import com.sixsprints.core.enums.AccessPermission;
 import com.sixsprints.core.exception.BaseException;
 import com.sixsprints.core.exception.EntityNotFoundException;
 import com.sixsprints.core.service.GenericCrudService;
@@ -41,7 +42,7 @@ public abstract class AbstractCrudController<T extends AbstractMongoEntity, SD, 
   }
 
   @PutMapping
-  @Authenticated(access = AccessPermission.UPDATE)
+  @BasicAuth(permission = BasicPermissionEnum.UPDATE)
   public ResponseEntity<?> patch(@RequestBody @Validated CD dto, @RequestParam String propChanged)
     throws BaseException {
     T domain = crudMapper.toDomain(dto);
@@ -49,7 +50,7 @@ public abstract class AbstractCrudController<T extends AbstractMongoEntity, SD, 
   }
 
   @PutMapping("/patch/multi")
-  @Authenticated(access = AccessPermission.UPDATE)
+  @BasicAuth(permission = BasicPermissionEnum.UPDATE)
   public ResponseEntity<?> patchMulti(@RequestBody @Validated CD dto, @RequestParam List<String> propChanged)
     throws BaseException {
     T domain = crudMapper.toDomain(dto);
@@ -57,28 +58,28 @@ public abstract class AbstractCrudController<T extends AbstractMongoEntity, SD, 
   }
 
   @PutMapping("/update")
-  @Authenticated(access = AccessPermission.UPDATE)
+  @BasicAuth(permission = BasicPermissionEnum.UPDATE)
   public ResponseEntity<?> update(@RequestBody @Validated CD dto) throws BaseException {
     T domain = crudMapper.toDomain(dto);
     return RestUtil.successResponse(crudService.update(domain.getId(), domain));
   }
 
   @PostMapping
-  @Authenticated(access = AccessPermission.CREATE)
+  @BasicAuth(permission = BasicPermissionEnum.CREATE)
   public ResponseEntity<RestResponse<CD>> add(@RequestBody @Validated CD dto)
     throws BaseException {
-    return RestUtil.successResponse(crudMapper.toDto(crudService.create(crudMapper.toDomain(dto))));
+    return RestUtil.successResponse(crudMapper.toDto(crudService.create(crudMapper.toDomain(dto))), HttpStatus.CREATED);
   }
 
   @PutMapping("/upsert")
-  @Authenticated(access = AccessPermission.UPDATE)
+  @BasicAuth(permission = BasicPermissionEnum.UPDATE)
   public ResponseEntity<RestResponse<CD>> upsert(@RequestBody @Validated CD dto)
     throws BaseException {
     return RestUtil.successResponse(crudMapper.toDto(crudService.upsert(crudMapper.toDomain(dto))));
   }
 
   @PostMapping("/delete")
-  @Authenticated(access = AccessPermission.DELETE)
+  @BasicAuth(permission = BasicPermissionEnum.DELETE)
   public ResponseEntity<?> delete(@RequestBody List<String> ids) throws EntityNotFoundException {
     crudService.delete(ids);
     return RestUtil.successResponse(null);

@@ -8,11 +8,14 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.AsyncHandlerInterceptor;
 
-import com.sixsprints.core.annotation.Authenticated;
 import com.sixsprints.core.annotation.DontAuthenticate;
+import com.sixsprints.core.auth.AuthAnnotationDataDto;
+import com.sixsprints.core.auth.Authenticated;
+import com.sixsprints.core.auth.BasicModuleEnum;
+import com.sixsprints.core.auth.BasicPermissionEnum;
+import com.sixsprints.core.auth.ModuleDefinition;
+import com.sixsprints.core.auth.PermissionDefinition;
 import com.sixsprints.core.domain.AbstractMongoEntity;
-import com.sixsprints.core.enums.AccessPermission;
-import com.sixsprints.core.enums.Restriction;
 import com.sixsprints.core.exception.BaseException;
 import com.sixsprints.core.exception.EntityNotFoundException;
 import com.sixsprints.core.exception.NotAuthenticatedException;
@@ -27,7 +30,7 @@ public abstract class AbstractAuthenticationInterceptor<T extends AbstractMongoE
   implements AsyncHandlerInterceptor {
 
   private static final String USER = "user";
-  private GenericCrudService<T> userService;
+  private final GenericCrudService<T> userService;
 
   public AbstractAuthenticationInterceptor(GenericCrudService<T> userService) {
     this.userService = userService;
@@ -40,32 +43,23 @@ public abstract class AbstractAuthenticationInterceptor<T extends AbstractMongoE
       return true;
     }
     Method method = ((HandlerMethod) handler).getMethod();
-    if (method.isAnnotationPresent(DontAuthenticate.class) ||
-      (!method.getDeclaringClass().isAnnotationPresent(Authenticated.class)
-        && !method.isAnnotationPresent(Authenticated.class))) {
+    if (method.isAnnotationPresent(DontAuthenticate.class)) {
       return true;
     }
-    Authenticated annotation = mergeAnnotationData(method);
+    AuthAnnotationDataDto annotationData = annotationData(method);
+
+    if (annotationData == null) {
+      return true;
+    }
+
     String token = httpServletRequest.getHeader(authTokenKey());
     if (!StringUtils.hasText(token)) {
       token = httpServletRequest.getParameter(authTokenKey());
     }
-    T user = checkUser(annotation, token);
-    checkRestriction(user, annotation.restriction());
+    T user = checkUser(token, annotationData.getRequired());
     postProcessor(user);
     return true;
   }
-
-  protected void checkRestriction(T user, Restriction restriction) throws BaseException {
-  }
-
-  protected abstract String authTokenKey();
-
-  protected abstract void checkUserPermissions(T user, Authenticated authAnnotation)
-    throws NotAuthenticatedException, EntityNotFoundException;
-
-  protected abstract void checkIfTokenInvalid(T user, String token, Authenticated authAnnotation)
-    throws NotAuthenticatedException;
 
   protected void postProcessor(T user) {
     ApplicationContext.setCurrentUser(user);
@@ -74,8 +68,8 @@ public abstract class AbstractAuthenticationInterceptor<T extends AbstractMongoE
     }
   }
 
-  protected void throwException(Authenticated authAnnotation, String message) throws NotAuthenticatedException {
-    if (authAnnotation.required()) {
+  protected void throwException(boolean required, String message) throws NotAuthenticatedException {
+    if (required) {
       throw NotAuthenticatedException.childBuilder().error(message).build();
     }
   }
@@ -96,118 +90,142 @@ public abstract class AbstractAuthenticationInterceptor<T extends AbstractMongoE
     return "Token is empty!";
   }
 
-  private T checkUser(Authenticated authAnnotation, String token)
+  protected abstract String authTokenKey();
+
+  protected abstract void checkUserPermissions(T user, ModuleDefinition module, PermissionDefinition permission,
+    boolean required)
+    throws NotAuthenticatedException, EntityNotFoundException;
+
+  protected abstract void checkIfTokenInvalid(T user, String token, boolean required)
+    throws NotAuthenticatedException;
+
+  private T checkUser(String token, boolean required)
     throws NotAuthenticatedException, EntityNotFoundException {
-    Boolean tokenEmpty = checkIfTokenEmpty(authAnnotation, token);
+    Boolean tokenEmpty = checkIfTokenEmpty(token, required);
     if (tokenEmpty) {
       return null;
     }
-    T user = decodeUser(token, authAnnotation);
+    T user = decodeUser(token, required);
     if (user == null) {
       return null;
     }
-    checkIfTokenInvalid(user, token, authAnnotation);
-    checkIfActive(user, authAnnotation);
-    checkUserPermissions(user, authAnnotation);
+    checkIfTokenInvalid(user, token, required);
+    checkIfActive(user, required);
+    checkUserPermissions(user, null, null, required);
     return user;
   }
 
-  private void checkIfActive(T user, Authenticated authAnnotation) throws NotAuthenticatedException {
+  private void checkIfActive(T user, boolean required) throws NotAuthenticatedException {
     if (!user.getActive()) {
-      throwException(authAnnotation, inactiveErrorMessage(user));
+      throwException(required, inactiveErrorMessage(user));
     }
   }
 
-  private T decodeUser(String token, Authenticated authAnnotation) throws NotAuthenticatedException {
+  private T decodeUser(String token, boolean required) throws NotAuthenticatedException {
     T user = null;
     try {
       String userId = AuthUtil.decodeToken(token);
       user = userService.findOne(userId);
     } catch (BaseException ex) {
-      throwException(authAnnotation, ex.getMessage());
+      throwException(required, ex.getMessage());
     }
     return user;
   }
 
-  private Boolean checkIfTokenEmpty(Authenticated authAnnotation, String token) throws NotAuthenticatedException {
+  private Boolean checkIfTokenEmpty(String token, boolean required) throws NotAuthenticatedException {
     if (!StringUtils.hasText(token)) {
-      throwException(authAnnotation, tokenEmptyErrorMessage());
+      throwException(required, tokenEmptyErrorMessage());
       return true;
     }
     return false;
   }
 
-  private Authenticated mergeAnnotationData(Method method) {
-    Authenticated annotationClass = method.getDeclaringClass().getAnnotation(Authenticated.class);
-    Authenticated annotationMethod = method.getAnnotation(Authenticated.class);
+  private AuthAnnotationDataDto annotationData(Method method) {
+    Annotation annotationClass = findRelevantAnnotation(method.getDeclaringClass().getAnnotations());
+    Annotation annotationMethod = findRelevantAnnotation(method.getAnnotations());
 
-    if (annotationMethod == null) {
-      return sanitize(annotationClass);
+    if (annotationClass == null && annotationMethod == null) {
+      return null;
     }
 
-    if (annotationClass == null) {
-      return sanitize(annotationMethod);
+    AuthAnnotationDataDto classData = fetchAnnotationData(annotationClass);
+    AuthAnnotationDataDto methodData = fetchAnnotationData(annotationMethod);
+
+    if (classData == null) {
+      return sanitize(methodData);
     }
 
-    return sanitize(new Authenticated() {
+    if (methodData == null) {
+      return sanitize(classData);
+    }
 
-      @Override
-      public Class<? extends Annotation> annotationType() {
-        return Authenticated.class;
-      }
-
-      @Override
-      public boolean required() {
-        return annotationMethod.required();
-      }
-
-      @Override
-      public String entity() {
-        return StringUtils.hasText(annotationMethod.entity()) ? annotationMethod.entity() : annotationClass.entity();
-      }
-
-      @Override
-      public Restriction restriction() {
-        return Restriction.NULL == annotationMethod.restriction() ? annotationClass.restriction()
-          : annotationMethod.restriction();
-      }
-
-      @Override
-      public AccessPermission access() {
-        return AccessPermission.NULL == annotationMethod.access() ? annotationClass.access()
-          : annotationMethod.access();
-      }
-    });
+    return sanitize(
+      AuthAnnotationDataDto.builder()
+        .module(methodData.getModule() == null ? classData.getModule() : methodData.getModule())
+        .permission(methodData.getPermission() == null ? classData.getPermission() : methodData.getPermission())
+        .required(methodData.getRequired() == null ? classData.getRequired() : methodData.getRequired())
+        .build());
   }
 
-  private Authenticated sanitize(Authenticated authenticated) {
-    return new Authenticated() {
+  private Annotation findRelevantAnnotation(Annotation[] annotations) {
+    for (Annotation annotation : annotations) {
+      if (annotation.annotationType().isAnnotationPresent(Authenticated.class)) {
+        return annotation;
+      }
+    }
+    return null;
+  }
 
-      @Override
-      public Class<? extends Annotation> annotationType() {
-        return Authenticated.class;
+  private AuthAnnotationDataDto sanitize(AuthAnnotationDataDto annotationData) {
+    return AuthAnnotationDataDto.builder()
+      .module(annotationData.getModule() == null ? BasicModuleEnum.ANY : annotationData.getModule())
+      .permission(annotationData.getPermission() == null ? BasicPermissionEnum.ANY : annotationData.getPermission())
+      .required(annotationData.getRequired() == null ? true : annotationData.getRequired())
+      .build();
+  }
+
+  private AuthAnnotationDataDto fetchAnnotationData(Annotation annotation) {
+
+    if (annotation == null) {
+      return null;
+    }
+
+    AuthAnnotationDataDto data = new AuthAnnotationDataDto();
+    Method[] methods = annotation.annotationType().getMethods();
+    for (Method method : methods) {
+      ModuleDefinition module = fetchSpecificData(annotation, method, "module", ModuleDefinition.class);
+      PermissionDefinition permission = fetchSpecificData(annotation, method, "permission", PermissionDefinition.class);
+      Boolean required = fetchSpecificData(annotation, method, "required", Boolean.class);
+
+      if (module != null) {
+        data.setModule(module);
       }
 
-      @Override
-      public boolean required() {
-        return authenticated.required();
+      if (permission != null) {
+        data.setPermission(permission);
       }
 
-      @Override
-      public String entity() {
-        return StringUtils.hasText(authenticated.entity()) ? authenticated.entity() : "";
+      if (required != null) {
+        data.setRequired(required);
       }
 
-      @Override
-      public Restriction restriction() {
-        return Restriction.NULL == authenticated.restriction() ? Restriction.NONE : authenticated.restriction();
-      }
+    }
+    return data;
+  }
 
-      @Override
-      public AccessPermission access() {
-        return AccessPermission.NULL == authenticated.access() ? AccessPermission.ANY : authenticated.access();
+  @SuppressWarnings("unchecked")
+  private <Z> Z fetchSpecificData(Annotation annotation, Method method, String methodName, Class<Z> clazz) {
+    String name = method.getName();
+    Class<?> returnType = method.getReturnType();
+    if (name.equals(methodName) && clazz.isAssignableFrom(returnType)) {
+      Z data = null;
+      try {
+        data = (Z) (method.invoke(annotation, new Object[] {}));
+      } catch (Exception e) {
       }
-    };
+      return data;
+    }
+    return null;
   }
 
 }

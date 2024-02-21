@@ -13,12 +13,12 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import com.sixsprints.core.annotation.Authenticated;
+import com.sixsprints.core.auth.BasicAuth;
+import com.sixsprints.core.auth.BasicPermissionEnum;
 import com.sixsprints.core.domain.AbstractMongoEntity;
 import com.sixsprints.core.dto.FieldDto;
 import com.sixsprints.core.dto.FilterRequestDto;
 import com.sixsprints.core.dto.PageDto;
-import com.sixsprints.core.enums.AccessPermission;
 import com.sixsprints.core.exception.EntityNotFoundException;
 import com.sixsprints.core.generic.read.GenericReadService;
 import com.sixsprints.core.service.GenericCrudService;
@@ -48,26 +48,26 @@ public abstract class AbstractReadController<T extends AbstractMongoEntity, SD, 
   }
 
   @GetMapping("/all/fields")
-  @Authenticated(access = AccessPermission.READ)
+  @BasicAuth(permission = BasicPermissionEnum.READ)
   public ResponseEntity<RestResponse<List<FieldDto>>> fields() {
     return RestUtil.successResponse(localise(searchDtoFields()));
   }
 
   @GetMapping("/{slug}")
-  @Authenticated(access = AccessPermission.READ)
+  @BasicAuth(permission = BasicPermissionEnum.READ)
   public ResponseEntity<RestResponse<DD>> findBySlug(@PathVariable String slug)
     throws EntityNotFoundException {
     return RestUtil.successResponse(detailDtoMapper.toDto(readService.findBySlug(slug)));
   }
 
   @PostMapping("/search")
-  @Authenticated(access = AccessPermission.READ)
+  @BasicAuth(permission = BasicPermissionEnum.READ)
   public ResponseEntity<RestResponse<PageDto<SD>>> filter(@RequestBody FilterRequestDto filterRequestDto) {
     return RestUtil.successResponse(searchDtoMapper.pageEntityToPageDtoDto(readService.filter(filterRequestDto)));
   }
 
   @PostMapping("/column/master")
-  @Authenticated(access = AccessPermission.READ)
+  @BasicAuth(permission = BasicPermissionEnum.READ)
   public ResponseEntity<RestResponse<List<?>>> getDistinctValues(@RequestParam String column,
     @RequestBody FilterRequestDto filterRequestDto) {
     return RestUtil.successResponse(readService.distinctColumnValues(column, filterRequestDto));
