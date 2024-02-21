@@ -207,6 +207,8 @@ public abstract class AbstractAuthenticationInterceptor<T extends AbstractMongoE
 
       if (required != null) {
         data.setRequired(required);
+      } else {
+        data.setRequired(true);
       }
 
     }
