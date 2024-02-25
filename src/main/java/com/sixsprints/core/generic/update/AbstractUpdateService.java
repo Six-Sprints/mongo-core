@@ -70,10 +70,29 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity> exten
   @Override
   public T patchUpdate(String id, T domain, List<String> propsChanged)
     throws EntityNotFoundException, EntityAlreadyExistsException, EntityInvalidException {
-
     T entity = findOne(id);
     BeanWrapperUtil.copyProperties(domain, entity, propsChanged);
-    return update(entity);
+    preUpdateCheck(domain);
+    patchUpdateRaw(id, domain, propsChanged);
+    return entity;
+  }
+
+  @Override
+  public UpdateResult patchUpdateRaw(Criteria criteria, T domain, String propChanged) {
+    return patchUpdateRaw(criteria, domain, List.of(propChanged));
+  }
+
+  @Override
+  public UpdateResult patchUpdateRaw(Criteria criteria, T domain, List<String> propsChanged) {
+
+    Update update = new Update();
+    for (String prop : propsChanged) {
+      update.set(prop, BeanWrapperUtil.getValue(domain, prop));
+    }
+    return mongo.updateFirst(
+      Query.query(criteria),
+      update,
+      metaData().getClassType());
   }
 
   @Override
@@ -83,15 +102,7 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity> exten
 
   @Override
   public UpdateResult patchUpdateRaw(String id, T domain, List<String> propsChanged) {
-
-    Update update = new Update();
-    for (String prop : propsChanged) {
-      update.set(prop, BeanWrapperUtil.getValue(domain, prop));
-    }
-    return mongo.updateFirst(
-      Query.query(Criteria.where(AbstractMongoEntity.ID).is(id)),
-      update,
-      metaData().getClassType());
+    return patchUpdateRaw(Criteria.where(AbstractMongoEntity.ID).is(id), domain, propsChanged);
   }
 
   @Override
@@ -233,6 +244,28 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity> exten
 
   protected String serialNumberError(Long serialNumber) {
     return "S.No. " + serialNumber + ": ";
+  }
+
+  private void preUpdateCheck(T domain) throws EntityAlreadyExistsException, EntityInvalidException {
+    T fromDB = findDuplicate(domain);
+    if (fromDB != null && !domain.getId().equals(fromDB.getId())) {
+      if (fromDB.getActive()) {
+        throw alreadyExistsException(fromDB, domain);
+      }
+      delete(fromDB);
+    }
+    preUpdate(fromDB, domain);
+
+    List<String> errors = checkValidity(domain);
+
+    if (!CollectionUtils.isEmpty(errors)) {
+      throw validationException(errors);
+    }
+    List<String> updateErrors = checkValidityPreUpdate(domain);
+
+    if (!CollectionUtils.isEmpty(updateErrors)) {
+      throw validationException(updateErrors);
+    }
   }
 
   private List<String> addPrefix(String prefix, List<String> errorList) {
@@ -402,26 +435,7 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity> exten
   }
 
   private T update(T domain) throws EntityAlreadyExistsException, EntityInvalidException {
-    T fromDB = findDuplicate(domain);
-    if (fromDB != null && !domain.getId().equals(fromDB.getId())) {
-      if (fromDB.getActive()) {
-        throw alreadyExistsException(fromDB, domain);
-      }
-      delete(fromDB);
-    }
-    preUpdate(fromDB, domain);
-
-    List<String> errors = checkValidity(domain);
-
-    if (!CollectionUtils.isEmpty(errors)) {
-      throw validationException(errors);
-    }
-    List<String> updateErrors = checkValidityPreUpdate(domain);
-
-    if (!CollectionUtils.isEmpty(updateErrors)) {
-      throw validationException(updateErrors);
-    }
-
+    preUpdateCheck(domain);
     save(domain);
     postUpdate(domain);
     return domain;

@@ -4,6 +4,8 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.data.mongodb.core.query.Criteria;
+
 import com.mongodb.client.result.UpdateResult;
 import com.sixsprints.core.domain.AbstractMongoEntity;
 import com.sixsprints.core.dto.BulkUpdateInfo;
@@ -31,6 +33,10 @@ public interface GenericUpdateService<T extends AbstractMongoEntity> {
   UpdateResult patchUpdateRaw(String id, T domain, String propChanged);
 
   UpdateResult patchUpdateRaw(String id, T domain, List<String> propsChanged);
+
+  UpdateResult patchUpdateRaw(Criteria criteria, T domain, String propChanged);
+
+  UpdateResult patchUpdateRaw(Criteria criteria, T domain, List<String> propsChanged);
 
   T upsert(T domain) throws EntityInvalidException;
 
