@@ -30,11 +30,11 @@ public interface GenericUpdateService<T extends AbstractMongoEntity> {
   T patchUpdate(String id, T domain, List<String> propsChanged)
     throws EntityNotFoundException, EntityAlreadyExistsException, EntityInvalidException;
 
-  UpdateResult patchUpdateRaw(String id, T domain, String propChanged);
+  UpdateResult patchUpdateRaw(String id, Object value, String propChanged);
 
   UpdateResult patchUpdateRaw(String id, T domain, List<String> propsChanged);
 
-  UpdateResult patchUpdateRaw(Criteria criteria, T domain, String propChanged);
+  UpdateResult patchUpdateRaw(Criteria criteria, Object value, String propChanged);
 
   UpdateResult patchUpdateRaw(Criteria criteria, T domain, List<String> propsChanged);
 

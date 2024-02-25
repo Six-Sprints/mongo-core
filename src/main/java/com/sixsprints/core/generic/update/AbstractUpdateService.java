@@ -78,8 +78,13 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity> exten
   }
 
   @Override
-  public UpdateResult patchUpdateRaw(Criteria criteria, T domain, String propChanged) {
-    return patchUpdateRaw(criteria, domain, List.of(propChanged));
+  public UpdateResult patchUpdateRaw(Criteria criteria, Object value, String propChanged) {
+    Update update = new Update();
+    update.set(propChanged, value);
+    return mongo.updateFirst(
+      Query.query(criteria),
+      update,
+      metaData().getClassType());
   }
 
   @Override
@@ -96,8 +101,8 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity> exten
   }
 
   @Override
-  public UpdateResult patchUpdateRaw(String id, T domain, String propChanged) {
-    return patchUpdateRaw(id, domain, List.of(propChanged));
+  public UpdateResult patchUpdateRaw(String id, Object value, String propChanged) {
+    return patchUpdateRaw(Criteria.where(AbstractMongoEntity.ID).is(id), value, propChanged);
   }
 
   @Override
