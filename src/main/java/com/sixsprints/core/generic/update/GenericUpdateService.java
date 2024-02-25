@@ -4,6 +4,7 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 
+import com.mongodb.client.result.UpdateResult;
 import com.sixsprints.core.domain.AbstractMongoEntity;
 import com.sixsprints.core.dto.BulkUpdateInfo;
 import com.sixsprints.core.dto.IGenericExcelImport;
@@ -25,6 +26,12 @@ public interface GenericUpdateService<T extends AbstractMongoEntity> {
     throws EntityNotFoundException, EntityAlreadyExistsException, EntityInvalidException;
 
   T patchUpdate(String id, T domain, List<String> propsChanged)
+    throws EntityNotFoundException, EntityAlreadyExistsException, EntityInvalidException;
+  
+  UpdateResult patchUpdateRaw(String id, T domain, String propChanged)
+    throws EntityNotFoundException, EntityAlreadyExistsException, EntityInvalidException;
+
+  UpdateResult patchUpdateRaw(String id, T domain, List<String> propsChanged)
     throws EntityNotFoundException, EntityAlreadyExistsException, EntityInvalidException;
 
   T upsert(T domain) throws EntityInvalidException;

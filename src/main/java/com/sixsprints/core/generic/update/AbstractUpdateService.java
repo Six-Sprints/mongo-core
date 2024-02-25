@@ -15,9 +15,13 @@ import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
+import com.mongodb.client.result.UpdateResult;
 import com.sixsprints.core.annotation.AuditCsvImport;
 import com.sixsprints.core.domain.AbstractMongoEntity;
 import com.sixsprints.core.dto.BulkUpdateInfo;
@@ -70,6 +74,26 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity> exten
     T entity = findOne(id);
     BeanWrapperUtil.copyProperties(domain, entity, propsChanged);
     return update(entity);
+  }
+
+  @Override
+  public UpdateResult patchUpdateRaw(String id, T domain, String propChanged)
+    throws EntityNotFoundException, EntityAlreadyExistsException, EntityInvalidException {
+    return patchUpdateRaw(id, domain, List.of(propChanged));
+  }
+
+  @Override
+  public UpdateResult patchUpdateRaw(String id, T domain, List<String> propsChanged)
+    throws EntityNotFoundException, EntityAlreadyExistsException, EntityInvalidException {
+
+    Update update = new Update();
+    for (String prop : propsChanged) {
+      update.set(prop, BeanWrapperUtil.getValue(domain, prop));
+    }
+    return mongo.updateFirst(
+      Query.query(Criteria.where(AbstractMongoEntity.ID).is(id)),
+      update,
+      metaData().getClassType());
   }
 
   @Override
@@ -188,7 +212,7 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity> exten
     List<String> errors = new ArrayList<>();
 
     for (DTO dto : data) {
-    	
+
       Set<ConstraintViolation<DTO>> validate = validator.validate(dto);
       errors.addAll(constraintMessages(validate));
     }
