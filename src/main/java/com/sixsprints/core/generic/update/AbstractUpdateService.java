@@ -77,14 +77,12 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity> exten
   }
 
   @Override
-  public UpdateResult patchUpdateRaw(String id, T domain, String propChanged)
-    throws EntityNotFoundException, EntityAlreadyExistsException, EntityInvalidException {
+  public UpdateResult patchUpdateRaw(String id, T domain, String propChanged) {
     return patchUpdateRaw(id, domain, List.of(propChanged));
   }
 
   @Override
-  public UpdateResult patchUpdateRaw(String id, T domain, List<String> propsChanged)
-    throws EntityNotFoundException, EntityAlreadyExistsException, EntityInvalidException {
+  public UpdateResult patchUpdateRaw(String id, T domain, List<String> propsChanged) {
 
     Update update = new Update();
     for (String prop : propsChanged) {
