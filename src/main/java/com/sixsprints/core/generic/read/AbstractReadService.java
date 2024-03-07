@@ -327,6 +327,27 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
   }
 
   protected void preFilter(FilterRequestDto filterRequestDto) {
+    if (filterRequestDto == null || filterRequestDto.getFilterModel() == null
+      || filterRequestDto.getFilterModel().isEmpty()) {
+      return;
+    }
+
+    Map<String, ColumnFilter> filterModel = new HashMap<>(filterRequestDto.getFilterModel());
+    MetaData<T> metaData = metaData();
+    Map<String, String> keysToCopy = new HashMap<>();
+    for (String key : filterModel.keySet()) {
+      FieldDto field = findField(key, metaData);
+      if (field != null && StringUtils.hasText(field.getJoinColumnNameLocal())) {
+        keysToCopy.put(key, field.getJoinColumnNameLocal());
+      }
+    }
+
+    if (!keysToCopy.isEmpty()) {
+      keysToCopy.keySet().forEach(key -> filterModel.put(keysToCopy.get(key), filterModel.get(key)));
+      keysToCopy.keySet().forEach(filterModel::remove);
+    }
+
+    filterRequestDto.setFilterModel(filterModel);
 
   }
 

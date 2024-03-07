@@ -6,24 +6,24 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>3.2.2</version>
+		<version>3.2.3</version>
 		<relativePath /> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.sixsprints</groupId>
 	<artifactId>mongo-core</artifactId>
-	<version>3.2.209</version>
+	<version>3.2.300</version>
 	<name>mongo-core</name>
 	<packaging>jar</packaging>
 	<description>Mongo Core Reusable Components</description>
 	<properties>
 		<java.version>17</java.version>
 		<nimbus.jwt.version>9.37.3</nimbus.jwt.version>
-		<javers.version>7.3.7</javers.version>
+		<javers.version>7.3.8</javers.version>
 		<mapstruct.version>1.5.5.Final</mapstruct.version>
 		<lombok.mapstruct.binding.version>0.2.0</lombok.mapstruct.binding.version>
-		<commons-validator.version>1.7</commons-validator.version>
+		<commons-validator.version>1.8.0</commons-validator.version>
 		<supercsv.version>2.4.0</supercsv.version>
-		<easypoi.version>4.4.0</easypoi.version>
+		<easypoi.version>4.5.0</easypoi.version>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -61,6 +61,10 @@
 			<artifactId>javers-spring-boot-starter-mongo</artifactId>
 			<version>${javers.version}</version>
 			<exclusions>
+				<exclusion>
+					<groupId>org.springframework.boot</groupId>
+					<artifactId>spring-boot-starter-parent</artifactId>
+				</exclusion>
 				<exclusion>
 					<groupId>org.springframework.boot</groupId>
 					<artifactId>spring-boot-starter-data-mongodb</artifactId>

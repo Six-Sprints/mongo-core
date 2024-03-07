@@ -27,6 +27,7 @@ import com.sixsprints.core.dto.KeyLabelDto;
 import com.sixsprints.core.dto.filter.ColumnFilter;
 import com.sixsprints.core.dto.filter.DateColumnFilter;
 import com.sixsprints.core.dto.filter.SearchColumnFilter;
+import com.sixsprints.core.dto.filter.SetColumnFilter;
 import com.sixsprints.core.enums.ImportOperation;
 import com.sixsprints.core.enums.UpdateAction;
 import com.sixsprints.core.exception.BaseException;
@@ -197,6 +198,32 @@ public class UserServiceTest extends ApplicationTests {
     assertThat(list.size()).isEqualTo(1);
     assertThat(list.get(0).getRoleSlug()).isEqualTo("R1");
   }
+  
+  @Test
+  public void shouldFilterOnJoinColumnWithAutoChange() {
+
+    mongo.save(Role.builder().name("ADMIN").group("READ_WRITE").slug("R1").build(), "role");
+    mongo.save(Role.builder().name("USER").group("READ_ONLY").slug("R2").build(), "role");
+
+    for (int i = 1; i <= 10; i++) {
+      userService.save(user(i));
+    }
+
+    Map<String, ColumnFilter> filterModel = ImmutableMap.<String, ColumnFilter>builder()
+      .put("roleGroup", SetColumnFilter.builder().values(List.of("R1")).build())
+      .build();
+
+    FilterRequestDto filters = FilterRequestDto.builder()
+      .page(0)
+      .size(10)
+      .filterModel(filterModel)
+      .build();
+    Page<User> users = userService.filter(filters);
+    List<User> list = users.getContent();
+    assertThat(list.size()).isEqualTo(1);
+    assertThat(list.get(0).getRoleSlug()).isEqualTo("R1");
+  }
+  
 
   private String fileName() {
     String currentUsersHomeDir = System.getProperty("user.home");
