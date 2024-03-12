@@ -72,8 +72,8 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity> exten
     throws EntityNotFoundException, EntityAlreadyExistsException, EntityInvalidException {
     T entity = findOne(id);
     BeanWrapperUtil.copyProperties(domain, entity, propsChanged);
-    preUpdateCheck(domain);
-    patchUpdateRaw(id, domain, propsChanged);
+    preUpdateCheck(entity);
+    patchUpdateRaw(id, entity, propsChanged);
     return entity;
   }
 
