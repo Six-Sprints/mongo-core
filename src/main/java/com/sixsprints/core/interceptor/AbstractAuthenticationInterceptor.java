@@ -99,7 +99,7 @@ public abstract class AbstractAuthenticationInterceptor<T extends AbstractMongoE
   protected abstract void checkIfTokenInvalid(T user, String token, boolean required)
     throws NotAuthenticatedException;
 
-  private T checkUser(String token, boolean required)
+  protected T checkUser(String token, boolean required)
     throws NotAuthenticatedException, EntityNotFoundException {
     Boolean tokenEmpty = checkIfTokenEmpty(token, required);
     if (tokenEmpty) {
@@ -112,10 +112,15 @@ public abstract class AbstractAuthenticationInterceptor<T extends AbstractMongoE
     checkIfTokenInvalid(user, token, required);
     checkIfActive(user, required);
     checkUserPermissions(user, null, null, required);
+    checkCustomAttributes(user, required);
     return user;
   }
 
-  private void checkIfActive(T user, boolean required) throws NotAuthenticatedException {
+  protected void checkCustomAttributes(T user, boolean required) {
+
+  }
+
+  protected void checkIfActive(T user, boolean required) throws NotAuthenticatedException {
     if (!user.getActive()) {
       throwException(required, inactiveErrorMessage(user));
     }

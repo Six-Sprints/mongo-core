@@ -37,6 +37,7 @@ import com.sixsprints.core.generic.create.AbstractCreateService;
 import com.sixsprints.core.service.ImportLogDetailsService;
 import com.sixsprints.core.transformer.GenericMapper;
 import com.sixsprints.core.transformer.ImportLogDetailsMapper;
+import com.sixsprints.core.utils.ApplicationContext;
 import com.sixsprints.core.utils.BeanWrapperUtil;
 import com.sixsprints.core.utils.excel.ExcelUtil;
 
@@ -81,6 +82,9 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity> exten
   public UpdateResult patchUpdateRaw(Criteria criteria, Object value, String propChanged) {
     Update update = new Update();
     update.set(propChanged, value);
+    update.set(AbstractMongoEntity.DATE_MODIFIED, System.currentTimeMillis());
+    update.set(AbstractMongoEntity.LAST_MODIFIED_BY, userAuditField(ApplicationContext.getCurrentUser()));
+
     return mongo.updateFirst(
       Query.query(criteria),
       update,
@@ -90,6 +94,12 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity> exten
   @Override
   public UpdateResult patchUpdateRaw(Criteria criteria, T domain, List<String> propsChanged) {
 
+    List<String> propsChangedWithAudit = new ArrayList<>(propsChanged);
+    domain.setDateModified(System.currentTimeMillis());
+    domain.setLastModifiedBy(userAuditField(ApplicationContext.getCurrentUser()));
+    propsChangedWithAudit.add(AbstractMongoEntity.DATE_MODIFIED);
+    propsChangedWithAudit.add(AbstractMongoEntity.LAST_MODIFIED_BY);
+
     Update update = new Update();
     for (String prop : propsChanged) {
       update.set(prop, BeanWrapperUtil.getValue(domain, prop));
@@ -98,6 +108,10 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity> exten
       Query.query(criteria),
       update,
       metaData().getClassType());
+  }
+
+  protected String userAuditField(AbstractMongoEntity currentUser) {
+    return currentUser.getSlug();
   }
 
   @Override
