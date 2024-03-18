@@ -116,7 +116,7 @@ public abstract class AbstractAuthenticationInterceptor<T extends AbstractMongoE
     return user;
   }
 
-  protected void checkCustomAttributes(T user, boolean required) {
+  protected void checkCustomAttributes(T user, boolean required) throws NotAuthenticatedException {
 
   }
 
