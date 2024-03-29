@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -415,8 +414,8 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
         .count();
       if (count > 0) {
         array = new Object[size + 2];
+        array[i++] = new ArrayList<String>();
         array[i++] = "";
-        array[i++] = Collections.EMPTY_LIST;
       }
 
       for (Object val : values) {

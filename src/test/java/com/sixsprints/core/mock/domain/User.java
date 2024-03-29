@@ -1,5 +1,7 @@
 package com.sixsprints.core.mock.domain;
 
+import java.util.List;
+
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -38,5 +40,7 @@ public class User extends AbstractMongoEntity {
   private Gender gender;
 
   private Long customId;
+
+  private List<String> tags;
 
 }

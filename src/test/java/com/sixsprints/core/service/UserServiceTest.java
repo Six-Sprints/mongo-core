@@ -7,6 +7,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -175,6 +176,31 @@ public class UserServiceTest extends ApplicationTests {
   }
 
   @Test
+  public void shouldFilterOnArrayColumns() {
+
+    mongo.save(Role.builder().name("ADMIN").group("READ_WRITE").slug("R1").build(), "role");
+    mongo.save(Role.builder().name("USER").group("READ_ONLY").slug("R2").build(), "role");
+
+    for (int i = 1; i <= 10; i++) {
+      userService.save(user(i));
+    }
+
+    Map<String, ColumnFilter> filterModel = ImmutableMap.<String, ColumnFilter>builder()
+      .put("tags", SetColumnFilter.builder().values(List.<String>of("", "2")).build())
+      .build();
+
+    FilterRequestDto filters = FilterRequestDto.builder()
+      .page(0)
+      .size(10)
+      .filterModel(filterModel)
+      .build();
+    Page<User> users = userService.filter(filters);
+    List<User> list = users.getContent();
+    assertThat(list.size()).isEqualTo(6);
+    userAssert(list.get(0), list.get(0).getCustomId().intValue());
+  }
+
+  @Test
   public void shouldFilterOnJoinColumns() {
 
     mongo.save(Role.builder().name("ADMIN").group("READ_WRITE").slug("R1").build(), "role");
@@ -198,7 +224,7 @@ public class UserServiceTest extends ApplicationTests {
     assertThat(list.size()).isEqualTo(1);
     assertThat(list.get(0).getRoleSlug()).isEqualTo("R1");
   }
-  
+
   @Test
   public void shouldFilterOnJoinColumnWithAutoChange() {
 
@@ -223,7 +249,6 @@ public class UserServiceTest extends ApplicationTests {
     assertThat(list.size()).isEqualTo(1);
     assertThat(list.get(0).getRoleSlug()).isEqualTo("R1");
   }
-  
 
   private String fileName() {
     String currentUsersHomeDir = System.getProperty("user.home");
@@ -233,10 +258,15 @@ public class UserServiceTest extends ApplicationTests {
 
   private User user(int i) {
     Address address = Address.builder().city("city" + i).state("state" + i).country("country" + i).build();
-    return User.builder().email("email" + i + "@gmail.com").name("Name" + i)
-      .gender(Gender.values()[i % Gender.values().length]).flag(true).customId(Long.valueOf(i))
+    return User.builder()
+      .email("email" + i + "@gmail.com")
+      .name("Name" + i)
+      .gender(Gender.values()[i % Gender.values().length])
+      .flag(true)
+      .customId(Long.valueOf(i))
       .roleSlug(i == 1 ? "R1" : "R2")
       .address(address)
+      .tags(i % 2 == 0 ? List.of("" + i) : new ArrayList<>())
       .build();
   }
 
