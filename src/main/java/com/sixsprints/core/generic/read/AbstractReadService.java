@@ -414,7 +414,7 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
       long count = values.stream().filter(val -> ObjectUtils.isEmpty(val) || val.equals(AppConstants.BLANK_STRING))
         .count();
       if (count > 0) {
-        array = new String[size + 2];
+        array = new Object[size + 2];
         array[i++] = "";
         array[i++] = Collections.EMPTY_LIST;
       }
