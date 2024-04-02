@@ -85,7 +85,7 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity> exten
     update.set(AbstractMongoEntity.DATE_MODIFIED, System.currentTimeMillis());
     update.set(AbstractMongoEntity.LAST_MODIFIED_BY, userAuditField(ApplicationContext.getCurrentUser()));
 
-    return mongo.updateFirst(
+    return mongo.updateMulti(
       Query.query(criteria),
       update,
       metaData().getClassType());
@@ -104,7 +104,7 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity> exten
     for (String prop : propsChanged) {
       update.set(prop, BeanWrapperUtil.getValue(domain, prop));
     }
-    return mongo.updateFirst(
+    return mongo.updateMulti(
       Query.query(criteria),
       update,
       metaData().getClassType());
