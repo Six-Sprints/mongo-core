@@ -56,7 +56,7 @@ public abstract class AbstractAuthenticationInterceptor<T extends AbstractMongoE
     if (!StringUtils.hasText(token)) {
       token = httpServletRequest.getParameter(authTokenKey());
     }
-    T user = checkUser(token, annotationData.isRequired());
+    T user = checkUser(token, annotationData);
     postProcessor(user);
     return true;
   }
@@ -99,8 +99,8 @@ public abstract class AbstractAuthenticationInterceptor<T extends AbstractMongoE
   protected abstract void checkIfTokenInvalid(T user, String token, boolean required)
     throws NotAuthenticatedException;
 
-  protected T checkUser(String token, boolean required)
-    throws NotAuthenticatedException, EntityNotFoundException {
+  protected T checkUser(String token, AuthAnnotationDataDto annotationData) throws NotAuthenticatedException, EntityNotFoundException {
+    Boolean required = annotationData.isRequired();
     Boolean tokenEmpty = checkIfTokenEmpty(token, required);
     if (tokenEmpty) {
       return null;
@@ -111,7 +111,7 @@ public abstract class AbstractAuthenticationInterceptor<T extends AbstractMongoE
     }
     checkIfTokenInvalid(user, token, required);
     checkIfActive(user, required);
-    checkUserPermissions(user, null, null, required);
+    checkUserPermissions(user, annotationData.getModule(), annotationData.getPermission(), required);
     checkCustomAttributes(user, required);
     return user;
   }
