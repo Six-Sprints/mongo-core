@@ -42,7 +42,7 @@ public abstract class AbstractCrudController<T extends AbstractMongoEntity, SD, 
   }
 
   @PutMapping
-  @BasicAuth(permission = BasicPermissionEnum.UPDATE)
+  @BasicAuth(permission = BasicPermissionEnum.EDIT)
   public ResponseEntity<?> patch(@RequestBody @Validated CD dto, @RequestParam String propChanged)
     throws BaseException {
     T domain = crudMapper.toDomain(dto);
@@ -50,7 +50,7 @@ public abstract class AbstractCrudController<T extends AbstractMongoEntity, SD, 
   }
 
   @PutMapping("/patch/multi")
-  @BasicAuth(permission = BasicPermissionEnum.UPDATE)
+  @BasicAuth(permission = BasicPermissionEnum.EDIT)
   public ResponseEntity<?> patchMulti(@RequestBody @Validated CD dto, @RequestParam List<String> propChanged)
     throws BaseException {
     T domain = crudMapper.toDomain(dto);
@@ -58,21 +58,21 @@ public abstract class AbstractCrudController<T extends AbstractMongoEntity, SD, 
   }
 
   @PutMapping("/update")
-  @BasicAuth(permission = BasicPermissionEnum.UPDATE)
+  @BasicAuth(permission = BasicPermissionEnum.EDIT)
   public ResponseEntity<?> update(@RequestBody @Validated CD dto) throws BaseException {
     T domain = crudMapper.toDomain(dto);
     return RestUtil.successResponse(crudService.update(domain.getId(), domain));
   }
 
   @PostMapping
-  @BasicAuth(permission = BasicPermissionEnum.CREATE)
+  @BasicAuth(permission = BasicPermissionEnum.ADD)
   public ResponseEntity<RestResponse<CD>> add(@RequestBody @Validated CD dto)
     throws BaseException {
     return RestUtil.successResponse(crudMapper.toDto(crudService.create(crudMapper.toDomain(dto))), HttpStatus.CREATED);
   }
 
   @PutMapping("/upsert")
-  @BasicAuth(permission = BasicPermissionEnum.UPDATE)
+  @BasicAuth(permission = BasicPermissionEnum.EDIT)
   public ResponseEntity<RestResponse<CD>> upsert(@RequestBody @Validated CD dto)
     throws BaseException {
     return RestUtil.successResponse(crudMapper.toDto(crudService.upsert(crudMapper.toDomain(dto))));

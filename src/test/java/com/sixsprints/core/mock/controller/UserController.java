@@ -34,7 +34,7 @@ public class UserController extends AbstractCrudController<User, UserDto, UserDt
   }
 
   @PostMapping
-  @BasicAuth(permission = BasicPermissionEnum.CREATE, required = false)
+  @BasicAuth(permission = BasicPermissionEnum.ADD, required = false)
   public ResponseEntity<RestResponse<UserDto>> add(@RequestBody @Validated UserDto dto)
     throws BaseException {
     return RestUtil.successResponse(mapper.toDto(crudService.create(mapper.toDomain(dto))), HttpStatus.CREATED);

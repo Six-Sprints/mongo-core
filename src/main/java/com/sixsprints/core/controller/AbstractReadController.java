@@ -48,26 +48,26 @@ public abstract class AbstractReadController<T extends AbstractMongoEntity, SD, 
   }
 
   @GetMapping("/all/fields")
-  @BasicAuth(permission = BasicPermissionEnum.READ)
+  @BasicAuth(permission = BasicPermissionEnum.VIEW)
   public ResponseEntity<RestResponse<List<FieldDto>>> fields() {
     return RestUtil.successResponse(localise(searchDtoFields()));
   }
 
   @GetMapping("/{slug}")
-  @BasicAuth(permission = BasicPermissionEnum.READ)
+  @BasicAuth(permission = BasicPermissionEnum.VIEW)
   public ResponseEntity<RestResponse<DD>> findBySlug(@PathVariable String slug)
     throws EntityNotFoundException {
     return RestUtil.successResponse(detailDtoMapper.toDto(readService.findBySlug(slug)));
   }
 
   @PostMapping("/search")
-  @BasicAuth(permission = BasicPermissionEnum.READ)
+  @BasicAuth(permission = BasicPermissionEnum.VIEW)
   public ResponseEntity<RestResponse<PageDto<SD>>> filter(@RequestBody FilterRequestDto filterRequestDto) {
     return RestUtil.successResponse(searchDtoMapper.pageEntityToPageDtoDto(readService.filter(filterRequestDto)));
   }
 
   @PostMapping("/column/master")
-  @BasicAuth(permission = BasicPermissionEnum.READ)
+  @BasicAuth(permission = BasicPermissionEnum.VIEW)
   public ResponseEntity<RestResponse<List<?>>> getDistinctValues(@RequestParam String column,
     @RequestBody FilterRequestDto filterRequestDto) {
     return RestUtil.successResponse(readService.distinctColumnValues(column, filterRequestDto));
