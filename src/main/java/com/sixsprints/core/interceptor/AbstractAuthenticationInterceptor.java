@@ -209,13 +209,13 @@ public abstract class AbstractAuthenticationInterceptor<T extends AbstractMongoE
 
       name = "permission";
       if (name.equals(methodName)) {
-        PermissionDefinition permission = fetchSpecificData(annotation, method, "", PermissionDefinition.class);
+        PermissionDefinition permission = fetchSpecificData(annotation, method, name, PermissionDefinition.class);
         data.setPermission(permission);
       }
 
       name = "required";
       if (name.equals(methodName)) {
-        Boolean required = fetchSpecificData(annotation, method, "required", boolean.class);
+        Boolean required = fetchSpecificData(annotation, method, name, boolean.class);
         if (required != null) {
           data.setRequired(required);
         } else {

@@ -59,7 +59,7 @@ public class ParentMongoConfig extends AbstractMongoClientConfiguration {
   }
 
   protected String uri() {
-    return "mongodb+srv://root:u9VYdHYx1jmvvz6S@cluster0.sux3l.mongodb.net/testdb?retryWrites=true&w=majority";
+    return "mongodb://localhost";
   }
 
   @Override
