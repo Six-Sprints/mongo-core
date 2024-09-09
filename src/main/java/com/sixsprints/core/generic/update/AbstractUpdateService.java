@@ -101,7 +101,7 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity> exten
     propsChangedWithAudit.add(AbstractMongoEntity.LAST_MODIFIED_BY);
 
     Update update = new Update();
-    for (String prop : propsChanged) {
+    for (String prop : propsChangedWithAudit) {
       update.set(prop, BeanWrapperUtil.getValue(domain, prop));
     }
     return mongo.updateMulti(
