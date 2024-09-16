@@ -251,7 +251,7 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity> exten
 
     for (DTO dto : data) {
       List<String> errorList = checkValidity(importMapper.toDomain(dto));
-      errorList = addPrefix(serialNumberError(dto.getSerialNo()), errorList);
+      errorList = addPrefix(serialNumberError(dto.getSerialNo()), resolveErrors(errorList));
       errors.addAll(errorList);
     }
 
@@ -259,6 +259,12 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity> exten
       throw validationException(errors);
     }
 
+  }
+
+  protected List<String> resolveErrors(List<String> errors) {
+    return errors.stream()
+      .map(err -> localisedMessage(err, null))
+      .collect(Collectors.toList());
   }
 
   protected String serialNumberError(Long serialNumber) {
@@ -287,7 +293,7 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity> exten
     }
   }
 
-  private List<String> addPrefix(String prefix, List<String> errorList) {
+  protected List<String> addPrefix(String prefix, List<String> errorList) {
 
     List<String> errors = new ArrayList<>();
     for (String error : errorList) {
@@ -309,7 +315,7 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity> exten
     return "Row numbers " + rows + " are duplicate.";
   }
 
-  private <DTO extends IGenericExcelImport> List<String> constraintMessages(
+  protected <DTO extends IGenericExcelImport> List<String> constraintMessages(
     Set<ConstraintViolation<DTO>> violations) {
 
     List<String> errors = new ArrayList<>();

@@ -6,6 +6,7 @@ import static org.springframework.data.mongodb.core.query.Query.query;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -126,10 +127,13 @@ public abstract class GenericAbstractService<T extends AbstractMongoEntity> exte
   }
 
   protected EntityInvalidException validationException(List<String> errors) {
+    List<String> resolvedErrors = errors.stream()
+      .map(err -> localisedMessage(err, null))
+      .collect(Collectors.toList());
     return EntityInvalidException.childBuilder()
-      .data(errors.stream()
-        .map(err -> MessageSourceUtil.resolveMessage(messageSourceService, err, null, LocaleContextHolder.getLocale())))
-      .error("Entity is invalid. Please check the error(s) and rectify.").build();
+      .data(resolvedErrors)
+      .error(resolvedErrors.size() > 1 ? errors.toString() : resolvedErrors.get(0))
+      .build();
   }
 
   protected boolean isNew(T entity) {
