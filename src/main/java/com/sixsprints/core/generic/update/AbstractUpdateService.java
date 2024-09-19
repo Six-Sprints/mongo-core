@@ -414,9 +414,9 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity> exten
         return bulkImportInfo(fromDb, UpdateAction.IGNORE, null);
       }
 
-      List<String> errors = checkValidityPreUpdate(domain);
+      List<String> errors = checkValidityPreUpdate(fromDb);
       if (!CollectionUtils.isEmpty(errors)) {
-        return bulkImportInfo(domain, UpdateAction.INVALID, errors);
+        return bulkImportInfo(fromDb, UpdateAction.INVALID, errors);
       }
       fromDb = save(fromDb);
       postUpdate(fromDb);
