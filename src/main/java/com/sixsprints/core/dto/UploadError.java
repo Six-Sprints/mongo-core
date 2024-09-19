@@ -1,5 +1,7 @@
 package com.sixsprints.core.dto;
 
+import java.io.Serializable;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -11,27 +13,14 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode
-public class UploadError implements Comparable<UploadError> {
+public class UploadError implements Serializable {
 
-  private Integer row;
-
-  private Integer col;
-
-  private String cellLocation;
+  private static final long serialVersionUID = 1L;
 
   private String message;
 
   private String type;
-  
-  private String dataString;
 
-  @Override
-  public int compareTo(UploadError other) {
-    int order = this.row - other.row;
-    if (order == 0) {
-      return this.col - other.col;
-    }
-    return order;
-  }
+  private String key;
 
 }

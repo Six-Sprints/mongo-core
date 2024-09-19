@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -379,7 +380,11 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity> exten
     GenericMapper<T, DTO> importMapper, List<DTO> upsertList) {
     List<T> domains = importMapper.toDomain(upsertList);
     List<BulkUpdateInfo<T>> bulkUpsert = bulkUpsert(domains);
+    return buildImportLog(upsertList, bulkUpsert);
+  }
 
+  protected <DTO extends IGenericExcelImport> ImportLogDetailsDto buildImportLog(List<DTO> upsertList,
+    List<BulkUpdateInfo<T>> bulkUpsert) {
     ImportLogDetailsDto retDto = ImportLogDetailsDto.builder()
       .totalRowCount(upsertList.size())
       .successRowCount((int) bulkUpsert.stream()
@@ -399,12 +404,17 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity> exten
     List<UploadError> errors = new ArrayList<>();
     for (BulkUpdateInfo<T> item : bulkUpsert) {
       errors.add(UploadError.builder()
-        .dataString(item.getData().toString())
+        .key(uniqueBulkUploadKey(item.getData()))
         .type(item.getUpdateAction().name())
-        .message(item.getErrors() == null ? null : item.getErrors().toString())
+        .message(
+          CollectionUtils.isEmpty(item.getErrors()) ? "" : StringUtils.join(resolveErrors(item.getErrors()), ','))
         .build());
     }
     return errors;
+  }
+
+  protected String uniqueBulkUploadKey(T data) {
+    return data.getId();
   }
 
   protected BulkUpdateInfo<T> upsertOneWhileBulkImport(T domain) {
