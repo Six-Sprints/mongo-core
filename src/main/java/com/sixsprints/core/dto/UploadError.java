@@ -22,6 +22,8 @@ public class UploadError implements Comparable<UploadError> {
   private String message;
 
   private String type;
+  
+  private String dataString;
 
   @Override
   public int compareTo(UploadError other) {

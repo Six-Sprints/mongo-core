@@ -27,6 +27,7 @@ import com.sixsprints.core.domain.AbstractMongoEntity;
 import com.sixsprints.core.dto.BulkUpdateInfo;
 import com.sixsprints.core.dto.IGenericExcelImport;
 import com.sixsprints.core.dto.ImportLogDetailsDto;
+import com.sixsprints.core.dto.UploadError;
 import com.sixsprints.core.enums.ImportOperation;
 import com.sixsprints.core.enums.UpdateAction;
 import com.sixsprints.core.exception.BaseException;
@@ -379,13 +380,31 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity> exten
     List<T> domains = importMapper.toDomain(upsertList);
     List<BulkUpdateInfo<T>> bulkUpsert = bulkUpsert(domains);
 
-    return ImportLogDetailsDto.builder()
+    ImportLogDetailsDto retDto = ImportLogDetailsDto.builder()
       .totalRowCount(upsertList.size())
       .successRowCount((int) bulkUpsert.stream()
         .filter(item -> List.of(UpdateAction.CREATE, UpdateAction.UPDATE)
           .contains(item.getUpdateAction()))
         .count())
+      .errorRowCount((int) bulkUpsert.stream()
+        .filter(item -> List.of(UpdateAction.INVALID)
+          .contains(item.getUpdateAction()))
+        .count())
       .build();
+    retDto.setErrors(getAllErrors(bulkUpsert));
+    return retDto;
+  }
+
+  protected List<UploadError> getAllErrors(List<BulkUpdateInfo<T>> bulkUpsert) {
+    List<UploadError> errors = new ArrayList<>();
+    for (BulkUpdateInfo<T> item : bulkUpsert) {
+      errors.add(UploadError.builder()
+        .dataString(item.getData().toString())
+        .type(item.getUpdateAction().name())
+        .message(item.getErrors() == null ? null : item.getErrors().toString())
+        .build());
+    }
+    return errors;
   }
 
   protected BulkUpdateInfo<T> upsertOneWhileBulkImport(T domain) {

@@ -20,5 +20,5 @@ public class BulkUpdateInfo<T> {
   private UpdateAction updateAction;
 
   private List<String> errors;
-
+  
 }
