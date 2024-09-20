@@ -406,11 +406,29 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity> exten
       errors.add(UploadError.builder()
         .key(uniqueBulkUploadKey(item.getData()))
         .type(item.getUpdateAction().name())
-        .message(
-          CollectionUtils.isEmpty(item.getErrors()) ? "" : StringUtils.join(resolveErrors(item.getErrors()), ','))
+        .message(generateMessageForImportItem(item))
         .build());
     }
     return errors;
+  }
+
+  protected String generateMessageForImportItem(BulkUpdateInfo<T> item) {
+    UpdateAction action = item.getUpdateAction();
+    String message = "";
+    switch (action) {
+    case CREATE:
+      message = localisedMessage("bulk.upsert.create.action", null);
+      break;
+    case UPDATE:
+      message = localisedMessage("bulk.upsert.update.action", null);
+      break;
+    case IGNORE:
+      message = localisedMessage("bulk.upsert.ignore.action", null);
+      break;
+    case INVALID:
+      message = StringUtils.join(resolveErrors(item.getErrors()), ',');
+    }
+    return message;
   }
 
   protected String uniqueBulkUploadKey(T data) {
