@@ -13,19 +13,22 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import javax.validation.ConstraintViolation;
-import javax.validation.Path.Node;
-
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
+import com.mongodb.client.result.UpdateResult;
 import com.sixsprints.core.annotation.AuditCsvImport;
 import com.sixsprints.core.domain.AbstractMongoEntity;
 import com.sixsprints.core.dto.BulkUpdateInfo;
 import com.sixsprints.core.dto.IGenericExcelImport;
 import com.sixsprints.core.dto.ImportLogDetailsDto;
+import com.sixsprints.core.dto.UploadError;
 import com.sixsprints.core.enums.ImportOperation;
 import com.sixsprints.core.enums.UpdateAction;
 import com.sixsprints.core.exception.BaseException;
@@ -36,11 +39,13 @@ import com.sixsprints.core.generic.create.AbstractCreateService;
 import com.sixsprints.core.service.ImportLogDetailsService;
 import com.sixsprints.core.transformer.GenericMapper;
 import com.sixsprints.core.transformer.ImportLogDetailsMapper;
+import com.sixsprints.core.utils.ApplicationContext;
 import com.sixsprints.core.utils.BeanWrapperUtil;
+import com.sixsprints.core.utils.excel.ExcelUtil;
 
-import cn.afterturn.easypoi.excel.ExcelImportUtil;
 import cn.afterturn.easypoi.excel.entity.ImportParams;
-import cn.afterturn.easypoi.excel.entity.result.ExcelImportResult;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Path.Node;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -52,7 +57,8 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity> exten
   private ImportLogDetailsService importLogDetailsService;
 
   @Override
-  public T update(String id, T domain) throws EntityNotFoundException, EntityAlreadyExistsException {
+  public T update(String id, T domain)
+    throws EntityNotFoundException, EntityAlreadyExistsException, EntityInvalidException {
     T entity = findOne(id);
     domain.copyEntityFrom(entity);
     return update(domain);
@@ -60,14 +66,64 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity> exten
 
   @Override
   public T patchUpdate(String id, T domain, String propChanged)
-    throws EntityNotFoundException, EntityAlreadyExistsException {
+    throws EntityNotFoundException, EntityAlreadyExistsException, EntityInvalidException {
+    return patchUpdate(id, domain, List.of(propChanged));
+  }
 
+  @Override
+  public T patchUpdate(String id, T domain, List<String> propsChanged)
+    throws EntityNotFoundException, EntityAlreadyExistsException, EntityInvalidException {
     T entity = findOne(id);
-    List<String> list = new ArrayList<>();
-    list.add(propChanged);
-    BeanWrapperUtil.copyProperties(domain, entity, list);
+    BeanWrapperUtil.copyProperties(domain, entity, propsChanged);
+    preUpdateCheck(entity);
+    patchUpdateRaw(id, entity, propsChanged);
+    return entity;
+  }
 
-    return update(entity);
+  @Override
+  public UpdateResult patchUpdateRaw(Criteria criteria, Object value, String propChanged) {
+    Update update = new Update();
+    update.set(propChanged, value);
+    update.set(AbstractMongoEntity.DATE_MODIFIED, System.currentTimeMillis());
+    update.set(AbstractMongoEntity.LAST_MODIFIED_BY, userAuditField(ApplicationContext.getCurrentUser()));
+
+    return mongo.updateMulti(
+      Query.query(criteria),
+      update,
+      metaData().getClassType());
+  }
+
+  @Override
+  public UpdateResult patchUpdateRaw(Criteria criteria, T domain, List<String> propsChanged) {
+
+    List<String> propsChangedWithAudit = new ArrayList<>(propsChanged);
+    domain.setDateModified(System.currentTimeMillis());
+    domain.setLastModifiedBy(userAuditField(ApplicationContext.getCurrentUser()));
+    propsChangedWithAudit.add(AbstractMongoEntity.DATE_MODIFIED);
+    propsChangedWithAudit.add(AbstractMongoEntity.LAST_MODIFIED_BY);
+
+    Update update = new Update();
+    for (String prop : propsChangedWithAudit) {
+      update.set(prop, BeanWrapperUtil.getValue(domain, prop));
+    }
+    return mongo.updateMulti(
+      Query.query(criteria),
+      update,
+      metaData().getClassType());
+  }
+
+  protected String userAuditField(AbstractMongoEntity currentUser) {
+    return currentUser.getSlug();
+  }
+
+  @Override
+  public UpdateResult patchUpdateRaw(String id, Object value, String propChanged) {
+    return patchUpdateRaw(Criteria.where(AbstractMongoEntity.ID).is(id), value, propChanged);
+  }
+
+  @Override
+  public UpdateResult patchUpdateRaw(String id, T domain, List<String> propsChanged) {
+    return patchUpdateRaw(Criteria.where(AbstractMongoEntity.ID).is(id), domain, propsChanged);
   }
 
   @Override
@@ -87,7 +143,7 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity> exten
   public T upsert(T domain) throws EntityInvalidException {
     BulkUpdateInfo<T> updateInfo = upsertOneWhileBulkImport(domain);
     if (UpdateAction.INVALID.equals(updateInfo.getUpdateAction())) {
-      throw invalidException(domain);
+      throw invalidException(domain, updateInfo.getErrors());
     }
     return updateInfo.getData();
   }
@@ -133,15 +189,17 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity> exten
   public <DTO extends IGenericExcelImport> List<DTO> importDataPreview(InputStream inputStream, ImportParams params)
     throws Exception {
 
+    transformImportParams(params);
+
     @SuppressWarnings("unchecked")
     Class<DTO> classType = (Class<DTO>) metaData().getImportDataClassType();
     log.info("Import request received for {}", classType.getSimpleName());
-    ExcelImportResult<DTO> result = ExcelImportUtil.<DTO>importExcelMore(inputStream, classType, params);
-    List<DTO> list = result.getList();
-    if (CollectionUtils.isEmpty(list)) {
-      return new ArrayList<>();
-    }
-    return list;
+
+    return ExcelUtil.importData(inputStream, params, classType);
+  }
+
+  protected void transformImportParams(ImportParams params) {
+
   }
 
   protected <DTO extends IGenericExcelImport> Map<ImportOperation, ImportLogDetailsDto> performImport(
@@ -184,6 +242,7 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity> exten
     List<String> errors = new ArrayList<>();
 
     for (DTO dto : data) {
+
       Set<ConstraintViolation<DTO>> validate = validator.validate(dto);
       errors.addAll(constraintMessages(validate));
     }
@@ -194,7 +253,7 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity> exten
 
     for (DTO dto : data) {
       List<String> errorList = checkValidity(importMapper.toDomain(dto));
-      errorList = addPrefix(serialNumberError(dto.getSerialNo()), errorList);
+      errorList = addPrefix(serialNumberError(dto.getSerialNo()), resolveErrors(errorList));
       errors.addAll(errorList);
     }
 
@@ -204,11 +263,39 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity> exten
 
   }
 
-  protected <DTO extends IGenericExcelImport> String serialNumberError(Long serialNumber) {
+  protected List<String> resolveErrors(List<String> errors) {
+    return errors.stream()
+      .map(err -> localisedMessage(err, null))
+      .collect(Collectors.toList());
+  }
+
+  protected String serialNumberError(Long serialNumber) {
     return "S.No. " + serialNumber + ": ";
   }
 
-  private List<String> addPrefix(String prefix, List<String> errorList) {
+  private void preUpdateCheck(T domain) throws EntityAlreadyExistsException, EntityInvalidException {
+    T fromDB = findDuplicate(domain);
+    if (fromDB != null && !domain.getId().equals(fromDB.getId())) {
+      if (fromDB.getActive()) {
+        throw alreadyExistsException(fromDB, domain);
+      }
+      delete(fromDB);
+    }
+    preUpdate(fromDB, domain);
+
+    List<String> errors = checkValidity(domain);
+
+    if (!CollectionUtils.isEmpty(errors)) {
+      throw validationException(errors);
+    }
+    List<String> updateErrors = checkValidityPreUpdate(domain);
+
+    if (!CollectionUtils.isEmpty(updateErrors)) {
+      throw validationException(updateErrors);
+    }
+  }
+
+  protected List<String> addPrefix(String prefix, List<String> errorList) {
 
     List<String> errors = new ArrayList<>();
     for (String error : errorList) {
@@ -230,7 +317,7 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity> exten
     return "Row numbers " + rows + " are duplicate.";
   }
 
-  private <DTO extends IGenericExcelImport> List<String> constraintMessages(
+  protected <DTO extends IGenericExcelImport> List<String> constraintMessages(
     Set<ConstraintViolation<DTO>> violations) {
 
     List<String> errors = new ArrayList<>();
@@ -293,20 +380,65 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity> exten
     GenericMapper<T, DTO> importMapper, List<DTO> upsertList) {
     List<T> domains = importMapper.toDomain(upsertList);
     List<BulkUpdateInfo<T>> bulkUpsert = bulkUpsert(domains);
+    return buildImportLog(upsertList, bulkUpsert);
+  }
 
-    return ImportLogDetailsDto.builder()
+  protected <DTO extends IGenericExcelImport> ImportLogDetailsDto buildImportLog(List<DTO> upsertList,
+    List<BulkUpdateInfo<T>> bulkUpsert) {
+    ImportLogDetailsDto retDto = ImportLogDetailsDto.builder()
       .totalRowCount(upsertList.size())
       .successRowCount((int) bulkUpsert.stream()
         .filter(item -> List.of(UpdateAction.CREATE, UpdateAction.UPDATE)
           .contains(item.getUpdateAction()))
         .count())
+      .errorRowCount((int) bulkUpsert.stream()
+        .filter(item -> List.of(UpdateAction.INVALID)
+          .contains(item.getUpdateAction()))
+        .count())
       .build();
+    retDto.setErrors(getAllErrors(bulkUpsert));
+    return retDto;
+  }
+
+  protected List<UploadError> getAllErrors(List<BulkUpdateInfo<T>> bulkUpsert) {
+    List<UploadError> errors = new ArrayList<>();
+    for (BulkUpdateInfo<T> item : bulkUpsert) {
+      errors.add(UploadError.builder()
+        .key(uniqueBulkUploadKey(item.getData()))
+        .type(item.getUpdateAction().name())
+        .message(generateMessageForImportItem(item))
+        .build());
+    }
+    return errors;
+  }
+
+  protected String generateMessageForImportItem(BulkUpdateInfo<T> item) {
+    UpdateAction action = item.getUpdateAction();
+    String message = "";
+    switch (action) {
+    case CREATE:
+      message = localisedMessage("bulk.upsert.create.action", null);
+      break;
+    case UPDATE:
+      message = localisedMessage("bulk.upsert.update.action", null);
+      break;
+    case IGNORE:
+      message = localisedMessage("bulk.upsert.ignore.action", null);
+      break;
+    case INVALID:
+      message = StringUtils.join(resolveErrors(item.getErrors()), ',');
+    }
+    return message;
+  }
+
+  protected String uniqueBulkUploadKey(T data) {
+    return data.getId();
   }
 
   protected BulkUpdateInfo<T> upsertOneWhileBulkImport(T domain) {
     List<String> errors = checkValidity(domain);
     if (!CollectionUtils.isEmpty(errors)) {
-      return bulkImportInfo(domain, UpdateAction.INVALID);
+      return bulkImportInfo(domain, UpdateAction.INVALID, errors);
     }
     return upsertOne(domain);
   }
@@ -326,17 +458,25 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity> exten
       }
 
       if (checkEquals(fromDb, copy)) {
-        return bulkImportInfo(fromDb, UpdateAction.IGNORE);
+        return bulkImportInfo(fromDb, UpdateAction.IGNORE, null);
       }
 
+      List<String> errors = checkValidityPreUpdate(fromDb);
+      if (!CollectionUtils.isEmpty(errors)) {
+        return bulkImportInfo(fromDb, UpdateAction.INVALID, errors);
+      }
       fromDb = save(fromDb);
       postUpdate(fromDb);
-      return bulkImportInfo(fromDb, UpdateAction.UPDATE);
+      return bulkImportInfo(fromDb, UpdateAction.UPDATE, null);
     }
     preCreate(domain);
     domain = save(domain);
     postCreate(domain);
-    return bulkImportInfo(domain, UpdateAction.CREATE);
+    return bulkImportInfo(domain, UpdateAction.CREATE, null);
+  }
+
+  protected List<String> checkValidityPreUpdate(T domain) {
+    return new ArrayList<>();
   }
 
   @SuppressWarnings("unchecked")
@@ -366,22 +506,15 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity> exten
     BeanWrapperUtil.copyNonNullProperties(source, target);
   }
 
-  private T update(T domain) throws EntityAlreadyExistsException {
-    T fromDB = findDuplicate(domain);
-    if (fromDB != null && !domain.getId().equals(fromDB.getId())) {
-      if (fromDB.getActive()) {
-        throw alreadyExistsException(fromDB);
-      }
-      delete(fromDB);
-    }
-    preUpdate(fromDB, domain);
+  private T update(T domain) throws EntityAlreadyExistsException, EntityInvalidException {
+    preUpdateCheck(domain);
     save(domain);
     postUpdate(domain);
     return domain;
   }
 
-  private BulkUpdateInfo<T> bulkImportInfo(T fromDB, UpdateAction action) {
-    return BulkUpdateInfo.<T>builder().updateAction(action).data(fromDB).build();
+  private BulkUpdateInfo<T> bulkImportInfo(T fromDB, UpdateAction action, List<String> errors) {
+    return BulkUpdateInfo.<T>builder().updateAction(action).errors(errors).data(fromDB).build();
   }
 
 }

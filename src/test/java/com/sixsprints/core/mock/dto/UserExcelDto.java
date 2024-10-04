@@ -1,13 +1,12 @@
 package com.sixsprints.core.mock.dto;
 
-import javax.validation.constraints.Email;
-import javax.validation.constraints.NotBlank;
-
 import com.sixsprints.core.dto.GenericExcelImportDto;
 import com.sixsprints.core.mock.domain.embedded.Address;
 import com.sixsprints.core.mock.enums.Gender;
 
 import cn.afterturn.easypoi.excel.annotation.Excel;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -22,6 +21,8 @@ import lombok.experimental.SuperBuilder;
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class UserExcelDto extends GenericExcelImportDto {
+
+  private static final long serialVersionUID = 1L;
 
   @Email
   @NotBlank

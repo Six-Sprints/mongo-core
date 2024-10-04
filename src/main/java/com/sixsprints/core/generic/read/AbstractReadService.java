@@ -5,9 +5,11 @@ import java.io.OutputStream;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.ObjectUtils;
@@ -180,10 +182,12 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
       return new ArrayList<>();
     }
 
+    String distinctColumn = StringUtils.hasText(field.getJoinColumnNameLocal()) ? field.getJoinColumnNameLocal()
+      : column;
     Query query = new Query().with(Sort.by(Direction.ASC, column));
     query.addCriteria(buildCriteria(filterRequestDto, metaData));
     List<?> list = mongo.getCollection(mongo.getCollectionName(metaData().getClassType()))
-      .distinct(column, query.getQueryObject(), classTypeFromField).into(new ArrayList<>());
+      .distinct(distinctColumn, query.getQueryObject(), classTypeFromField).into(new ArrayList<>());
 
     List<KeyLabelDto> result = new ArrayList<>();
     result.add(KeyLabelDto.builder()
@@ -322,6 +326,31 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
     return pageable;
   }
 
+  protected void preFilter(FilterRequestDto filterRequestDto) {
+    if (filterRequestDto == null || filterRequestDto.getFilterModel() == null
+      || filterRequestDto.getFilterModel().isEmpty()) {
+      return;
+    }
+
+    Map<String, ColumnFilter> filterModel = new HashMap<>(filterRequestDto.getFilterModel());
+    MetaData<T> metaData = metaData();
+    Map<String, String> keysToCopy = new HashMap<>();
+    for (String key : filterModel.keySet()) {
+      FieldDto field = findField(key, metaData);
+      if (field != null && StringUtils.hasText(field.getJoinColumnNameLocal())) {
+        keysToCopy.put(key, field.getJoinColumnNameLocal());
+      }
+    }
+
+    if (!keysToCopy.isEmpty()) {
+      keysToCopy.keySet().forEach(key -> filterModel.put(keysToCopy.get(key), filterModel.get(key)));
+      keysToCopy.keySet().forEach(filterModel::remove);
+    }
+
+    filterRequestDto.setFilterModel(filterModel);
+
+  }
+
   private Sort buildSort(List<SortModel> sortModel, MetaData<T> meta) {
     Sort sort = Sort.unsorted();
     if (!CollectionUtils.isEmpty(sortModel)) {
@@ -336,6 +365,8 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
   }
 
   private Criteria buildCriteria(FilterRequestDto filterRequestDto, MetaData<T> meta) {
+
+    preFilter(filterRequestDto);
     List<Criteria> criterias = new ArrayList<>();
     Criteria criteria = InheritanceMongoUtil.generate(meta.getClassType());
     if (criteria != null) {
@@ -356,6 +387,7 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
   }
 
   private void addCriteria(ColumnFilter filter, String key, List<Criteria> criterias) {
+
     if (filter instanceof SetColumnFilter) {
       addSetFilter(criterias, key, (SetColumnFilter) filter);
     } else if (filter instanceof NumberColumnFilter) {
@@ -381,15 +413,26 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
       long count = values.stream().filter(val -> ObjectUtils.isEmpty(val) || val.equals(AppConstants.BLANK_STRING))
         .count();
       if (count > 0) {
-        array = new String[size + 1];
+        array = new Object[size + 2];
+        array[i++] = new ArrayList<String>();
         array[i++] = "";
       }
 
       for (Object val : values) {
         array[i++] = ObjectUtils.isEmpty(val) || val.toString().equals(AppConstants.BLANK_STRING) ? null : val;
       }
-      criterias.add(setKeyCriteria(key).in(array));
+      criterias.add(setCriteriaOperator(filter, array, key));
     }
+  }
+
+  private Criteria setCriteriaOperator(SetColumnFilter filter, Object[] array, String key) {
+    Criteria crit = setKeyCriteria(key);
+    if (AppConstants.NOT_EQUAL.equals(filter.getType())) {
+      crit = crit.nin(array);
+    } else {
+      crit = crit.in(array);
+    }
+    return crit;
   }
 
   private void addNumberFilter(List<Criteria> criterias, String key, NumberColumnFilter numberFilter) {
@@ -451,7 +494,8 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
 
   private void addDateFilter(List<Criteria> criterias, String key, DateColumnFilter filter) {
     Criteria criteria = setKeyCriteria(key);
-    criteria = dateCriteria(filter.getType(), filter.getFilter(), filter.getFilterTo(), filter.isExactMatch(),
+    Long dateTo = filter.getDateTo() == null ? null : filter.getDateTo().getTime();
+    criteria = dateCriteria(filter.getType(), filter.getDateFrom().getTime(), dateTo, filter.isExactMatch(),
       criteria);
     criterias.add(criteria);
   }
@@ -496,9 +540,9 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
       return criteria;
     }
 
-    Long filterEOD = dateUtil.endOfDay(filter).getMillis();
-    Long filterSOD = dateUtil.startOfDay(filter).getMillis();
-    Long filterToEOD = filterTo != null ? dateUtil.endOfDay(filterTo).getMillis() : 0;
+    Long filterEOD = dateUtil.endOfDay(filter).toInstant().toEpochMilli();
+    Long filterSOD = dateUtil.startOfDay(filter).toInstant().toEpochMilli();
+    Long filterToEOD = filterTo != null ? dateUtil.endOfDay(filterTo).toInstant().toEpochMilli() : 0;
 
     switch (type) {
     case AppConstants.EQUALS:
@@ -534,31 +578,69 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
   }
 
   private void addSearchCriteria(SearchColumnFilter filter, List<Criteria> criterias) {
-    List<Criteria> searchCriteria = new ArrayList<>();
-    String quote = Pattern.quote(filter.getFilter());
 
+    List<Criteria> searchCriteria = new ArrayList<>();
+    String quote = transformFreeTextSearchInput(filter.getFilter());
     List<FieldDto> fields = buildSearchFields(filter);
 
     if (CollectionUtils.isEmpty(fields)) {
       return;
     }
 
+    for (FieldDto field : fields) {
+      if (field.getDataType().isSearchable()) {
+        Criteria criteria = null;
+        if (StringUtils.hasText(field.getJoinCollectionName())) {
+          criteria = resolveJoinValues(criterias, field, quote);
+        } else {
+          criteria = setKeyCriteria(field.getName()).regex(quote, IGNORE_CASE_FLAG);
+        }
+        if (criteria != null) {
+          searchCriteria.add(criteria);
+        }
+      }
+    }
+
     if (!filter.isSlugExcludedFromSearch() && !fields.contains(FieldDto.builder().name(SLUG).build())) {
       searchCriteria.add(setKeyCriteria(SLUG).regex(quote, IGNORE_CASE_FLAG));
     }
-    for (FieldDto field : fields) {
-      if (field.getDataType().isSearchable()) {
-        Criteria criteria = setKeyCriteria(field.getName()).regex(quote, IGNORE_CASE_FLAG);
-        searchCriteria.add(criteria);
-      }
-    }
+
     if (!searchCriteria.isEmpty()) {
       criterias.add(new Criteria().orOperator(searchCriteria.toArray(new Criteria[searchCriteria.size()])));
     }
 
   }
 
-  private List<FieldDto> buildSearchFields(SearchColumnFilter filter) {
+  protected String transformFreeTextSearchInput(String filter) {
+    return Pattern.quote(filter);
+  }
+
+  protected Criteria resolveJoinValues(List<Criteria> criterias, FieldDto field, String filter) {
+    Set<String> joinedSlugs = new HashSet<>();
+    Query joinQuery = new Query();
+    joinQuery.fields().include(SLUG).exclude("_id");
+    joinQuery.addCriteria(Criteria.where(field.getJoinColumnName()).regex(filter, IGNORE_CASE_FLAG));
+
+    List<?> joinedValues = mongo.find(joinQuery, field.getJoinCollectionClass());
+
+    joinedValues.forEach(item -> {
+      if (ObjectUtils.isNotEmpty(item)) {
+        Object value = BeanWrapperUtil.getValue(item, SLUG);
+        if (ObjectUtils.isNotEmpty(value)) {
+          joinedSlugs.add(value.toString());
+        }
+      }
+    });
+
+    if (!joinedSlugs.isEmpty()) {
+      return setKeyCriteria(field.getJoinColumnNameLocal()).in(joinedSlugs);
+    }
+
+    return null;
+
+  }
+
+  protected List<FieldDto> buildSearchFields(SearchColumnFilter filter) {
     List<FieldDto> fields = new ArrayList<>();
     if (CollectionUtils.isEmpty(filter.getFields())) {
       return metaData().getFields();

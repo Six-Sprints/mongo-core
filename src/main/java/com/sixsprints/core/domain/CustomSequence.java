@@ -16,7 +16,7 @@ public class CustomSequence {
   @Id
   private String id;
 
-  @Indexed(unique = true)
+  @Indexed
   private long seq;
 
 }

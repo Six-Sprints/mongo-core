@@ -13,14 +13,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class ImportLogDetailsDto {
 
-  private String id;
-
-  private String slug;
-
-  private Long dateCreated;
-
-  private String createdBy;
-
   private String entity;
 
   private List<UploadError> errors;

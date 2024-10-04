@@ -6,7 +6,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 import lombok.Data;
 
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "filterType")
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.EXISTING_PROPERTY, property = "filterType", visible = true)
 @JsonSubTypes({ @JsonSubTypes.Type(value = NumberColumnFilter.class, name = "number"),
     @JsonSubTypes.Type(value = SetColumnFilter.class, name = "set"),
     @JsonSubTypes.Type(value = BooleanColumnFilter.class, name = "boolean"),

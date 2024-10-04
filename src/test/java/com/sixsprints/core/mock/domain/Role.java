@@ -25,5 +25,8 @@ public class Role extends AbstractMongoEntity {
 
   @Indexed(unique = true)
   private String name;
+  
+  @Indexed
+  private String group;
 
 }

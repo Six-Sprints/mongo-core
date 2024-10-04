@@ -45,7 +45,7 @@ public class FieldDto implements Comparable<FieldDto> {
 
   private String joinColumnName;
 
-  private String joinColumnNameForDB;
+  private String joinColumnNameLocal;
 
   private Class<?> joinCollectionClass;
 

@@ -1,8 +1,8 @@
 
 package com.sixsprints.core.transformer;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -74,20 +74,18 @@ public abstract class GenericMapper<ENTITY, DTO> {
   }
 
   protected String epochToString(Long epoch) {
-    return epoch == null ? null
-      : dateUtil.dateToString(dateUtil.initDateFromLong(epoch).toDate());
+    return epoch == null ? null : dateUtil.epochToString(epoch);
   }
-
-  protected Date epochToDate(Long epoch) {
-    return epoch == null ? null : dateUtil.initDateFromLong(epoch).toDate();
-  }
-
-  protected Long dateToEpoch(Date date) {
-    return date == null ? null : dateUtil.initDateFromDate(date).getMillis();
-  }
-
+  
   protected Long dateStringToEpoch(String date) {
-    return date == null ? null : dateUtil.stringToDate(date).getMillis();
+    return date == null ? null : dateUtil.stringToEpoch(date);
   }
 
+  protected LocalDateTime epochToDate(Long epoch) {
+    return epoch == null ? null : dateUtil.initDateFromEpoch(epoch).toLocalDateTime();
+  }
+
+  protected Long dateToEpoch(LocalDateTime date) {
+    return date == null ? null : dateUtil.initDateFromDate(date).toInstant().toEpochMilli();
+  }
 }

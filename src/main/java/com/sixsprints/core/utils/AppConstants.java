@@ -28,8 +28,6 @@ public interface AppConstants {
 
   String INHERITANCE_CRITERIA = "_class";
 
-  int TOKEN_EXPIRY_IN_DAYS = 30;
-
   String CSV_IMPORT_MESSAGE = "CSV file import processing is complete. Number of rows successfully processed: %d (number of error cells: %d), number of rows failed in processing: %d. See the CSV error log for details.";
 
 }

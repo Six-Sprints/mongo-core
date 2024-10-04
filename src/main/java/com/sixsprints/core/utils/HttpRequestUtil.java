@@ -9,12 +9,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
-
 import org.apache.commons.lang3.StringUtils;
 
-public class RequestUtils {
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+
+public class HttpRequestUtil {
 
   public static String getSelfUrl(HttpServletRequest request) {
     if (request.getQueryString() != null) {
@@ -169,4 +169,25 @@ public class RequestUtils {
     }
     return decode ? URLDecoder.decode(utmInfoString, "UTF-8") : utmInfoString;
   }
+
+  public static String extractModuleName(String apiPrefix, String uri) {
+    String module = "";
+    if (StringUtils.isBlank(uri)) {
+      return module;
+    }
+    if (!uri.endsWith("/")) {
+      uri = uri + "/";
+    }
+    if (!apiPrefix.endsWith("/")) {
+      apiPrefix = apiPrefix + "/";
+    }
+
+    if (!uri.contains(apiPrefix)) {
+      apiPrefix = "/";
+    }
+
+    String temp = uri.substring(uri.indexOf(apiPrefix) + apiPrefix.length());
+    return temp.substring(0, temp.indexOf("/")).replace("-", "_").toUpperCase();
+  }
+
 }

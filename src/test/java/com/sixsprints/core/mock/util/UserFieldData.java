@@ -36,12 +36,18 @@ public class UserFieldData {
 
     fields.add(FieldDto.builder().name("dateCreated").sequence(i++)
       .dataType(DataType.DATE)
-      .localizedDisplay(ImmutableMap.<Locale, String>of(Locale.ENGLISH, "Date", Locale.JAPANESE, "メール")).build());
+      .localizedDisplay(ImmutableMap.<Locale, String>of(Locale.ENGLISH, "Date", Locale.JAPANESE, "JapanDate")).build());
 
     fields.add(FieldDto.builder().name("roleSlug").sequence(i++)
       .dataType(DataType.AUTO_COMPLETE).joinCollectionName("role").joinColumnName("name")
-      .joinCollectionClass(Role.class).joinColumnNameForDB("name")
+      .joinCollectionClass(Role.class).joinColumnNameLocal("roleSlug")
       .localizedDisplay(ImmutableMap.<Locale, String>of(Locale.ENGLISH, "Role Name", Locale.JAPANESE, "JapanRoleName"))
+      .build());
+    
+    fields.add(FieldDto.builder().name("roleGroup").sequence(i++)
+      .dataType(DataType.AUTO_COMPLETE).joinCollectionName("role").joinColumnName("group")
+      .joinCollectionClass(Role.class).joinColumnNameLocal("roleSlug")
+      .localizedDisplay(ImmutableMap.<Locale, String>of(Locale.ENGLISH, "Role Group", Locale.JAPANESE, "JapanRoleGroup"))
       .build());
 
     fields.add(FieldDto.builder().name("gender").sequence(i++)

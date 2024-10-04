@@ -29,6 +29,12 @@ public class AbstractMongoEntity implements Serializable {
 
   public static final String ID = "id";
 
+  public static final String SLUG = "slug";
+
+  public static final String DATE_MODIFIED = "dateModified";
+
+  public static final String LAST_MODIFIED_BY = "lastModifiedBy";
+
   @Id
   protected String id;
 

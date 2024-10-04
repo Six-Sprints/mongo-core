@@ -6,27 +6,25 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>2.4.4</version>
+		<version>3.3.3</version>
 		<relativePath /> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.sixsprints</groupId>
 	<artifactId>mongo-core</artifactId>
-	<version>2.4.4.0.0</version>
+	<version>3.3.314</version>
 	<name>mongo-core</name>
 	<packaging>jar</packaging>
 	<description>Mongo Core Reusable Components</description>
-
 	<properties>
-		<java.version>11</java.version>
-		<joda.time.version>2.10.9</joda.time.version>
-		<javers.version>5.14.0</javers.version>
-		<mapstruct.version>1.4.1.Final</mapstruct.version>
+		<java.version>17</java.version>
+		<nimbus.jwt.version>9.40</nimbus.jwt.version>
+		<javers.version>7.6.1</javers.version>
+		<mapstruct.version>1.6.0</mapstruct.version>
 		<lombok.mapstruct.binding.version>0.2.0</lombok.mapstruct.binding.version>
-		<commons-validator.version>1.7</commons-validator.version>
+		<commons-validator.version>1.9.0</commons-validator.version>
 		<supercsv.version>2.4.0</supercsv.version>
-		<easypoi.version>4.2.0</easypoi.version>
+		<easypoi.version>4.5.0</easypoi.version>
 	</properties>
-
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -40,33 +38,33 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-validation</artifactId>
 		</dependency>
-
 		<dependency>
-			<groupId>joda-time</groupId>
-			<artifactId>joda-time</artifactId>
-			<version>${joda.time.version}</version>
+			<groupId>jakarta.validation</groupId>
+			<artifactId>jakarta.validation-api</artifactId>
 		</dependency>
-		<dependency>
-			<groupId>com.nimbusds</groupId>
-			<artifactId>nimbus-jose-jwt</artifactId>
-		</dependency>
-
 		<dependency>
 			<groupId>net.minidev</groupId>
 			<artifactId>json-smart</artifactId>
 		</dependency>
-
+		<dependency>
+			<groupId>com.nimbusds</groupId>
+			<artifactId>nimbus-jose-jwt</artifactId>
+			<version>${nimbus.jwt.version}</version>
+		</dependency>
 		<dependency>
 			<groupId>org.javers</groupId>
 			<artifactId>javers-core</artifactId>
 			<version>${javers.version}</version>
 		</dependency>
-
 		<dependency>
 			<groupId>org.javers</groupId>
 			<artifactId>javers-spring-boot-starter-mongo</artifactId>
 			<version>${javers.version}</version>
 			<exclusions>
+				<exclusion>
+					<groupId>org.springframework.boot</groupId>
+					<artifactId>spring-boot-starter-parent</artifactId>
+				</exclusion>
 				<exclusion>
 					<groupId>org.springframework.boot</groupId>
 					<artifactId>spring-boot-starter-data-mongodb</artifactId>
@@ -81,7 +79,6 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
-
 		<dependency>
 			<groupId>org.mapstruct</groupId>
 			<artifactId>mapstruct</artifactId>
@@ -103,7 +100,6 @@
 			<artifactId>commons-validator</artifactId>
 			<version>${commons-validator.version}</version>
 		</dependency>
-
 		<dependency>
 			<groupId>net.sf.supercsv</groupId>
 			<artifactId>super-csv</artifactId>
@@ -119,7 +115,6 @@
 			<artifactId>super-csv-java8</artifactId>
 			<version>${supercsv.version}</version>
 		</dependency>
-
 		<dependency>
 			<groupId>cn.afterturn</groupId>
 			<artifactId>easypoi-base</artifactId>
@@ -129,6 +124,10 @@
 			<groupId>cn.afterturn</groupId>
 			<artifactId>easypoi-annotation</artifactId>
 			<version>${easypoi.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>com.github.spotbugs</groupId>
+			<artifactId>spotbugs-annotations</artifactId>
 		</dependency>
 
 		<dependency>
@@ -141,8 +140,13 @@
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
-	</dependencies>
+		<dependency>
+			<groupId>org.junit.platform</groupId>
+			<artifactId>junit-platform-launcher</artifactId>
+			<scope>test</scope>
+		</dependency>
 
+	</dependencies>
 	<build>
 		<plugins>
 			<plugin>
@@ -154,5 +158,4 @@
 			</plugin>
 		</plugins>
 	</build>
-
 </project>

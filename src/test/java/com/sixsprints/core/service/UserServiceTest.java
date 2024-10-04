@@ -7,19 +7,28 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.data.mongodb.core.MongoOperations;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.sixsprints.core.ApplicationTests;
 import com.sixsprints.core.dto.BulkUpdateInfo;
+import com.sixsprints.core.dto.FilterRequestDto;
 import com.sixsprints.core.dto.ImportLogDetailsDto;
 import com.sixsprints.core.dto.KeyLabelDto;
+import com.sixsprints.core.dto.filter.ColumnFilter;
+import com.sixsprints.core.dto.filter.DateColumnFilter;
+import com.sixsprints.core.dto.filter.SearchColumnFilter;
+import com.sixsprints.core.dto.filter.SetColumnFilter;
 import com.sixsprints.core.enums.ImportOperation;
 import com.sixsprints.core.enums.UpdateAction;
 import com.sixsprints.core.exception.BaseException;
@@ -29,6 +38,7 @@ import com.sixsprints.core.mock.domain.embedded.Address;
 import com.sixsprints.core.mock.enums.Gender;
 import com.sixsprints.core.mock.service.UserService;
 import com.sixsprints.core.transformer.UserExcelMapper;
+import com.sixsprints.core.utils.AppConstants;
 
 public class UserServiceTest extends ApplicationTests {
 
@@ -127,6 +137,119 @@ public class UserServiceTest extends ApplicationTests {
     assertThat(list.get(2).getKey()).isEqualTo("R2");
   }
 
+  @Test
+  public void shouldFindDistinctColumnValues() {
+    mongo.save(Role.builder().name("ADMIN").group("READ_WRITE").slug("R1").build(), "role");
+    mongo.save(Role.builder().name("USER").group("READ_ONLY").slug("R2").build(), "role");
+
+    for (int i = 1; i <= 10; i++) {
+      userService.save(user(i));
+    }
+    List<KeyLabelDto> values = userService.distinctColumnValues("roleGroup", null);
+    assertThat(values.size()).isEqualTo(3);
+    assertThat(values.get(2).getKey()).isEqualTo("R1");
+  }
+
+  @Test
+  public void shouldFilterOnDate() {
+    mongo.save(Role.builder().name("ADMIN").group("READ_WRITE").slug("R1").build(), "role");
+    mongo.save(Role.builder().name("USER").group("READ_ONLY").slug("R2").build(), "role");
+    for (int i = 1; i <= 10; i++) {
+      userService.save(user(i));
+    }
+
+    Map<String, ColumnFilter> filterModel = ImmutableMap.<String, ColumnFilter>builder()
+      .put("dateCreated", DateColumnFilter.builder()
+        .type(AppConstants.EQUALS)
+        .dateFrom(new Date()).build())
+      .build();
+
+    FilterRequestDto filters = FilterRequestDto.builder()
+      .page(0)
+      .size(10)
+      .filterModel(filterModel)
+      .build();
+    Page<User> users = userService.filter(filters);
+    List<User> list = users.getContent();
+    assertThat(list.size()).isEqualTo(10);
+
+  }
+
+  @Test
+  public void shouldFilterOnArrayColumns() {
+
+    mongo.save(Role.builder().name("ADMIN").group("READ_WRITE").slug("R1").build(), "role");
+    mongo.save(Role.builder().name("USER").group("READ_ONLY").slug("R2").build(), "role");
+
+    for (int i = 1; i <= 10; i++) {
+      userService.save(user(i));
+    }
+
+    Map<String, ColumnFilter> filterModel = ImmutableMap.<String, ColumnFilter>builder()
+      .put("tags", SetColumnFilter.builder().values(List.<String>of("", "2")).build())
+      .build();
+
+    FilterRequestDto filters = FilterRequestDto.builder()
+      .page(0)
+      .size(10)
+      .filterModel(filterModel)
+      .build();
+    Page<User> users = userService.filter(filters);
+    List<User> list = users.getContent();
+    assertThat(list.size()).isEqualTo(6);
+    userAssert(list.get(0), list.get(0).getCustomId().intValue());
+  }
+
+  @Test
+  public void shouldFilterOnJoinColumns() {
+
+    mongo.save(Role.builder().name("ADMIN").group("READ_WRITE").slug("R1").build(), "role");
+    mongo.save(Role.builder().name("USER").group("READ_ONLY").slug("R2").build(), "role");
+
+    for (int i = 1; i <= 10; i++) {
+      userService.save(user(i));
+    }
+
+    Map<String, ColumnFilter> filterModel = ImmutableMap.<String, ColumnFilter>builder()
+      .put("_", SearchColumnFilter.builder().filter("READ_WRITE").build())
+      .build();
+
+    FilterRequestDto filters = FilterRequestDto.builder()
+      .page(0)
+      .size(10)
+      .filterModel(filterModel)
+      .build();
+    Page<User> users = userService.filter(filters);
+    List<User> list = users.getContent();
+    assertThat(list.size()).isEqualTo(1);
+    assertThat(list.get(0).getRoleSlug()).isEqualTo("R1");
+  }
+
+  @Test
+  public void shouldFilterOnJoinColumnWithAutoChange() {
+
+    mongo.save(Role.builder().name("ADMIN").group("READ_WRITE").slug("R1").build(), "role");
+    mongo.save(Role.builder().name("USER").group("READ_ONLY").slug("R2").build(), "role");
+
+    for (int i = 1; i <= 10; i++) {
+      userService.save(user(i));
+    }
+
+    Map<String, ColumnFilter> filterModel = ImmutableMap.<String, ColumnFilter>builder()
+      .put("roleGroup", SetColumnFilter.builder().values(List.of("R1")).build())
+      .build();
+
+    FilterRequestDto filters = FilterRequestDto.builder()
+      .page(0)
+      .size(10)
+      .filterModel(filterModel)
+      .build();
+    Page<User> users = userService.filter(filters);
+    List<User> list = users.getContent();
+    assertThat(list.size()).isEqualTo(1);
+    assertThat(list.get(0).getRoleSlug()).isEqualTo("R1");
+  }
+
   private String fileName() {
     String currentUsersHomeDir = System.getProperty("user.home");
     String otherFolder = currentUsersHomeDir + File.separator + "Desktop" + File.separator + "test.xlsx";
@@ -135,10 +258,16 @@ public class UserServiceTest extends ApplicationTests {
 
   private User user(int i) {
     Address address = Address.builder().city("city" + i).state("state" + i).country("country" + i).build();
-    return User.builder().email("email" + i + "@gmail.com").name("Name" + i)
-      .gender(Gender.values()[i % Gender.values().length]).flag(true).customId(Long.valueOf(i))
+    return User.builder()
+      .email("email" + i + "@gmail.com")
+      .name("Name" + i)
+      .gender(Gender.values()[i % Gender.values().length])
+      .flag(true)
+      .customId(Long.valueOf(i))
       .roleSlug(i == 1 ? "R1" : "R2")
-      .address(address).build();
+      .address(address)
+      .tags(i % 2 == 0 ? List.of("" + i) : new ArrayList<>())
+      .build();
   }
 
   private User userWithNullAddress(int i) {

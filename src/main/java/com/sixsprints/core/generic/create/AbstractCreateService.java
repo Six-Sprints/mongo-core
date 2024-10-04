@@ -47,7 +47,7 @@ public abstract class AbstractCreateService<T extends AbstractMongoEntity> exten
     T fromDB = findDuplicate(domain);
     if (fromDB != null) {
       if (fromDB.getActive()) {
-        throw alreadyExistsException(fromDB);
+        throw alreadyExistsException(fromDB, domain);
       }
       delete(fromDB);
     }

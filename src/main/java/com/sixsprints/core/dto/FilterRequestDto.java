@@ -25,6 +25,4 @@ public class FilterRequestDto {
 
   private List<SortModel> sortModel;
 
-  private Boolean deepFilter;
-
 }

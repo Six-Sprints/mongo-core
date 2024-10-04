@@ -6,10 +6,11 @@ import static org.springframework.data.mongodb.core.query.Query.query;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import javax.validation.Validator;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.mongodb.core.MongoOperations;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.http.HttpStatus;
@@ -25,7 +26,10 @@ import com.sixsprints.core.exception.EntityAlreadyExistsException;
 import com.sixsprints.core.exception.EntityInvalidException;
 import com.sixsprints.core.exception.EntityNotFoundException;
 import com.sixsprints.core.repository.GenericRepository;
+import com.sixsprints.core.service.MessageSourceService;
+import com.sixsprints.core.utils.MessageSourceUtil;
 
+import jakarta.validation.Validator;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -41,13 +45,22 @@ public abstract class GenericAbstractService<T extends AbstractMongoEntity> exte
   @Autowired
   protected Validator validator;
 
+  @Value("${slug.padding.character:0}")
+  private String slugPaddingCharacter;
+
+  @Value("${slug.padding.length:8}")
+  private int slugPaddingLength;
+
+  @Autowired(required = false)
+  private MessageSourceService messageSourceService;
+
   protected abstract GenericRepository<T> repository();
 
   protected abstract MetaData<T> metaData();
 
   protected SlugFormatter slugFromatter(T entity) {
     String className = entity.getClass().getSimpleName().toLowerCase();
-    String prefix = className.replaceAll("[aeiou]", "");
+    String prefix = className.charAt(0) + className.substring(1).replaceAll("[aeiou]", "");
     return SlugFormatter.builder()
       .collection(className)
       .prefix(prefix.substring(0, Math.min(3, prefix.length())).toUpperCase())
@@ -71,7 +84,7 @@ public abstract class GenericAbstractService<T extends AbstractMongoEntity> exte
       SlugFormatter slugFromatter = slugFromatter(entity);
       if (slugFromatter != null && slugFromatter.getCollection() != null) {
         Long nextSequence = getNextSequence(slugFromatter.getCollection());
-        entity.setSlug(slug(nextSequence, slugFromatter));
+        entity.setSlug(slug(entity, nextSequence, slugFromatter));
         entity.setSequence(nextSequence);
       }
     }
@@ -91,13 +104,13 @@ public abstract class GenericAbstractService<T extends AbstractMongoEntity> exte
     for (T entity : entities) {
       if (shouldOverwriteSlug(entity)) {
         Long nextSequence = sequence - size + i++;
-        entity.setSlug(slug(nextSequence, slugFromatter(entity)));
+        entity.setSlug(slug(entity, nextSequence, slugFromatter(entity)));
         entity.setSequence(nextSequence);
       }
     }
   }
 
-  protected EntityAlreadyExistsException alreadyExistsException(T domain) {
+  protected EntityAlreadyExistsException alreadyExistsException(T fromDb, T request) {
     return EntityAlreadyExistsException.childBuilder().build();
   }
 
@@ -109,13 +122,18 @@ public abstract class GenericAbstractService<T extends AbstractMongoEntity> exte
     return new ArrayList<>();
   }
 
-  protected EntityInvalidException invalidException(T domain) {
-    return EntityInvalidException.childBuilder().build();
+  protected EntityInvalidException invalidException(T domain, List<String> errors) {
+    return validationException(errors);
   }
 
   protected EntityInvalidException validationException(List<String> errors) {
-    return EntityInvalidException.childBuilder().data(errors)
-      .error("Entity is invalid. Please check the error(s) and rectify.").build();
+    List<String> resolvedErrors = errors.stream()
+      .map(err -> localisedMessage(err, null))
+      .collect(Collectors.toList());
+    return EntityInvalidException.childBuilder()
+      .data(resolvedErrors)
+      .error(resolvedErrors.size() > 1 ? errors.toString() : resolvedErrors.get(0))
+      .build();
   }
 
   protected boolean isNew(T entity) {
@@ -130,7 +148,7 @@ public abstract class GenericAbstractService<T extends AbstractMongoEntity> exte
     }
   }
 
-  private String slug(Long nextSequence, SlugFormatter slugFromatter) {
+  protected String slug(T entity, Long nextSequence, SlugFormatter slugFromatter) {
     StringBuffer buffer = new StringBuffer(slugFromatter.getPrefix());
     if (slugFromatter.getMinimumSequenceNumber() != null) {
       nextSequence += slugFromatter.getMinimumSequenceNumber();
@@ -142,15 +160,11 @@ public abstract class GenericAbstractService<T extends AbstractMongoEntity> exte
   }
 
   protected String slugPaddingCharacter() {
-    return "0";
+    return slugPaddingCharacter;
   }
 
   protected int slugPaddingLength() {
-    return 8;
-  }
-
-  private boolean shouldOverwriteSlug(T entity) {
-    return isNew(entity) && !StringUtils.hasText(entity.getSlug());
+    return slugPaddingLength;
   }
 
   protected String entityName() {
@@ -161,6 +175,14 @@ public abstract class GenericAbstractService<T extends AbstractMongoEntity> exte
     log.warn(
       "Entity name is not set for this class. Defaulting to classname. Please consider providing the entityName in the metaData() for this class.");
     return metaData.getClassType().getSimpleName();
+  }
+
+  protected String localisedMessage(String messageKey, List<Object> args) {
+    return MessageSourceUtil.resolveMessage(messageSourceService, messageKey, args, LocaleContextHolder.getLocale());
+  }
+
+  private boolean shouldOverwriteSlug(T entity) {
+    return isNew(entity) && !StringUtils.hasText(entity.getSlug());
   }
 
 }

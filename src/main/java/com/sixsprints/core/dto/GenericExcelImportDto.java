@@ -1,6 +1,8 @@
 package com.sixsprints.core.dto;
 
-import javax.validation.constraints.NotNull;
+import java.io.Serializable;
+
+import jakarta.validation.constraints.NotNull;
 
 import com.sixsprints.core.enums.ImportOperation;
 
@@ -16,7 +18,9 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-public class GenericExcelImportDto implements IGenericExcelImport {
+public class GenericExcelImportDto implements IGenericExcelImport, Serializable {
+
+  private static final long serialVersionUID = 1L;
 
   @NotNull
   @Excel(name = "S.No.", fixedIndex = 0, orderNum = "-2")

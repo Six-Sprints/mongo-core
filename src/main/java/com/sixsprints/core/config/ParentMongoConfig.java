@@ -27,7 +27,7 @@ import com.sixsprints.core.repository.InheritanceAwareMongoRepositoryFactoryBean
 public class ParentMongoConfig extends AbstractMongoClientConfiguration {
 
   @Bean
-  public MongoTransactionManager transactionManager(MongoDatabaseFactory dbFactory) {
+  protected MongoTransactionManager transactionManager(MongoDatabaseFactory dbFactory) {
     return new MongoTransactionManager(dbFactory);
   }
 
@@ -59,7 +59,7 @@ public class ParentMongoConfig extends AbstractMongoClientConfiguration {
   }
 
   protected String uri() {
-    return "mongodb+srv://root:u9VYdHYx1jmvvz6S@cluster0.sux3l.mongodb.net/testdb?retryWrites=true&w=majority";
+    return "mongodb://localhost";
   }
 
   @Override
