@@ -3,6 +3,7 @@ package com.sixsprints.core.config;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.convert.converter.Converter;
@@ -20,11 +21,16 @@ import com.sixsprints.core.converters.Decimal128ToBigDecimalConverter;
 import com.sixsprints.core.converters.IntegerToLocalTimeConverter;
 import com.sixsprints.core.converters.LocalTimeToIntegerConverter;
 import com.sixsprints.core.converters.StringToClassConverter;
-import com.sixsprints.core.repository.InheritanceAwareMongoRepositoryFactoryBean;
 
 @Configuration
-@EnableMongoRepositories(repositoryFactoryBeanClass = InheritanceAwareMongoRepositoryFactoryBean.class, basePackages = "com.sixsprints.core")
+@EnableMongoRepositories(basePackages = "com.sixsprints.core")
 public class ParentMongoConfig extends AbstractMongoClientConfiguration {
+  
+  @Value(value = "${spring.data.mongodb.uri:}")
+  private String uri;
+
+  @Value(value = "${spring.data.mongodb.database:}")
+  private String database;
 
   @Bean
   protected MongoTransactionManager transactionManager(MongoDatabaseFactory dbFactory) {
@@ -59,12 +65,12 @@ public class ParentMongoConfig extends AbstractMongoClientConfiguration {
   }
 
   protected String uri() {
-    return "mongodb://localhost";
+    return uri;
   }
 
   @Override
   protected String getDatabaseName() {
-    return "testdb";
+    return database;
   }
 
 }

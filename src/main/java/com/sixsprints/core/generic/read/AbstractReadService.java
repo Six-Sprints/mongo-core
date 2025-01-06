@@ -53,7 +53,6 @@ import com.sixsprints.core.utils.AppConstants;
 import com.sixsprints.core.utils.BeanWrapperUtil;
 import com.sixsprints.core.utils.DateUtil;
 import com.sixsprints.core.utils.ExcelDefaultStyles;
-import com.sixsprints.core.utils.InheritanceMongoUtil;
 
 import cn.afterturn.easypoi.excel.ExcelExportUtil;
 import cn.afterturn.easypoi.excel.entity.ExportParams;
@@ -368,10 +367,6 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
 
     preFilter(filterRequestDto);
     List<Criteria> criterias = new ArrayList<>();
-    Criteria criteria = InheritanceMongoUtil.generate(meta.getClassType());
-    if (criteria != null) {
-      criterias.add(criteria);
-    }
     if (!(filterRequestDto == null || filterRequestDto.getFilterModel() == null
       || filterRequestDto.getFilterModel().isEmpty())) {
       Map<String, ColumnFilter> filters = filterRequestDto.getFilterModel();

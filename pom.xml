@@ -6,20 +6,20 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>3.3.3</version>
+		<version>3.4.1</version>
 		<relativePath /> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.sixsprints</groupId>
 	<artifactId>mongo-core</artifactId>
-	<version>3.3.314</version>
+	<version>3.4.100</version>
 	<name>mongo-core</name>
 	<packaging>jar</packaging>
 	<description>Mongo Core Reusable Components</description>
 	<properties>
 		<java.version>17</java.version>
-		<nimbus.jwt.version>9.40</nimbus.jwt.version>
-		<javers.version>7.6.1</javers.version>
-		<mapstruct.version>1.6.0</mapstruct.version>
+		<nimbus.jwt.version>10.0.1</nimbus.jwt.version>
+		<javers.version>7.7.0</javers.version>
+		<mapstruct.version>1.6.3</mapstruct.version>
 		<lombok.mapstruct.binding.version>0.2.0</lombok.mapstruct.binding.version>
 		<commons-validator.version>1.9.0</commons-validator.version>
 		<supercsv.version>2.4.0</supercsv.version>
@@ -155,6 +155,10 @@
 				<configuration>
 					<classifier>exec</classifier>
 				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>versions-maven-plugin</artifactId>
 			</plugin>
 		</plugins>
 	</build>
