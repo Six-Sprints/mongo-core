@@ -11,7 +11,7 @@ import org.springframework.data.repository.NoRepositoryBean;
 import com.sixsprints.core.domain.AbstractMongoEntity;
 
 @NoRepositoryBean
-public interface GenericRepository<T extends AbstractMongoEntity> extends MongoRepository<T, String> {
+public interface GenericCrudRepository<T extends AbstractMongoEntity> extends MongoRepository<T, String> {
 
   List<T> findAllByActiveTrue();
 

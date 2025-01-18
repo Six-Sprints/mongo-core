@@ -3,9 +3,12 @@ package com.sixsprints.core.generic.read;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.mongodb.core.query.Criteria;
 
 import com.sixsprints.core.domain.AbstractMongoEntity;
 import com.sixsprints.core.dto.FilterRequestDto;
@@ -32,6 +35,8 @@ public interface GenericReadService<T extends AbstractMongoEntity> {
 
   T findBySlug(String slug) throws EntityNotFoundException;
 
+  Optional<T> findBySlugOptional(String slug);
+
   Page<T> findAllLike(T example, Pageable page);
 
   List<T> findAllLike(T example);
@@ -46,5 +51,13 @@ public interface GenericReadService<T extends AbstractMongoEntity> {
 
   <E> void exportData(GenericMapper<T, E> transformer, FilterRequestDto filterRequestDto, OutputStream writer)
     throws IOException, BaseException;
+
+  T findOne(Criteria criteria);
+
+  List<T> findAll(Criteria criteria);
+
+  List<T> findAll(Criteria criteria, Sort sort);
+
+  Page<T> findAll(Criteria criteria, Pageable page);
 
 }

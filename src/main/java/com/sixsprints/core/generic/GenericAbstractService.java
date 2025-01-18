@@ -25,7 +25,7 @@ import com.sixsprints.core.exception.BaseRuntimeException;
 import com.sixsprints.core.exception.EntityAlreadyExistsException;
 import com.sixsprints.core.exception.EntityInvalidException;
 import com.sixsprints.core.exception.EntityNotFoundException;
-import com.sixsprints.core.repository.GenericRepository;
+import com.sixsprints.core.repository.GenericCrudRepository;
 import com.sixsprints.core.service.MessageSourceService;
 import com.sixsprints.core.utils.MessageSourceUtil;
 
@@ -54,7 +54,7 @@ public abstract class GenericAbstractService<T extends AbstractMongoEntity> exte
   @Autowired(required = false)
   private MessageSourceService messageSourceService;
 
-  protected abstract GenericRepository<T> repository();
+  protected abstract GenericCrudRepository<T> repository();
 
   protected abstract MetaData<T> metaData();
 
@@ -180,7 +180,7 @@ public abstract class GenericAbstractService<T extends AbstractMongoEntity> exte
   protected String localisedMessage(String messageKey, List<Object> args) {
     return MessageSourceUtil.resolveMessage(messageSourceService, messageKey, args, LocaleContextHolder.getLocale());
   }
-
+  
   private boolean shouldOverwriteSlug(T entity) {
     return isNew(entity) && !StringUtils.hasText(entity.getSlug());
   }

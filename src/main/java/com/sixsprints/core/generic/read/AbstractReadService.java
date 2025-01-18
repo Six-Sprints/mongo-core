@@ -116,11 +116,17 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
 
   @Override
   public T findBySlug(String slug) throws EntityNotFoundException {
-    T entity = repository().findBySlug(slug);
-    if (entity == null) {
+    Optional<T> entity = findBySlugOptional(slug);
+    if (entity.isEmpty()) {
       throw notFoundException(SLUG);
     }
-    return entity;
+    return entity.get();
+  }
+
+  @Override
+  public Optional<T> findBySlugOptional(String slug) {
+    T entity = repository().findBySlug(slug);
+    return Optional.ofNullable(entity);
   }
 
   @Override
@@ -147,6 +153,10 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
     Sort sort = buildSort(filterRequestDto.getSortModel(), meta);
     Pageable pageable = PageRequest.of(filterRequestDto.getPage(), filterRequestDto.getSize(), sort);
     Criteria criteria = buildCriteria(filterRequestDto, meta);
+    return runCriteriaWithPage(meta, pageable, criteria);
+  }
+
+  private Page<T> runCriteriaWithPage(MetaData<T> meta, Pageable pageable, Criteria criteria) {
     Query query = new Query(criteria);
     long total = mongo.count(query, meta.getClassType());
     query.with(pageable);
@@ -350,7 +360,7 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
 
   }
 
-  private Sort buildSort(List<SortModel> sortModel, MetaData<T> meta) {
+  protected Sort buildSort(List<SortModel> sortModel, MetaData<T> meta) {
     Sort sort = Sort.unsorted();
     if (!CollectionUtils.isEmpty(sortModel)) {
       for (SortModel aSort : sortModel) {
@@ -363,7 +373,7 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
     return sort;
   }
 
-  private Criteria buildCriteria(FilterRequestDto filterRequestDto, MetaData<T> meta) {
+  protected Criteria buildCriteria(FilterRequestDto filterRequestDto, MetaData<T> meta) {
 
     preFilter(filterRequestDto);
     List<Criteria> criterias = new ArrayList<>();
@@ -645,6 +655,30 @@ public abstract class AbstractReadService<T extends AbstractMongoEntity> extends
       fields.add(FieldDto.builder().name(fieldName).dataType(DataType.TEXT).build());
     }
     return fields;
+  }
+
+  @Override
+  public T findOne(Criteria criteria) {
+    Query query = new Query(criteria);
+    return mongo.findOne(query, metaData().getClassType());
+  }
+
+  @Override
+  public List<T> findAll(Criteria criteria) {
+    Query query = new Query(criteria);
+    return mongo.find(query, metaData().getClassType());
+  }
+
+  @Override
+  public List<T> findAll(Criteria criteria, Sort sort) {
+    Query query = new Query(criteria);
+    query.with(sort);
+    return mongo.find(query, metaData().getClassType());
+  }
+
+  @Override
+  public Page<T> findAll(Criteria criteria, Pageable page) {
+    return runCriteriaWithPage(metaData(), page, criteria);
   }
 
   private void addExactMatchCriteria(List<Criteria> criterias, String key, ExactMatchColumnFilter filter) {

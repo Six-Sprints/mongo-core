@@ -10,7 +10,7 @@ import com.sixsprints.core.mock.dto.UserExcelDto;
 import com.sixsprints.core.mock.repository.UserRepository;
 import com.sixsprints.core.mock.service.UserService;
 import com.sixsprints.core.mock.util.UserFieldData;
-import com.sixsprints.core.repository.GenericRepository;
+import com.sixsprints.core.repository.GenericCrudRepository;
 import com.sixsprints.core.service.AbstractCrudService;
 import com.sixsprints.core.transformer.UserMapper;
 
@@ -24,7 +24,7 @@ public class UserServiceImpl extends AbstractCrudService<User> implements UserSe
   private UserMapper userMapper;
 
   @Override
-  protected GenericRepository<User> repository() {
+  protected GenericCrudRepository<User> repository() {
     return userRepository;
   }
 

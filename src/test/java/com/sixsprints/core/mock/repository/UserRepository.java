@@ -3,10 +3,10 @@ package com.sixsprints.core.mock.repository;
 import org.javers.spring.annotation.JaversSpringDataAuditable;
 
 import com.sixsprints.core.mock.domain.User;
-import com.sixsprints.core.repository.GenericRepository;
+import com.sixsprints.core.repository.GenericCrudRepository;
 
 @JaversSpringDataAuditable
-public interface UserRepository extends GenericRepository<User> {
+public interface UserRepository extends GenericCrudRepository<User> {
 
   User findByEmail(String email);
 
