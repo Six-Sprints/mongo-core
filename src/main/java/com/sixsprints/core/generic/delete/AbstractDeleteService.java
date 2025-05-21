@@ -50,6 +50,26 @@ public abstract class AbstractDeleteService<T extends AbstractMongoEntity> exten
     softDeleteQuery(criteria);
   }
 
+  @Override
+  public void deleteBySlug(String slug) {
+    Criteria criteria = new Criteria(AbstractMongoEntity.SLUG).is(slug);
+    Query query = new Query(criteria);
+    mongo.remove(query, metaData().getClassType());
+  }
+
+  @Override
+  public void deleteBySlug(List<String> slugs) {
+    Criteria criteria = new Criteria(AbstractMongoEntity.SLUG).in(slugs);
+    Query query = new Query(criteria);
+    mongo.remove(query, metaData().getClassType());
+  }
+
+  @Override
+  public void deleteByCriteria(Criteria criteria) {
+    Query query = new Query(criteria);
+    mongo.remove(query, metaData().getClassType());
+  }
+
   private void softDeleteQuery(Criteria criteria) {
     Query query = new Query(criteria);
     Update update = new Update().set(ACTIVE, Boolean.FALSE);

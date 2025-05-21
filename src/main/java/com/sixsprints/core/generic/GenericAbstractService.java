@@ -4,8 +4,8 @@ import static org.springframework.data.mongodb.core.FindAndModifyOptions.options
 import static org.springframework.data.mongodb.core.query.Criteria.where;
 import static org.springframework.data.mongodb.core.query.Query.query;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,6 +29,7 @@ import com.sixsprints.core.repository.GenericCrudRepository;
 import com.sixsprints.core.service.MessageSourceService;
 import com.sixsprints.core.utils.MessageSourceUtil;
 
+import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
 import lombok.extern.slf4j.Slf4j;
 
@@ -119,7 +120,32 @@ public abstract class GenericAbstractService<T extends AbstractMongoEntity> exte
   }
 
   protected List<String> checkValidity(T domain) {
-    return new ArrayList<>();
+
+    Set<ConstraintViolation<T>> violations = validator.validate(domain);
+    return toHumanReadableErrors(violations);
+  }
+
+  protected List<String> toHumanReadableErrors(Set<ConstraintViolation<T>> violations) {
+    if (violations == null || violations.isEmpty()) {
+      return List.of();
+    }
+    return violations.stream()
+      .map(violation -> {
+        String propertyPath = violation.getPropertyPath().toString();
+        String message = violation.getMessage();
+        Object invalidValue = violation.getInvalidValue();
+        String valuePart = (invalidValue != null) ? " (was: '" + String.valueOf(invalidValue) + "')" : "";
+        if (propertyPath.isEmpty()) {
+          return message + valuePart;
+        } else {
+          return createViolationError(propertyPath, message, valuePart);
+        }
+      })
+      .collect(Collectors.toList());
+  }
+
+  protected String createViolationError(String propertyPath, String message, String valuePart) {
+    return propertyPath + ": " + message + valuePart;
   }
 
   protected EntityInvalidException invalidException(T domain, List<String> errors) {
@@ -180,7 +206,7 @@ public abstract class GenericAbstractService<T extends AbstractMongoEntity> exte
   protected String localisedMessage(String messageKey, List<Object> args) {
     return MessageSourceUtil.resolveMessage(messageSourceService, messageKey, args, LocaleContextHolder.getLocale());
   }
-  
+
   private boolean shouldOverwriteSlug(T entity) {
     return isNew(entity) && !StringUtils.hasText(entity.getSlug());
   }

@@ -34,54 +34,78 @@ public abstract class AbstractCrudController<T extends AbstractMongoEntity, SD, 
 
   private GenericMapper<T, CD> crudMapper;
 
+  private GenericMapper<T, DD> detailMapper;
+
   public AbstractCrudController(GenericCrudService<T> crudService, GenericMapper<T, SD> searchMapper,
     GenericMapper<T, DD> detailMapper, GenericMapper<T, CD> crudMapper) {
     super(crudService, searchMapper, detailMapper);
     this.crudService = crudService;
     this.crudMapper = crudMapper;
+    this.detailMapper = detailMapper;
   }
 
   @PutMapping
   @BasicAuth(permission = BasicPermissionEnum.EDIT)
-  public ResponseEntity<?> patch(@RequestBody @Validated CD dto, @RequestParam String propChanged)
+  public ResponseEntity<RestResponse<DD>> patch(@RequestBody @Validated CD dto, @RequestParam String propChanged)
     throws BaseException {
     T domain = crudMapper.toDomain(dto);
-    return RestUtil.successResponse(crudService.patchUpdate(domain.getId(), domain, propChanged));
+    return RestUtil.successResponse(detailMapper.toDto(crudService.patchUpdate(domain.getId(), domain, propChanged)));
   }
 
   @PutMapping("/patch/multi")
   @BasicAuth(permission = BasicPermissionEnum.EDIT)
-  public ResponseEntity<?> patchMulti(@RequestBody @Validated CD dto, @RequestParam List<String> propChanged)
+  public ResponseEntity<RestResponse<DD>> patchMulti(@RequestBody @Validated CD dto, @RequestParam List<String> propChanged)
     throws BaseException {
     T domain = crudMapper.toDomain(dto);
-    return RestUtil.successResponse(crudService.patchUpdate(domain.getId(), domain, propChanged));
+    return RestUtil.successResponse(detailMapper.toDto(crudService.patchUpdate(domain.getId(), domain, propChanged)));
   }
 
   @PutMapping("/update")
   @BasicAuth(permission = BasicPermissionEnum.EDIT)
-  public ResponseEntity<?> update(@RequestBody @Validated CD dto) throws BaseException {
+  public ResponseEntity<RestResponse<DD>> update(@RequestBody @Validated CD dto) throws BaseException {
     T domain = crudMapper.toDomain(dto);
-    return RestUtil.successResponse(crudService.update(domain.getId(), domain));
+    return RestUtil.successResponse(detailMapper.toDto(crudService.update(domain.getId(), domain)));
   }
 
   @PostMapping
   @BasicAuth(permission = BasicPermissionEnum.ADD)
-  public ResponseEntity<RestResponse<CD>> add(@RequestBody @Validated CD dto)
+  public ResponseEntity<RestResponse<DD>> add(@RequestBody @Validated CD dto)
     throws BaseException {
-    return RestUtil.successResponse(crudMapper.toDto(crudService.create(crudMapper.toDomain(dto))), HttpStatus.CREATED);
+    return RestUtil.successResponse(detailMapper.toDto(crudService.create(crudMapper.toDomain(dto))), HttpStatus.CREATED);
   }
 
   @PutMapping("/upsert")
   @BasicAuth(permission = BasicPermissionEnum.EDIT)
-  public ResponseEntity<RestResponse<CD>> upsert(@RequestBody @Validated CD dto)
+  public ResponseEntity<RestResponse<DD>> upsert(@RequestBody @Validated CD dto)
     throws BaseException {
-    return RestUtil.successResponse(crudMapper.toDto(crudService.upsert(crudMapper.toDomain(dto))));
+    return RestUtil.successResponse(detailMapper.toDto(crudService.upsert(crudMapper.toDomain(dto))));
   }
 
-  @PostMapping("/delete")
+  @PostMapping("/delete/id")
   @BasicAuth(permission = BasicPermissionEnum.DELETE)
-  public ResponseEntity<?> delete(@RequestBody List<String> ids) throws EntityNotFoundException {
+  public ResponseEntity<?> deleteById(@RequestParam String id) throws EntityNotFoundException {
+    crudService.delete(id);
+    return RestUtil.successResponse(null);
+  }
+
+  @PostMapping("/delete/slug")
+  @BasicAuth(permission = BasicPermissionEnum.DELETE)
+  public ResponseEntity<?> deleteBySlug(@RequestParam String slug) throws EntityNotFoundException {
+    crudService.deleteBySlug(slug);
+    return RestUtil.successResponse(null);
+  }
+  
+  @PostMapping("/delete-bulk/id")
+  @BasicAuth(permission = BasicPermissionEnum.DELETE)
+  public ResponseEntity<?> bulkDeleteById(@RequestParam List<String> ids) throws EntityNotFoundException {
     crudService.delete(ids);
+    return RestUtil.successResponse(null);
+  }
+
+  @PostMapping("/delete-bulk/slug")
+  @BasicAuth(permission = BasicPermissionEnum.DELETE)
+  public ResponseEntity<?> bulkDeleteBySlug(@RequestParam List<String> slugs) throws EntityNotFoundException {
+    crudService.deleteBySlug(slugs);
     return RestUtil.successResponse(null);
   }
 

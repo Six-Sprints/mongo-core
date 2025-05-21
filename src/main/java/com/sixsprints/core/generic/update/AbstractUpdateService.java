@@ -242,16 +242,6 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity> exten
     List<String> errors = new ArrayList<>();
 
     for (DTO dto : data) {
-
-      Set<ConstraintViolation<DTO>> validate = validator.validate(dto);
-      errors.addAll(constraintMessages(validate));
-    }
-
-    if (!errors.isEmpty()) {
-      throw validationException(errors);
-    }
-
-    for (DTO dto : data) {
       List<String> errorList = checkValidity(importMapper.toDomain(dto));
       errorList = addPrefix(serialNumberError(dto.getSerialNo()), resolveErrors(errorList));
       errors.addAll(errorList);

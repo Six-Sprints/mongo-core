@@ -36,23 +36,23 @@ public class AbstractMongoEntity implements Serializable {
   public static final String LAST_MODIFIED_BY = "lastModifiedBy";
 
   @Id
-  protected String id;
+  private String id;
 
   @Indexed(unique = true, sparse = true)
-  protected String slug;
+  private String slug;
 
   @Indexed
-  protected Long sequence;
+  private Long sequence;
 
   @Indexed
   @Builder.Default
-  protected Boolean active = Boolean.TRUE;
+  private Boolean active = Boolean.TRUE;
 
   @CreatedDate
-  protected Long dateCreated;
+  private Long dateCreated;
 
   @LastModifiedDate
-  protected Long dateModified;
+  private Long dateModified;
 
   @CreatedBy
   private String createdBy;

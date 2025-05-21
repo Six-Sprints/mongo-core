@@ -6,10 +6,12 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.mongodb.MongoDatabaseFactory;
 import org.springframework.data.mongodb.MongoTransactionManager;
 import org.springframework.data.mongodb.config.AbstractMongoClientConfiguration;
+import org.springframework.data.mongodb.core.convert.MappingMongoConverter;
 import org.springframework.data.mongodb.core.convert.MongoCustomConversions;
 import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
 
@@ -25,7 +27,9 @@ import com.sixsprints.core.converters.StringToClassConverter;
 @Configuration
 @EnableMongoRepositories(basePackages = "com.sixsprints.core")
 public class ParentMongoConfig extends AbstractMongoClientConfiguration {
-  
+
+  private static final String DOT = "-DOT-";
+
   @Value(value = "${spring.data.mongodb.uri:}")
   private String uri;
 
@@ -62,6 +66,18 @@ public class ParentMongoConfig extends AbstractMongoClientConfiguration {
     converters.add(new IntegerToLocalTimeConverter());
 
     return converters;
+  }
+
+  @Override
+  protected boolean autoIndexCreation() {
+    return true;
+  }
+
+  @Bean
+  @Primary
+  MappingMongoConverter mongoConverter(MappingMongoConverter mongoConverter) {
+    mongoConverter.setMapKeyDotReplacement(DOT);
+    return mongoConverter;
   }
 
   protected String uri() {
