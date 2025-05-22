@@ -426,6 +426,7 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity> exten
   }
 
   protected BulkUpdateInfo<T> upsertOneWhileBulkImport(T domain) {
+    preCreate(domain);
     List<String> errors = checkValidity(domain);
     if (!CollectionUtils.isEmpty(errors)) {
       return bulkImportInfo(domain, UpdateAction.INVALID, errors);
@@ -459,7 +460,6 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity> exten
       postUpdate(fromDb);
       return bulkImportInfo(fromDb, UpdateAction.UPDATE, null);
     }
-    preCreate(domain);
     domain = save(domain);
     postCreate(domain);
     return bulkImportInfo(domain, UpdateAction.CREATE, null);
