@@ -17,7 +17,7 @@
 	<description>Mongo Core Reusable Components</description>
 	<properties>
 		<java.version>17</java.version>
-		<nimbus.jwt.version>9.40</nimbus.jwt.version>
+		<nimbus.jwt.version>10.0.2</nimbus.jwt.version>
 		<javers.version>7.6.1</javers.version>
 		<mapstruct.version>1.6.0</mapstruct.version>
 		<lombok.mapstruct.binding.version>0.2.0</lombok.mapstruct.binding.version>
