@@ -26,19 +26,16 @@ public class HttpRequestUtil {
   public static String getServer(HttpServletRequest request) {
     int port = request.getServerPort();
     StringBuilder result = new StringBuilder();
-    result.append(request.getScheme())
-      .append("://")
-      .append(request.getServerName());
+    result.append(request.getScheme()).append("://").append(request.getServerName());
     if (port != 80) {
-      result.append(':')
-        .append(port);
+      result.append(':').append(port);
     }
     return result.toString();
   }
 
   public static String getRequestId(String prefix) {
     return String.format("%s-%s-%s", prefix, ThreadLocalRandom.current().nextInt(100001, 999999),
-      System.currentTimeMillis());
+        System.currentTimeMillis());
   }
 
   public static Map<String, List<String>> getHeadersMap(HttpServletRequest request) {
@@ -91,10 +88,9 @@ public class HttpRequestUtil {
     if (ipAddress != null) {
       ipAddress = truncate(ipAddress, 40);
     }
-    assert ipAddress != null;
-    int indexOfComma = ipAddress.indexOf(",");
+    int indexOfComma = ipAddress == null ? -1 : ipAddress.indexOf(",");
     if (indexOfComma > -1) {
-      ipAddress = ipAddress.substring(0, indexOfComma);
+      ipAddress = ipAddress == null ? null : ipAddress.substring(0, indexOfComma);
     }
     return ipAddress;
   }
@@ -162,7 +158,7 @@ public class HttpRequestUtil {
   }
 
   public static String getUtmInfo(HttpServletRequest request, String utmHeaderKey, boolean decode)
-    throws UnsupportedEncodingException {
+      throws UnsupportedEncodingException {
     String utmInfoString = request.getHeader(utmHeaderKey);
     if (StringUtils.isBlank(utmInfoString)) {
       return null;

@@ -6,22 +6,22 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>3.4.5</version>
+		<version>3.5.3</version>
 		<relativePath /> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.sixsprints</groupId>
 	<artifactId>mongo-core</artifactId>
-	<version>3.4.501</version>
+	<version>3.5.300</version>
 	<name>mongo-core</name>
 	<packaging>jar</packaging>
 	<description>Mongo Core Reusable Components</description>
 	<properties>
 		<java.version>17</java.version>
-		<nimbus.jwt.version>10.3</nimbus.jwt.version>
+		<nimbus.jwt.version>10.4</nimbus.jwt.version>
 		<javers.version>7.8.0</javers.version>
 		<mapstruct.version>1.6.3</mapstruct.version>
 		<lombok.mapstruct.binding.version>0.2.0</lombok.mapstruct.binding.version>
-		<commons-validator.version>1.9.0</commons-validator.version>
+		<commons-validator.version>1.10.0</commons-validator.version>
 		<supercsv.version>2.4.0</supercsv.version>
 		<easypoi.version>4.5.0</easypoi.version>
 	</properties>
