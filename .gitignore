@@ -1,6 +1,7 @@
 HELP.md
 /target/
 !.mvn/wrapper/maven-wrapper.jar
+.java-version
 
 ### STS ###
 .apt_generated
@@ -28,4 +29,6 @@ HELP.md
 ### VS Code ###
 .vscode/
 
-.java-version
+### macOS ###
+.DS_Store
+**/.DS_Store
