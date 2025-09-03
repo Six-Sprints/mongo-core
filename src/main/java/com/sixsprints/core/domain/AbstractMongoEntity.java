@@ -33,10 +33,7 @@ public class AbstractMongoEntity implements Serializable {
   private String slug;
 
   @Indexed(unique = true, sparse = true)
-  protected Integer sequence;
-
-  @Indexed
-  private Long sequence;
+  protected Long sequence;
 
   @CreatedDate
   private Long dateCreated;
