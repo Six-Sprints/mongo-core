@@ -176,11 +176,13 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity>
     return new ArrayList<>();
   }
 
+  @SuppressWarnings("null")
   private T update(T entity, T entityFromDb) throws EntityInvalidException {
     assertValid(entity != null, metaData().getClassType().getSimpleName(), entity);
     enhanceEntity(entity);
     preUpdate(entityFromDb, entity);
     preUpdateCheck(entity);
+    entity.copyEntityFrom(entityFromDb);
     repository().save(entity);
     postUpdate(entity);
     return entity;
