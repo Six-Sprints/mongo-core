@@ -11,7 +11,7 @@
 	</parent>
 	<groupId>com.sixsprints</groupId>
 	<artifactId>mongo-core</artifactId>
-	<version>3.5.500</version>
+	<version>3.5.502</version>
 	<name>mongo-core</name>
 	<packaging>jar</packaging>
 	<description>Lightweight Framework built on top of Spring Boot MongoDB with opinionated CRUD operations (Controller and Service layer included), JWT authentication, and built-in exception handling.</description>

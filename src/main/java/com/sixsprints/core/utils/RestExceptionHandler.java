@@ -108,6 +108,11 @@ public abstract class RestExceptionHandler {
   }
 
   protected String getErrorMessage(String key, List<Object> args, Locale locale) {
+    return getErrorMessage(messageSource, key, args, locale);
+  }
+
+  public static String getErrorMessage(MessageSource messageSource, String key, List<Object> args,
+      Locale locale) {
     if (args == null) {
       args = List.of();
     }

@@ -4,12 +4,12 @@ import static org.springframework.data.mongodb.core.FindAndModifyOptions.*;
 import static org.springframework.data.mongodb.core.query.Criteria.*;
 import static org.springframework.data.mongodb.core.query.Query.*;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.MessageSource;
-import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.mongodb.core.MongoOperations;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.http.HttpStatus;
@@ -25,6 +25,7 @@ import com.sixsprints.core.exception.EntityAlreadyExistsException;
 import com.sixsprints.core.exception.EntityInvalidException;
 import com.sixsprints.core.exception.EntityNotFoundException;
 import com.sixsprints.core.repository.GenericCrudRepository;
+import com.sixsprints.core.utils.RestExceptionHandler;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
 import lombok.extern.slf4j.Slf4j;
@@ -195,10 +196,7 @@ public abstract class GenericAbstractService<T extends AbstractMongoEntity> exte
   }
 
   protected String localisedMessage(String messageKey, List<Object> args) {
-    if (args == null) {
-      args = List.of();
-    }
-    return messageSource.getMessage(messageKey, args.toArray(), LocaleContextHolder.getLocale());
+    return RestExceptionHandler.getErrorMessage(messageSource, messageKey, args, Locale.ENGLISH);
   }
 
   protected void assertValid(Boolean expression, String field, Object value) {
