@@ -1,5 +1,5 @@
 
-package com.sixsprints.core.transformer;
+package com.sixsprints.core.mapper;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -11,7 +11,7 @@ import org.springframework.data.domain.Page;
 import com.sixsprints.core.dto.PageDto;
 import com.sixsprints.core.utils.DateUtil;
 
-public abstract class GenericMapper<ENTITY, DTO> {
+public abstract class GenericCrudMapper<ENTITY, DTO> {
 
   @Autowired
   protected DateUtil dateUtil;
@@ -76,7 +76,7 @@ public abstract class GenericMapper<ENTITY, DTO> {
   protected String epochToString(Long epoch) {
     return epoch == null ? null : dateUtil.epochToString(epoch);
   }
-  
+
   protected Long dateStringToEpoch(String date) {
     return date == null ? null : dateUtil.stringToEpoch(date);
   }

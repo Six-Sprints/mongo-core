@@ -19,6 +19,7 @@ import com.sixsprints.core.domain.AbstractMongoEntity;
 import com.sixsprints.core.exception.BaseException;
 import com.sixsprints.core.exception.EntityNotFoundException;
 import com.sixsprints.core.exception.NotAuthenticatedException;
+import com.sixsprints.core.constants.ExceptionConstants;
 import com.sixsprints.core.service.GenericCrudService;
 import com.sixsprints.core.utils.ApplicationContext;
 import com.sixsprints.core.utils.AuthUtil;
@@ -27,7 +28,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 public abstract class AbstractAuthenticationInterceptor<T extends AbstractMongoEntity>
-  implements AsyncHandlerInterceptor {
+    implements AsyncHandlerInterceptor {
 
   private static final String USER = "user";
   private final GenericCrudService<T> userService;
@@ -37,8 +38,8 @@ public abstract class AbstractAuthenticationInterceptor<T extends AbstractMongoE
   }
 
   @Override
-  public boolean preHandle(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse,
-    Object handler) throws Exception {
+  public boolean preHandle(HttpServletRequest httpServletRequest,
+      HttpServletResponse httpServletResponse, Object handler) throws Exception {
     if (!(handler instanceof HandlerMethod)) {
       return true;
     }
@@ -75,32 +76,32 @@ public abstract class AbstractAuthenticationInterceptor<T extends AbstractMongoE
   }
 
   protected String unauthorisedErrorMessage(T user) {
-    return "You are not authorized to take this action.";
+    return ExceptionConstants.UNAUTHORIZED_ACTION;
   }
 
   protected String inactiveErrorMessage(T user) {
-    return "User account is not active.";
+    return ExceptionConstants.USER_ACCOUNT_INACTIVE;
   }
 
   protected String tokenInvalidErrorMessage() {
-    return "Token is invalid!";
+    return ExceptionConstants.TOKEN_INVALID;
   }
 
   protected String tokenEmptyErrorMessage() {
-    return "Token is empty!";
+    return ExceptionConstants.TOKEN_EMPTY;
   }
 
   protected abstract String authTokenKey();
 
-  protected abstract void checkUserPermissions(T user, ModuleDefinition module, PermissionDefinition permission,
-    boolean required)
-    throws NotAuthenticatedException, EntityNotFoundException;
+  protected abstract void checkUserPermissions(T user, ModuleDefinition module,
+      PermissionDefinition permission, boolean required)
+      throws NotAuthenticatedException, EntityNotFoundException;
 
   protected abstract void checkIfTokenInvalid(T user, String token, boolean required)
-    throws NotAuthenticatedException;
+      throws NotAuthenticatedException;
 
   protected T checkUser(String token, AuthAnnotationDataDto annotationData)
-    throws NotAuthenticatedException, EntityNotFoundException {
+      throws NotAuthenticatedException, EntityNotFoundException {
     Boolean required = annotationData.isRequired();
     Boolean tokenEmpty = checkIfTokenEmpty(token, required);
     if (tokenEmpty) {
@@ -111,8 +112,8 @@ public abstract class AbstractAuthenticationInterceptor<T extends AbstractMongoE
       return null;
     }
     checkIfTokenInvalid(user, token, required);
-    checkIfActive(user, required);
-    checkUserPermissions(user, annotationData.getModule(), annotationData.getPermission(), required);
+    checkUserPermissions(user, annotationData.getModule(), annotationData.getPermission(),
+        required);
     checkCustomAttributes(user, required);
     return user;
   }
@@ -121,24 +122,20 @@ public abstract class AbstractAuthenticationInterceptor<T extends AbstractMongoE
 
   }
 
-  protected void checkIfActive(T user, boolean required) throws NotAuthenticatedException {
-    if (!user.getActive()) {
-      throwException(required, inactiveErrorMessage(user));
-    }
-  }
-
   protected T decodeUser(String token, boolean required) throws NotAuthenticatedException {
     T user = null;
     try {
       String userId = AuthUtil.decodeToken(token);
-      user = userService.findOne(userId);
+      user = userService.findOneById(userId).orElseThrow(() -> NotAuthenticatedException
+          .childBuilder().error(ExceptionConstants.USER_NOT_FOUND_WITH_ID).arg(userId).build());
     } catch (BaseException ex) {
       throwException(required, ex.getMessage());
     }
     return user;
   }
 
-  protected Boolean checkIfTokenEmpty(String token, boolean required) throws NotAuthenticatedException {
+  protected Boolean checkIfTokenEmpty(String token, boolean required)
+      throws NotAuthenticatedException {
     if (!StringUtils.hasText(token)) {
       throwException(required, tokenEmptyErrorMessage());
       return true;
@@ -147,7 +144,8 @@ public abstract class AbstractAuthenticationInterceptor<T extends AbstractMongoE
   }
 
   private AuthAnnotationDataDto annotationData(Method method) {
-    Annotation annotationClass = findRelevantAnnotation(method.getDeclaringClass().getAnnotations());
+    Annotation annotationClass =
+        findRelevantAnnotation(method.getDeclaringClass().getAnnotations());
     Annotation annotationMethod = findRelevantAnnotation(method.getAnnotations());
 
     if (annotationClass == null && annotationMethod == null) {
@@ -165,12 +163,11 @@ public abstract class AbstractAuthenticationInterceptor<T extends AbstractMongoE
       return sanitize(classData);
     }
 
-    return sanitize(
-      AuthAnnotationDataDto.builder()
+    return sanitize(AuthAnnotationDataDto.builder()
         .module(methodData.getModule() == null ? classData.getModule() : methodData.getModule())
-        .permission(methodData.getPermission() == null ? classData.getPermission() : methodData.getPermission())
-        .required(methodData.isRequired())
-        .build());
+        .permission(methodData.getPermission() == null ? classData.getPermission()
+            : methodData.getPermission())
+        .required(methodData.isRequired()).build());
   }
 
   private Annotation findRelevantAnnotation(Annotation[] annotations) {
@@ -184,10 +181,11 @@ public abstract class AbstractAuthenticationInterceptor<T extends AbstractMongoE
 
   private AuthAnnotationDataDto sanitize(AuthAnnotationDataDto annotationData) {
     return AuthAnnotationDataDto.builder()
-      .module(annotationData.getModule() == null ? BasicModuleEnum.ANY : annotationData.getModule())
-      .permission(annotationData.getPermission() == null ? BasicPermissionEnum.ANY : annotationData.getPermission())
-      .required(annotationData.isRequired())
-      .build();
+        .module(
+            annotationData.getModule() == null ? BasicModuleEnum.ANY : annotationData.getModule())
+        .permission(annotationData.getPermission() == null ? BasicPermissionEnum.ANY
+            : annotationData.getPermission())
+        .required(annotationData.isRequired()).build();
   }
 
   private AuthAnnotationDataDto fetchAnnotationData(Annotation annotation) {
@@ -204,13 +202,15 @@ public abstract class AbstractAuthenticationInterceptor<T extends AbstractMongoE
 
       String name = "module";
       if (name.equals(methodName)) {
-        ModuleDefinition module = fetchSpecificData(annotation, method, name, ModuleDefinition.class);
+        ModuleDefinition module =
+            fetchSpecificData(annotation, method, name, ModuleDefinition.class);
         data.setModule(module);
       }
 
       name = "permission";
       if (name.equals(methodName)) {
-        PermissionDefinition permission = fetchSpecificData(annotation, method, name, PermissionDefinition.class);
+        PermissionDefinition permission =
+            fetchSpecificData(annotation, method, name, PermissionDefinition.class);
         data.setPermission(permission);
       }
 
@@ -228,7 +228,8 @@ public abstract class AbstractAuthenticationInterceptor<T extends AbstractMongoE
   }
 
   @SuppressWarnings("unchecked")
-  private <Z> Z fetchSpecificData(Annotation annotation, Method method, String methodName, Class<Z> clazz) {
+  private <Z> Z fetchSpecificData(Annotation annotation, Method method, String methodName,
+      Class<Z> clazz) {
     String name = method.getName();
     Class<?> returnType = method.getReturnType();
     if (name.equals(methodName) && clazz.isAssignableFrom(returnType)) {

@@ -17,6 +17,7 @@ import com.nimbusds.jose.crypto.MACVerifier;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import com.sixsprints.core.exception.NotAuthorizedException;
+import com.sixsprints.core.constants.ExceptionConstants;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -34,23 +35,20 @@ public class AuthUtil {
   }
 
   public static String createToken(String subject, int expiryDays) {
-	  
+
     LocalDateTime now = LocalDateTime.now();
     ZonedDateTime zdt = now.atZone(ZoneId.systemDefault());
     Date nowDate = Date.from(zdt.toInstant());
-  
+
     JWSSigner signer = null;
     try {
       signer = new MACSigner(EnvConstants.SHARED_SECRET);
     } catch (KeyLengthException e) {
       log.error(e.getMessage(), e);
     }
-    JWTClaimsSet claimsSet = new JWTClaimsSet.Builder()
-      .subject(xor(subject.getBytes()))
-      .issuer(EnvConstants.ISSUER)
-      .issueTime(nowDate)
-      .expirationTime( Date.from(zdt.plusDays(expiryDays).toInstant()) )
-      .build();
+    JWTClaimsSet claimsSet = new JWTClaimsSet.Builder().subject(xor(subject.getBytes()))
+        .issuer(EnvConstants.ISSUER).issueTime(nowDate)
+        .expirationTime(Date.from(zdt.plusDays(expiryDays).toInstant())).build();
     SignedJWT signedJWT = new SignedJWT(JWT_HEADER, claimsSet);
     try {
       signedJWT.sign(signer);
@@ -68,11 +66,12 @@ public class AuthUtil {
       JWSVerifier verifier = new MACVerifier(EnvConstants.SHARED_SECRET);
       boolean verify = jwtClaimsSet.verify(verifier);
       if (!verify) {
-        throw NotAuthorizedException.childBuilder().error("Unable to verify the token").build();
+        throw NotAuthorizedException.childBuilder().error(ExceptionConstants.UNABLE_TO_VERIFY_TOKEN)
+            .build();
       }
       claimsSet = jwtClaimsSet.getJWTClaimsSet();
     } catch (Exception e) {
-      throw NotAuthorizedException.childBuilder().error("Invalid Token provided!").build();
+      throw NotAuthorizedException.childBuilder().error(ExceptionConstants.INVALID_TOKEN).build();
     }
 
     Date expiryDate = claimsSet.getExpirationTime();
@@ -81,7 +80,7 @@ public class AuthUtil {
     Date nowDate = Date.from(zdt.toInstant());
 
     if (nowDate.after(expiryDate)) {
-      throw NotAuthorizedException.childBuilder().error("Token expired").build();
+      throw NotAuthorizedException.childBuilder().error(ExceptionConstants.TOKEN_EXPIRED).build();
     }
     return claimsSet;
   }

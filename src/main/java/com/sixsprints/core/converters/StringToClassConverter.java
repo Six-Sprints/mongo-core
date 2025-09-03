@@ -4,6 +4,7 @@ import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.convert.ReadingConverter;
 
 import com.sixsprints.core.exception.BaseRuntimeException;
+import com.sixsprints.core.constants.ExceptionConstants;
 
 @ReadingConverter
 public class StringToClassConverter implements Converter<String, Class<?>> {
@@ -14,8 +15,8 @@ public class StringToClassConverter implements Converter<String, Class<?>> {
       Class<?> forName = Class.forName(source);
       return forName;
     } catch (Exception e) {
-      throw BaseRuntimeException.builder().error("Unable to convert {0} to desired class type.")
-        .argument(source).build();
+      throw BaseRuntimeException.builder().error(ExceptionConstants.UNABLE_TO_CONVERT)
+          .argument(source).build();
     }
   }
 

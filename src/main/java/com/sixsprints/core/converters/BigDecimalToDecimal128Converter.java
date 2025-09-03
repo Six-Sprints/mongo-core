@@ -7,6 +7,7 @@ import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.convert.WritingConverter;
 
 import com.sixsprints.core.exception.BaseRuntimeException;
+import com.sixsprints.core.constants.ExceptionConstants;
 
 @WritingConverter
 public class BigDecimalToDecimal128Converter implements Converter<BigDecimal, Decimal128> {
@@ -16,8 +17,8 @@ public class BigDecimalToDecimal128Converter implements Converter<BigDecimal, De
     try {
       return new Decimal128(source);
     } catch (Exception e) {
-      throw BaseRuntimeException.builder().error("Unable to convert {0} to desired class type.")
-        .argument(source).build();
+      throw BaseRuntimeException.builder().error(ExceptionConstants.UNABLE_TO_CONVERT)
+          .argument(source).build();
     }
   }
 }
