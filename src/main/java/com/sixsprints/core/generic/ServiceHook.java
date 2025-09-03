@@ -4,22 +4,14 @@ import com.sixsprints.core.domain.AbstractMongoEntity;
 
 public class ServiceHook<T extends AbstractMongoEntity> {
 
-  protected void preSave(T entity) {
-  }
+  protected void enhanceEntity(T entity) {}
 
-  protected void postSave(T entity) {
-  }
+  protected void preUpdate(T now, T toBe) {}
 
-  protected void preUpdate(T now, T toBe) {
-  }
+  protected void postUpdate(T entity) {}
 
-  protected void postUpdate(T entity) {
-  }
+  protected void preInsert(T entity) {}
 
-  protected void preCreate(T entity) {
-  }
-
-  protected void postCreate(T entity) {
-  }
+  protected void postInsert(T entity) {}
 
 }

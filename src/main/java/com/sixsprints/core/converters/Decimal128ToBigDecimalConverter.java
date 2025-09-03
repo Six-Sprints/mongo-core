@@ -8,6 +8,7 @@ import org.springframework.data.convert.ReadingConverter;
 
 import com.mongodb.lang.NonNull;
 import com.sixsprints.core.exception.BaseRuntimeException;
+import com.sixsprints.core.constants.ExceptionConstants;
 
 @ReadingConverter
 public class Decimal128ToBigDecimalConverter implements Converter<Decimal128, BigDecimal> {
@@ -17,8 +18,8 @@ public class Decimal128ToBigDecimalConverter implements Converter<Decimal128, Bi
     try {
       return source.bigDecimalValue();
     } catch (Exception e) {
-      throw BaseRuntimeException.builder().error("Unable to convert {0} to desired class type.")
-        .argument(source).build();
+      throw BaseRuntimeException.builder().error(ExceptionConstants.UNABLE_TO_CONVERT)
+          .argument(source).build();
     }
   }
 

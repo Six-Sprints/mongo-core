@@ -7,11 +7,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
 import com.sixsprints.core.auth.BasicAuth;
 import com.sixsprints.core.auth.BasicPermissionEnum;
 import com.sixsprints.core.controller.AbstractCrudController;
-import com.sixsprints.core.exception.BaseException;
+import com.sixsprints.core.exception.EntityAlreadyExistsException;
+import com.sixsprints.core.exception.EntityInvalidException;
 import com.sixsprints.core.mock.domain.User;
 import com.sixsprints.core.mock.dto.UserDto;
 import com.sixsprints.core.mock.mapper.UserDtoMapper;
@@ -33,11 +33,13 @@ public class UserController extends AbstractCrudController<User, UserDto, UserDt
     this.mapper = mapper;
   }
 
+  @Override
   @PostMapping
-  @BasicAuth(permission = BasicPermissionEnum.ADD, required = false)
-  public ResponseEntity<RestResponse<UserDto>> add(@RequestBody @Validated UserDto dto)
-    throws BaseException {
-    return RestUtil.successResponse(mapper.toDto(crudService.create(mapper.toDomain(dto))), HttpStatus.CREATED);
+  @BasicAuth(permission = BasicPermissionEnum.CREATE, required = false)
+  public ResponseEntity<RestResponse<UserDto>> create(@RequestBody @Validated UserDto dto)
+      throws EntityInvalidException, EntityAlreadyExistsException {
+    return RestUtil.successResponse(mapper.toDto(crudService.insertOne(mapper.toDomain(dto))),
+        HttpStatus.CREATED);
   }
 
 }

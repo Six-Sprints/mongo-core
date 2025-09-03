@@ -6,6 +6,8 @@ import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.util.CollectionUtils;
 
+import com.sixsprints.core.constants.ExceptionConstants;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -24,7 +26,7 @@ public class BaseRuntimeException extends RuntimeException {
 
   public static final HttpStatus DEFAULT_HTTP_STATUS = HttpStatus.INTERNAL_SERVER_ERROR;
 
-  public static final String DEFAULT_MESSAGE = "Something Bad Happened !";
+  public static final String DEFAULT_MESSAGE = ExceptionConstants.DEFAULT_ERROR_MESSAGE;
 
   @Builder.Default
   private HttpStatus httpStatus = DEFAULT_HTTP_STATUS;

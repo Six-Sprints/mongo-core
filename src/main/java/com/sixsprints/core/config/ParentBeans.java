@@ -10,6 +10,7 @@ import org.springframework.context.annotation.Configuration;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.datatype.jsr310.deser.LocalTimeDeserializer;
 import com.sixsprints.core.converters.LocalTimeSerializerAsString;
 import com.sixsprints.core.utils.DateUtil;
@@ -34,6 +35,7 @@ public class ParentBeans {
     mapper.setTimeZone(TimeZone.getTimeZone(defaultTimeZone()));
     SimpleModule module = module();
     mapper.registerModule(module);
+    mapper.registerModule(new JavaTimeModule());
     return mapper;
   }
 

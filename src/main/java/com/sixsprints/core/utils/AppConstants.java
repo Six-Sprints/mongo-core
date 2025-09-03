@@ -7,9 +7,9 @@ public interface AppConstants {
   String EQUALS = "equals";
 
   String NOT_EQUAL = "notEqual";
-  
+
   String EXISTS = "exists";
-  
+
   String DOES_NOT_EXIST = "doesNotExist";
 
   String LESS_THAN = "lessThan";
@@ -28,6 +28,5 @@ public interface AppConstants {
 
   String INHERITANCE_CRITERIA = "_class";
 
-  String CSV_IMPORT_MESSAGE = "CSV file import processing is complete. Number of rows successfully processed: %d (number of error cells: %d), number of rows failed in processing: %d. See the CSV error log for details.";
 
 }

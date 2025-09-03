@@ -1,59 +1,54 @@
 package com.sixsprints.core.generic.delete;
 
 import java.util.List;
-
+import java.util.Optional;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
-import org.springframework.data.mongodb.core.query.Update;
-
 import com.sixsprints.core.domain.AbstractMongoEntity;
 import com.sixsprints.core.generic.read.AbstractReadService;
 
-public abstract class AbstractDeleteService<T extends AbstractMongoEntity> extends AbstractReadService<T>
-  implements GenericDeleteService<T> {
-
-  private static final String ACTIVE = "active";
-
-  private static final String ID = "id";
+public abstract class AbstractDeleteService<T extends AbstractMongoEntity>
+    extends AbstractReadService<T> implements GenericDeleteService<T> {
 
   @Override
-  public void delete(String id) {
-    repository().deleteById(id);
+  public long deleteOneById(String id) {
+    assertValid(id != null, "id", id);
+    return deleteOneByCriteria(Criteria.where(AbstractMongoEntity.Fields.id).is(id));
   }
 
   @Override
-  public void delete(T entity) {
-    repository().delete(entity);
+  public long deleteOneBySlug(String slug) {
+    assertValid(slug != null, "slug", slug);
+    return deleteOneByCriteria(Criteria.where(AbstractMongoEntity.Fields.slug).is(slug));
   }
 
   @Override
-  public void delete(List<String> ids) {
-    Criteria criteria = new Criteria(ID).in(ids);
+  public long deleteOneByCriteria(Criteria criteria) {
+    assertValid(criteria != null, "criteria", criteria);
     Query query = new Query(criteria);
-    mongo.remove(query, metaData().getClassType());
+    T entity = mongo.findAndRemove(query, metaData().getClassType());
+    return Optional.ofNullable(entity).map(e -> 1).orElse(0);
   }
 
   @Override
-  public void softDelete(T entity) {
-    softDelete(entity.getId());
+  public long bulkDeleteById(List<String> ids) {
+    assertValid(ids != null, "ids", ids);
+    Criteria criteria = Criteria.where(AbstractMongoEntity.Fields.id).in(ids);
+    return bulkDeleteByCriteria(criteria);
   }
 
   @Override
-  public void softDelete(String id) {
-    Criteria criteria = new Criteria(ID).is(id);
-    softDeleteQuery(criteria);
+  public long bulkDeleteBySlug(List<String> slugs) {
+    assertValid(slugs != null, "slugs", slugs);
+    Criteria criteria = Criteria.where(AbstractMongoEntity.Fields.slug).in(slugs);
+    return bulkDeleteByCriteria(criteria);
   }
 
   @Override
-  public void softDelete(List<String> ids) {
-    Criteria criteria = new Criteria(ID).in(ids);
-    softDeleteQuery(criteria);
-  }
-
-  private void softDeleteQuery(Criteria criteria) {
+  public long bulkDeleteByCriteria(Criteria criteria) {
+    assertValid(criteria != null, "criteria", criteria);
     Query query = new Query(criteria);
-    Update update = new Update().set(ACTIVE, Boolean.FALSE);
-    mongo.updateMulti(query, update, metaData().getClassType());
+    return mongo.remove(query, metaData().getClassType()).getDeletedCount();
   }
 
 }

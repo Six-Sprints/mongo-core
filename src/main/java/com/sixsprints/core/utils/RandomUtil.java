@@ -4,15 +4,18 @@ package com.sixsprints.core.utils;
 import java.util.Date;
 import java.util.Random;
 
+import com.sixsprints.core.constants.ExceptionConstants;
+
 public class RandomUtil {
 
-  private static final char[] CHARS = "abcdefghijklmnpqrstuvwxyzABCDEFGHIJKLMNPQRSTUVWXYZ123456789".toCharArray();
+  private static final char[] CHARS =
+      "abcdefghijklmnpqrstuvwxyzABCDEFGHIJKLMNPQRSTUVWXYZ123456789".toCharArray();
 
   private static Random random = new Random();
 
   public static int randomInt(int min, int max) {
     if (min > max) {
-      throw new IllegalArgumentException("min cannot be greater than max");
+      throw new IllegalArgumentException(ExceptionConstants.MIN_GREATER_THAN_MAX);
     }
     if (min == max) {
       return min;
@@ -22,7 +25,7 @@ public class RandomUtil {
 
   public static double randomDouble(double min, double max, int scale) {
     if (min > max) {
-      throw new IllegalArgumentException("min = " + min + " cannot be greater than max =" + max);
+      throw new IllegalArgumentException(ExceptionConstants.MIN_GREATER_THAN_MAX);
     }
     if (min == max) {
       return min;
