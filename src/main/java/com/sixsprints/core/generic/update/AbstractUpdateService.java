@@ -23,6 +23,7 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity>
   public T updateOneById(String id, T entity)
       throws EntityNotFoundException, EntityInvalidException {
     T entityFromDb = findOneById(id).orElseThrow(() -> notFoundException(id));
+    enhanceEntity(entity);
     return update(entity, entityFromDb);
   }
 
@@ -30,6 +31,7 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity>
   public T updateOneBySlug(String slug, T entity)
       throws EntityNotFoundException, EntityInvalidException {
     T entityFromDb = findOneBySlug(slug).orElseThrow(() -> notFoundException(slug));
+    enhanceEntity(entity);
     return update(entity, entityFromDb);
   }
 
@@ -37,6 +39,7 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity>
   public T updateOneByCriteria(Criteria criteria, T entity)
       throws EntityNotFoundException, EntityInvalidException {
     T entityFromDb = findOneByCriteria(criteria).orElseThrow(() -> notFoundExceptionCriteria());
+    enhanceEntity(entity);
     return update(entity, entityFromDb);
   }
 
@@ -179,7 +182,6 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity>
   @SuppressWarnings("null")
   private T update(T entity, T entityFromDb) throws EntityInvalidException {
     assertValid(entity != null, metaData().getClassType().getSimpleName(), entity);
-    enhanceEntity(entity);
     preUpdate(entityFromDb, entity);
     preUpdateCheck(entity);
     entity.copyEntityFrom(entityFromDb);
