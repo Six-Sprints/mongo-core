@@ -32,7 +32,6 @@ public class AbstractMongoEntity implements Serializable {
   @Indexed(unique = true, sparse = true)
   private String slug;
 
-  @Indexed(unique = true, sparse = true)
   protected Long sequence;
 
   @CreatedDate
@@ -49,9 +48,10 @@ public class AbstractMongoEntity implements Serializable {
 
   public void copyEntityFrom(AbstractMongoEntity source) {
     this.id = source.id;
+    this.slug = source.slug;
+    this.sequence = source.sequence;
     this.dateCreated = source.dateCreated;
     this.dateModified = source.dateModified;
-    this.slug = source.slug;
     this.createdBy = source.createdBy;
     this.lastModifiedBy = source.lastModifiedBy;
   }
