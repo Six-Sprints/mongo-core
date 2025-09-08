@@ -56,7 +56,7 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity>
     T entityFromDb = findOneById(id).orElseThrow(() -> notFoundException(id));
     patchUpdateOne(Criteria.where(AbstractMongoEntity.Fields.id).is(id), entity, entityFromDb,
         propsChanged);
-    return entity;
+    return entityFromDb;
   }
 
   @Override
@@ -72,7 +72,7 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity>
     T entityFromDb = findOneBySlug(slug).orElseThrow(() -> notFoundException(slug));
     patchUpdateOne(Criteria.where(AbstractMongoEntity.Fields.slug).is(slug), entity, entityFromDb,
         propsChanged);
-    return entity;
+    return entityFromDb;
   }
 
   @Override
