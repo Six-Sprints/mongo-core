@@ -2,7 +2,7 @@
 
 This document provides an overview of the custom exceptions used in this library. These exceptions are designed to provide a consistent and structured way of handling errors.
 
-## `BaseException`
+## `com.sixsprints.core.exception.BaseException`
 
 This is a custom checked exception that serves as the base for all other checked exceptions in the library. It includes the following properties:
 
@@ -13,7 +13,7 @@ This is a custom checked exception that serves as the base for all other checked
 
 ### Note: The `BaseException` and all it's children exceptions are checked and must be thrown from the methods where they are being used so that the code can compile witout issues.
 
-## `BaseRuntimeException`
+## `com.sixsprints.core.exception.BaseRuntimeException`
 
 This is a custom unchecked exception that serves as the base for all other unchecked exceptions in the library. It has the same properties as `BaseException`.
 
@@ -27,7 +27,10 @@ The following exceptions extend `BaseException` and provide more specific error 
 - **`NotAuthenticatedException`**: Thrown when a user is not authenticated to access a resource. (HTTP Status: `403 FORBIDDEN`)
 - **`NotAuthorizedException`**: Thrown when a user is not authorized to perform a specific action. (HTTP Status: `401 UNAUTHORIZED`)
 
-### All these specific exceptions have the default HHTP status already set and they provide a `childBuilder()` to set a custom error if needed.
+### Notes about the exceptions
+
+- All these specific exceptions have the default HTTP status already set and they provide a `childBuilder()` to set a custom error if needed.
+- All exceptions are part of the same package: `com.sixsprints.core.exception`
 
 ## How to Use
 

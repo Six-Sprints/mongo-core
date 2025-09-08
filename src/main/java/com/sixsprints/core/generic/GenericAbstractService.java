@@ -25,6 +25,7 @@ import com.sixsprints.core.exception.EntityAlreadyExistsException;
 import com.sixsprints.core.exception.EntityInvalidException;
 import com.sixsprints.core.exception.EntityNotFoundException;
 import com.sixsprints.core.repository.GenericCrudRepository;
+import com.sixsprints.core.validator.EntityValidator;
 import com.sixsprints.core.utils.RestExceptionHandler;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
@@ -42,6 +43,9 @@ public abstract class GenericAbstractService<T extends AbstractMongoEntity> exte
 
   @Autowired
   protected Validator validator;
+
+  @Autowired(required = false)
+  protected List<EntityValidator<T>> entityValidators;
 
   @Value("${slug.padding.character:0}")
   private String slugPaddingCharacter;
@@ -133,7 +137,16 @@ public abstract class GenericAbstractService<T extends AbstractMongoEntity> exte
   protected List<String> checkValidity(T domain) {
 
     Set<ConstraintViolation<T>> violations = validator.validate(domain);
-    return toHumanReadableErrors(violations);
+    List<String> errors = toHumanReadableErrors(violations);
+    if (!CollectionUtils.isEmpty(errors) || CollectionUtils.isEmpty(entityValidators)) {
+      return errors;
+    }
+    for (EntityValidator<T> customValidator : entityValidators) {
+      if (customValidator.supports(domain.getClass())) {
+        errors.addAll(customValidator.validate(domain));
+      }
+    }
+    return errors;
   }
 
   protected List<String> toHumanReadableErrors(Set<ConstraintViolation<T>> violations) {
