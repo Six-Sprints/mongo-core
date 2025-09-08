@@ -3,10 +3,10 @@ package com.sixsprints.core.generic;
 import static org.springframework.data.mongodb.core.FindAndModifyOptions.*;
 import static org.springframework.data.mongodb.core.query.Criteria.*;
 import static org.springframework.data.mongodb.core.query.Query.*;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
-import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.MessageSource;
@@ -25,8 +25,8 @@ import com.sixsprints.core.exception.EntityAlreadyExistsException;
 import com.sixsprints.core.exception.EntityInvalidException;
 import com.sixsprints.core.exception.EntityNotFoundException;
 import com.sixsprints.core.repository.GenericCrudRepository;
-import com.sixsprints.core.validator.EntityValidator;
 import com.sixsprints.core.utils.RestExceptionHandler;
+import com.sixsprints.core.validator.EntityValidator;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
 import lombok.extern.slf4j.Slf4j;
@@ -137,7 +137,7 @@ public abstract class GenericAbstractService<T extends AbstractMongoEntity> exte
   protected List<String> checkValidity(T domain) {
 
     Set<ConstraintViolation<T>> violations = validator.validate(domain);
-    List<String> errors = toHumanReadableErrors(violations);
+    List<String> errors = new ArrayList<>(toHumanReadableErrors(violations));
     if (!CollectionUtils.isEmpty(errors) || CollectionUtils.isEmpty(entityValidators)) {
       return errors;
     }
@@ -164,7 +164,7 @@ public abstract class GenericAbstractService<T extends AbstractMongoEntity> exte
       } else {
         return createViolationError(propertyPath, message, valuePart);
       }
-    }).collect(Collectors.toList());
+    }).toList();
   }
 
   protected String createViolationError(String propertyPath, String message, String valuePart) {
@@ -181,8 +181,7 @@ public abstract class GenericAbstractService<T extends AbstractMongoEntity> exte
   }
 
   protected EntityInvalidException validationException(List<String> errors) {
-    List<String> resolvedErrors =
-        errors.stream().map(err -> localisedMessage(err, null)).collect(Collectors.toList());
+    List<String> resolvedErrors = errors.stream().map(err -> localisedMessage(err, null)).toList();
     return EntityInvalidException.childBuilder().data(resolvedErrors)
         .error(resolvedErrors.size() > 1 ? errors.toString() : resolvedErrors.get(0)).build();
   }

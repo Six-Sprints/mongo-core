@@ -87,7 +87,7 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity>
       throws EntityNotFoundException, EntityInvalidException {
     T entityFromDb = findOneByCriteria(criteria).orElseThrow(() -> notFoundExceptionCriteria());
     patchUpdateOne(criteria, entity, entityFromDb, propsChanged);
-    return entity;
+    return entityFromDb;
   }
 
   @Override
