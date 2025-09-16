@@ -2,6 +2,7 @@ package com.sixsprints.core.generic.update;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
@@ -131,6 +132,9 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity>
   }
 
   protected String userAuditField(AbstractMongoEntity currentUser) {
+    if (currentUser == null || StringUtils.isEmpty(currentUser.getSlug())) {
+      return "unknown";
+    }
     return currentUser.getSlug();
   }
 

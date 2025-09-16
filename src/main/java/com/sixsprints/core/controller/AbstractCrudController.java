@@ -24,7 +24,7 @@ import com.sixsprints.core.utils.RestUtil;
  * @param <T>  - Domain Class Type
  * @param <SD> - Search DTO Class Type
  * @param <DD> - Detailed DTO Class Type
- * @param <CD> - CRUD DTO class Type
+ * @param <CD> - Create DTO class Type
  */
 public abstract class AbstractCrudController<T extends AbstractMongoEntity, SD, DD, CD>
     extends AbstractReadController<T, SD, DD> {
@@ -46,7 +46,7 @@ public abstract class AbstractCrudController<T extends AbstractMongoEntity, SD, 
 
   @PutMapping
   @BasicAuth(permission = BasicPermissionEnum.UPDATE)
-  public ResponseEntity<RestResponse<DD>> patchUpdateOneBySlug(@RequestBody @Validated CD dto,
+  public ResponseEntity<RestResponse<DD>> patchUpdateOneBySlug(@RequestBody CD dto,
       @RequestParam String slug, @RequestParam String propChanged)
       throws EntityNotFoundException, EntityInvalidException {
     T domain = crudMapper.toDomain(dto);
@@ -56,9 +56,8 @@ public abstract class AbstractCrudController<T extends AbstractMongoEntity, SD, 
 
   @PutMapping("/patch/multi")
   @BasicAuth(permission = BasicPermissionEnum.UPDATE)
-  public ResponseEntity<RestResponse<DD>> patchUpdateOneBySlugMultiProps(
-      @RequestBody @Validated CD dto, @RequestParam String slug,
-      @RequestParam List<String> propsChanged)
+  public ResponseEntity<RestResponse<DD>> patchUpdateOneBySlugMultiProps(@RequestBody CD dto,
+      @RequestParam String slug, @RequestParam List<String> propsChanged)
       throws EntityNotFoundException, EntityInvalidException {
     T domain = crudMapper.toDomain(dto);
     return RestUtil.successResponse(

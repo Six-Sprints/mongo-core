@@ -23,18 +23,12 @@ public class AuthInterceptor extends AbstractAuthenticationInterceptor<User> {
   }
 
   @Override
-  protected void checkUserPermissions(User user, ModuleDefinition module, PermissionDefinition permission,
-    boolean required) throws NotAuthenticatedException, EntityNotFoundException {
-    System.out.println(module.name());
-    System.out.println(permission.name());
-    System.out.println(required);
-  }
+  protected void checkUserPermissions(User user, ModuleDefinition module,
+      PermissionDefinition permission, boolean required)
+      throws NotAuthenticatedException, EntityNotFoundException {}
 
   @Override
-  protected void checkIfTokenInvalid(User user, String token, boolean required) throws NotAuthenticatedException {
-    System.out.println(user);
-    System.out.println(token);
-    System.out.println(required);
-  }
+  protected void checkIfTokenInvalid(User user, String token, boolean required)
+      throws NotAuthenticatedException {}
 
 }

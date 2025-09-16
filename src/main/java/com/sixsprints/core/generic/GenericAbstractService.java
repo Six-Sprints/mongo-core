@@ -24,6 +24,11 @@ import com.sixsprints.core.exception.BaseRuntimeException;
 import com.sixsprints.core.exception.EntityAlreadyExistsException;
 import com.sixsprints.core.exception.EntityInvalidException;
 import com.sixsprints.core.exception.EntityNotFoundException;
+import com.sixsprints.core.generic.hooks.EnhanceEntityHook;
+import com.sixsprints.core.generic.hooks.PostInsertHook;
+import com.sixsprints.core.generic.hooks.PostUpdateHook;
+import com.sixsprints.core.generic.hooks.PreInsertHook;
+import com.sixsprints.core.generic.hooks.PreUpdateHook;
 import com.sixsprints.core.repository.GenericCrudRepository;
 import com.sixsprints.core.utils.RestExceptionHandler;
 import com.sixsprints.core.validator.EntityValidator;
@@ -46,6 +51,21 @@ public abstract class GenericAbstractService<T extends AbstractMongoEntity> exte
 
   @Autowired(required = false)
   protected List<EntityValidator<T>> entityValidators;
+
+  @Autowired(required = false)
+  protected List<PreInsertHook<T>> preInsertHooks;
+
+  @Autowired(required = false)
+  protected List<PreUpdateHook<T>> preUpdateHooks;
+
+  @Autowired(required = false)
+  protected List<PostInsertHook<T>> postInsertHooks;
+
+  @Autowired(required = false)
+  protected List<PostUpdateHook<T>> postUpdateHooks;
+
+  @Autowired(required = false)
+  protected List<EnhanceEntityHook<T>> enhanceEntityHooks;
 
   @Value("${slug.padding.character:0}")
   private String slugPaddingCharacter;
@@ -219,6 +239,51 @@ public abstract class GenericAbstractService<T extends AbstractMongoEntity> exte
 
   private boolean shouldOverwriteSlug(T entity) {
     return isNew(entity) && !StringUtils.hasText(entity.getSlug());
+  }
+
+  @Override
+  protected void enhanceEntity(T entity) {
+    if (!CollectionUtils.isEmpty(enhanceEntityHooks)) {
+      for (EnhanceEntityHook<T> enhanceEntityHook : enhanceEntityHooks) {
+        enhanceEntityHook.enhanceEntity(entity);
+      }
+    }
+  }
+
+  @Override
+  protected void preInsert(T entity) {
+    if (!CollectionUtils.isEmpty(preInsertHooks)) {
+      for (PreInsertHook<T> preInsertHook : preInsertHooks) {
+        preInsertHook.preInsert(entity);
+      }
+    }
+  }
+
+  @Override
+  protected void preUpdate(T now, T toBe) {
+    if (!CollectionUtils.isEmpty(preUpdateHooks)) {
+      for (PreUpdateHook<T> preUpdateHook : preUpdateHooks) {
+        preUpdateHook.preUpdate(now, toBe);
+      }
+    }
+  }
+
+  @Override
+  protected void postInsert(T entity) {
+    if (!CollectionUtils.isEmpty(postInsertHooks)) {
+      for (PostInsertHook<T> postInsertHook : postInsertHooks) {
+        postInsertHook.postInsert(entity);
+      }
+    }
+  }
+
+  @Override
+  protected void postUpdate(T entity) {
+    if (!CollectionUtils.isEmpty(postUpdateHooks)) {
+      for (PostUpdateHook<T> postUpdateHook : postUpdateHooks) {
+        postUpdateHook.postUpdate(entity);
+      }
+    }
   }
 
 }
