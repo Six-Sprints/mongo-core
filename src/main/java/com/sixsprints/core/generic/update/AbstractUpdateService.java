@@ -117,7 +117,7 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity>
     assertValid(propsChanged != null, "propsChanged", propsChanged);
     Update update = preparePatchUpdate(entity, propsChanged);
     BeanWrapperUtil.copyProperties(entity, entityFromDb, propsChanged);
-    preUpdate(entityFromDb, entity);
+    preUpdate(entityFromDb, entityFromDb);
     preUpdateCheck(entityFromDb);
     UpdateResult result =
         mongo.updateFirst(Query.query(criteria), update, metaData().getClassType());
