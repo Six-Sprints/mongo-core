@@ -55,6 +55,7 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity>
   public T patchUpdateOneById(String id, T entity, List<String> propsChanged)
       throws EntityNotFoundException, EntityInvalidException {
     T entityFromDb = findOneById(id).orElseThrow(() -> notFoundException(id));
+    enhanceEntity(entity);
     patchUpdateOne(Criteria.where(AbstractMongoEntity.Fields.id).is(id), entity, entityFromDb,
         propsChanged);
     return entityFromDb;
@@ -71,6 +72,7 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity>
   public T patchUpdateOneBySlug(String slug, T entity, List<String> propsChanged)
       throws EntityNotFoundException, EntityInvalidException {
     T entityFromDb = findOneBySlug(slug).orElseThrow(() -> notFoundException(slug));
+    enhanceEntity(entity);
     patchUpdateOne(Criteria.where(AbstractMongoEntity.Fields.slug).is(slug), entity, entityFromDb,
         propsChanged);
     return entityFromDb;
@@ -87,6 +89,7 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity>
   public T patchUpdateOneByCriteria(Criteria criteria, T entity, List<String> propsChanged)
       throws EntityNotFoundException, EntityInvalidException {
     T entityFromDb = findOneByCriteria(criteria).orElseThrow(() -> notFoundExceptionCriteria());
+    enhanceEntity(entity);
     patchUpdateOne(criteria, entity, entityFromDb, propsChanged);
     return entityFromDb;
   }
@@ -101,6 +104,7 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity>
     assertValid(criteria != null, "criteria", criteria);
     assertValid(entity != null, metaData().getClassType().getSimpleName(), entity);
     assertValid(propsChanged != null, "propsChanged", propsChanged);
+    enhanceEntity(entity);
     Update update = preparePatchUpdate(entity, propsChanged);
     return mongo.updateMulti(Query.query(criteria), update, metaData().getClassType())
         .getMatchedCount();
@@ -113,8 +117,12 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity>
     assertValid(propsChanged != null, "propsChanged", propsChanged);
     Update update = preparePatchUpdate(entity, propsChanged);
     BeanWrapperUtil.copyProperties(entity, entityFromDb, propsChanged);
+    preUpdate(entityFromDb, entity);
     preUpdateCheck(entityFromDb);
-    return mongo.updateFirst(Query.query(criteria), update, metaData().getClassType());
+    UpdateResult result =
+        mongo.updateFirst(Query.query(criteria), update, metaData().getClassType());
+    postUpdate(entityFromDb);
+    return result;
   }
 
   private Update preparePatchUpdate(T entity, List<String> propsChanged) {
