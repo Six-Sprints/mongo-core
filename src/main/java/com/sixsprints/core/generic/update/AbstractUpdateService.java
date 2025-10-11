@@ -8,6 +8,7 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.util.CollectionUtils;
 import com.mongodb.client.result.UpdateResult;
+import com.sixsprints.core.constants.ExceptionConstants;
 import com.sixsprints.core.domain.AbstractMongoEntity;
 import com.sixsprints.core.exception.EntityInvalidException;
 import com.sixsprints.core.exception.EntityNotFoundException;
@@ -115,6 +116,11 @@ public abstract class AbstractUpdateService<T extends AbstractMongoEntity>
     assertValid(criteria != null, "criteria", criteria);
     assertValid(entity != null, metaData().getClassType().getSimpleName(), entity);
     assertValid(propsChanged != null, "propsChanged", propsChanged);
+    T duplicate = findDuplicate(entity);
+    if (duplicate != null && !duplicate.getId().equals(entityFromDb.getId())) {
+      throw invalidException(duplicate, List.of(ExceptionConstants.ENTITY_ALREADY_EXISTS_WITH_FIELD,
+          entityFromDb.getClass().getSimpleName(), "slug", entityFromDb.getSlug()));
+    }
     Update update = preparePatchUpdate(entity, propsChanged);
     BeanWrapperUtil.copyProperties(entity, entityFromDb, propsChanged);
     preUpdate(entityFromDb, entityFromDb);

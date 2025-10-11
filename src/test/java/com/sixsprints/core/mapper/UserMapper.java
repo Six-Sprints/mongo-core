@@ -1,10 +1,9 @@
-package com.sixsprints.core.transformer;
+package com.sixsprints.core.mapper;
 
 import org.mapstruct.Mapper;
 import org.mapstruct.MappingTarget;
 import org.mapstruct.NullValuePropertyMappingStrategy;
 import org.mapstruct.ReportingPolicy;
-import com.sixsprints.core.mapper.GenericCrudMapper;
 import com.sixsprints.core.mock.domain.User;
 import com.sixsprints.core.mock.domain.embedded.Address;
 import com.sixsprints.core.mock.dto.UserDto;

@@ -1,6 +1,7 @@
 
 package com.sixsprints.core.utils;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
@@ -9,16 +10,14 @@ import org.springframework.context.MessageSource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
-import org.springframework.validation.FieldError;
-import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
+import com.sixsprints.core.constants.ExceptionConstants;
 import com.sixsprints.core.exception.BaseException;
 import com.sixsprints.core.exception.BaseRuntimeException;
-import com.sixsprints.core.constants.ExceptionConstants;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
@@ -70,23 +69,24 @@ public abstract class RestExceptionHandler {
   @ExceptionHandler(MethodArgumentNotValidException.class)
   public ResponseEntity<?> handleMethodArgumentNotValid(MethodArgumentNotValidException ex,
       HttpServletRequest request, Locale locale) {
-    ObjectError objectError = ex.getBindingResult().getAllErrors().get(0);
-    String field = "";
-    if (objectError instanceof FieldError) {
-      field = ((FieldError) objectError).getField();
-    }
-    FieldError fieldError = (FieldError) objectError;
-    String error = getErrorMessage(fieldError.getDefaultMessage(), List.of(), locale);
-    if (error == null || error.equals(fieldError.getDefaultMessage())) {
-      error = getErrorMessage(ExceptionConstants.REQUEST_PARAMETER_ANOMALY,
-          List.of(field, fieldError.getDefaultMessage()), locale);
-    }
-    log.error(error);
-    return RestUtil.errorResponse(null, error, HttpStatus.BAD_REQUEST);
+    List<String> errorMessages = new ArrayList<>();
+
+    ex.getBindingResult().getAllErrors().forEach(error -> {
+      String messageKey = error.getDefaultMessage();
+      if (messageKey != null && messageKey.startsWith("{") && messageKey.endsWith("}")) {
+        messageKey = messageKey.substring(1, messageKey.length() - 1);
+      }
+      String resolvedMessage =
+          getErrorMessage(messageKey, Arrays.asList(error.getArguments()), locale);
+      log.error(getErrorMessage(messageKey, Arrays.asList(error.getArguments()), Locale.ENGLISH));
+      errorMessages.add(resolvedMessage);
+    });
+    String errorMessage = String.join(", ", errorMessages);
+    return RestUtil.errorResponse(null, errorMessage, HttpStatus.BAD_REQUEST);
   }
 
   @ExceptionHandler(HttpMessageNotReadableException.class)
-  public ResponseEntity<?> handleConstraintVoilationException(
+  public ResponseEntity<?> handleHttpMessageNotReadableException(
       HttpMessageNotReadableException exception, HttpServletRequest request) {
     String errorDetails = jsonInvalidErrorMessage(exception);
 
@@ -101,7 +101,7 @@ public abstract class RestExceptionHandler {
   }
 
   @ExceptionHandler(MissingServletRequestParameterException.class)
-  public ResponseEntity<?> handleMissingParameterException(
+  public ResponseEntity<?> handleMissingServletRequestParameterException(
       MissingServletRequestParameterException ex) {
     log.error(ex.getMessage(), ex);
     return RestUtil.errorResponse(null, ex.getMessage(), HttpStatus.BAD_REQUEST);

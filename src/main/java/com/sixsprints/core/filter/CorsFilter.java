@@ -25,7 +25,7 @@ public class CorsFilter implements Filter {
 
   @Override
   public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain)
-    throws IOException, ServletException {
+      throws IOException, ServletException {
     Long startTime = System.currentTimeMillis();
     if (req instanceof HttpServletRequest && res instanceof HttpServletResponse) {
       HttpServletRequest request = (HttpServletRequest) req;
@@ -51,7 +51,7 @@ public class CorsFilter implements Filter {
   }
 
   protected String allowMethodsHeader(HttpServletRequest request) {
-    return "PUT, POST, GET, OPTIONS, DELETE";
+    return "PUT, POST, GET, OPTIONS, DELETE, PATCH";
   }
 
   protected String allowCredentialsHeader(HttpServletRequest request) {
@@ -84,13 +84,11 @@ public class CorsFilter implements Filter {
 
   protected void logRequest(Long startTime) {
     RequestContext request = ApplicationContext.getCurrentRequest();
-    log.info("Response time taken for request {} {} {} {} milliseconds",
-      request.getRequestId(), request.getHttpMethod(), request.getSelfUrl(),
-      System.currentTimeMillis() - startTime);
+    log.info("Response time taken for request {} {} {} {} milliseconds", request.getRequestId(),
+        request.getHttpMethod(), request.getSelfUrl(), System.currentTimeMillis() - startTime);
   }
 
   @Override
-  public void init(FilterConfig filterConfig) {
-  }
+  public void init(FilterConfig filterConfig) {}
 
 }

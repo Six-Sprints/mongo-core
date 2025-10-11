@@ -20,9 +20,9 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class DateUtil {
 
-  public static final ZoneId DEFAULT_TIMEZONE = ZoneId.systemDefault();
+  public static final ZoneId DEFAULT_TIMEZONE = ZoneId.of("UTC");
 
-  public static final String DEFAULT_DATE_PATTERN = "dd-MM-yyyy";
+  public static final String DEFAULT_DATE_PATTERN = "MM-dd-yyyy";
 
   public static final String DEFAULT_SHORT_DATE_PATTERN = "dd MMM";
 
