@@ -4,9 +4,10 @@ package com.sixsprints.core.exception;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
-import org.springframework.util.CollectionUtils;
+import org.springframework.context.i18n.LocaleContextHolder;
 
 import com.sixsprints.core.constants.ExceptionConstants;
+import com.sixsprints.core.utils.MessageSourceHolder;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -41,10 +42,8 @@ public class BaseException extends Exception {
 
   @Override
   public String getMessage() {
-    if (CollectionUtils.isEmpty(arguments)) {
-      return error;
-    }
-    return String.format(error, arguments.toArray());
+    return MessageSourceHolder.resolve(error, arguments,
+        LocaleContextHolder.getLocale());
   }
 
   protected static HttpStatus checkIfNull(HttpStatus httpStatus, HttpStatus defaultStatus) {

@@ -32,27 +32,29 @@ public abstract class RestExceptionHandler {
 
   private final MessageSource messageSource;
 
-  @ExceptionHandler(value = {BaseException.class})
+  @ExceptionHandler(value = { BaseException.class })
   protected ResponseEntity<?> handleBaseException(BaseException ex, HttpServletRequest request,
       Locale locale) {
-    log.error(getErrorMessage(ex.getMessage(), ex.getArguments(), Locale.ENGLISH), ex);
+    log.error(MessageSourceHolder.resolve(ex.getError(), ex.getArguments(), Locale.ENGLISH), ex);
     return RestUtil.errorResponse(ex.getData(),
-        getErrorMessage(ex.getMessage(), ex.getArguments(), locale), ex.getHttpStatus());
+        MessageSourceHolder.resolve(ex.getError(), ex.getArguments(), locale),
+        ex.getHttpStatus());
   }
 
-  @ExceptionHandler(value = {BaseRuntimeException.class})
+  @ExceptionHandler(value = { BaseRuntimeException.class })
   protected ResponseEntity<?> handleBaseRuntimeException(BaseRuntimeException ex,
       HttpServletRequest request, Locale locale) {
-    log.error(getErrorMessage(ex.getMessage(), ex.getArguments(), Locale.ENGLISH), ex);
+    log.error(MessageSourceHolder.resolve(ex.getError(), ex.getArguments(), Locale.ENGLISH), ex);
     return RestUtil.errorResponse(ex.getData(),
-        getErrorMessage(ex.getMessage(), ex.getArguments(), locale), ex.getHttpStatus());
+        MessageSourceHolder.resolve(ex.getError(), ex.getArguments(), locale),
+        ex.getHttpStatus());
   }
 
-  @ExceptionHandler(value = {Exception.class})
+  @ExceptionHandler(value = { Exception.class })
   protected ResponseEntity<?> handleUnknownException(Exception ex, HttpServletRequest request,
       Locale locale) {
-    log.error(getErrorMessage(ex.getMessage()), ex);
-    String errorMessage = getErrorMessage(ExceptionConstants.GENERIC_ERROR, locale);
+    log.error(MessageSourceHolder.resolve(ex.getMessage(), Locale.ENGLISH), ex);
+    String errorMessage = MessageSourceHolder.resolve(ExceptionConstants.GENERIC_ERROR, locale);
     return RestUtil.errorResponse(null, errorMessage, BaseException.DEFAULT_HTTP_STATUS);
   }
 
@@ -76,9 +78,9 @@ public abstract class RestExceptionHandler {
       if (messageKey != null && messageKey.startsWith("{") && messageKey.endsWith("}")) {
         messageKey = messageKey.substring(1, messageKey.length() - 1);
       }
-      String resolvedMessage =
-          getErrorMessage(messageKey, Arrays.asList(error.getArguments()), locale);
-      log.error(getErrorMessage(messageKey, Arrays.asList(error.getArguments()), Locale.ENGLISH));
+      Object[] args = error.getArguments();
+      String resolvedMessage = MessageSourceHolder.resolve(messageKey, args, locale);
+      log.error(MessageSourceHolder.resolve(messageKey, args, Locale.ENGLISH));
       errorMessages.add(resolvedMessage);
     });
     String errorMessage = String.join(", ", errorMessages);
@@ -124,29 +126,29 @@ public abstract class RestExceptionHandler {
   }
 
   protected String getErrorMessage(String key, Locale locale) {
-    return getErrorMessage(key, null, locale);
+    return MessageSourceHolder.resolve(key, locale);
   }
 
   protected String getErrorMessage(String key) {
-    return getErrorMessage(key, Locale.ENGLISH);
+    return MessageSourceHolder.resolve(key, Locale.ENGLISH);
   }
 
-
   protected String invalidEnumErrorMessage(InvalidFormatException invalidFormatException) {
-    return getErrorMessage(ExceptionConstants.INVALID_ENUM_VALUE,
-        List.of(invalidFormatException.getValue(),
+    return MessageSourceHolder.resolve(ExceptionConstants.INVALID_ENUM_VALUE,
+        new Object[] { invalidFormatException.getValue(),
             invalidFormatException.getPath().get(invalidFormatException.getPath().size() - 1)
                 .getFieldName(),
-            Arrays.toString(invalidFormatException.getTargetType().getEnumConstants())),
+            Arrays.toString(invalidFormatException.getTargetType().getEnumConstants()) },
         Locale.ENGLISH);
   }
 
   protected String jsonInvalidErrorMessage(HttpMessageNotReadableException exception) {
-    return getErrorMessage(ExceptionConstants.REQUEST_BODY_EMPTY_OR_MALFORMED, Locale.ENGLISH);
+    return MessageSourceHolder.resolve(ExceptionConstants.REQUEST_BODY_EMPTY_OR_MALFORMED,
+        Locale.ENGLISH);
   }
 
   protected String invalidFielErrorMessage(ConstraintViolation<?> next, String field) {
-    return getErrorMessage(ExceptionConstants.FIELD_INVALID, List.of(field, next.getMessage()),
+    return MessageSourceHolder.resolve(ExceptionConstants.FIELD_INVALID, new Object[] { field, next.getMessage() },
         Locale.ENGLISH);
   }
 

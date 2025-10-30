@@ -6,12 +6,12 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>3.5.6</version>
+		<version>3.5.7</version>
 		<relativePath /> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.sixsprints</groupId>
 	<artifactId>mongo-core</artifactId>
-	<version>3.5.600</version>
+	<version>3.5.700</version>
 	<name>mongo-core</name>
 	<packaging>jar</packaging>
 	<description>Lightweight Framework built on top of Spring Boot MongoDB with opinionated CRUD operations (Controller and Service layer included), JWT authentication, and built-in exception handling.</description>
@@ -46,7 +46,6 @@
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-lang3</artifactId>
-			<version>${commons-lang3.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>jakarta.validation</groupId>
@@ -164,7 +163,6 @@
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
 				<artifactId>build-helper-maven-plugin</artifactId>
-				<version>3.6.0</version>
 				<executions>
 					<execution>
 						<id>add-test-source</id>
