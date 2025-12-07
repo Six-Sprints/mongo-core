@@ -5,11 +5,11 @@ import static org.springframework.data.mongodb.core.query.Criteria.*;
 import static org.springframework.data.mongodb.core.query.Query.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.mongodb.core.MongoOperations;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.http.HttpStatus;
@@ -228,7 +228,8 @@ public abstract class GenericAbstractService<T extends AbstractMongoEntity> exte
   }
 
   protected String localisedMessage(String messageKey, List<Object> args) {
-    return RestExceptionHandler.getErrorMessage(messageSource, messageKey, args, Locale.ENGLISH);
+    return RestExceptionHandler.getErrorMessage(messageSource, messageKey, args,
+        LocaleContextHolder.getLocale());
   }
 
   protected void assertValid(Boolean expression, String field, Object value) {
