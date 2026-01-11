@@ -7,13 +7,13 @@ import java.lang.annotation.Target;
 
 @Authenticated
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ ElementType.METHOD, ElementType.TYPE })
+@Target({ElementType.METHOD, ElementType.TYPE})
 public @interface BasicAuth {
-  
+
   boolean required() default true;
 
-  BasicModuleEnum module() default BasicModuleEnum.ANY;
-  
-  BasicPermissionEnum permission() default BasicPermissionEnum.ANY;
+  BasicModuleEnum module() default BasicModuleEnum.UNDEFINED;
+
+  BasicPermissionEnum permission() default BasicPermissionEnum.UNDEFINED;
 
 }

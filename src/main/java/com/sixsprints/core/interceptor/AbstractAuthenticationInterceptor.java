@@ -26,7 +26,9 @@ import com.sixsprints.core.utils.AuthUtil;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public abstract class AbstractAuthenticationInterceptor<T extends AbstractMongoEntity>
     implements AsyncHandlerInterceptor {
 
@@ -48,7 +50,7 @@ public abstract class AbstractAuthenticationInterceptor<T extends AbstractMongoE
       return true;
     }
     AuthAnnotationDataDto annotationData = annotationData(method);
-
+    log.info("Final annotation data: {}", annotationData);
     if (annotationData == null) {
       return true;
     }
@@ -154,6 +156,7 @@ public abstract class AbstractAuthenticationInterceptor<T extends AbstractMongoE
 
     AuthAnnotationDataDto classData = fetchAnnotationData(annotationClass);
     AuthAnnotationDataDto methodData = fetchAnnotationData(annotationMethod);
+    log.info("Class Data: {}, Method Data: {}", classData, methodData);
 
     if (classData == null) {
       return sanitize(methodData);
@@ -163,10 +166,11 @@ public abstract class AbstractAuthenticationInterceptor<T extends AbstractMongoE
       return sanitize(classData);
     }
 
-    return sanitize(AuthAnnotationDataDto.builder()
-        .module(methodData.getModule() == null ? classData.getModule() : methodData.getModule())
-        .permission(methodData.getPermission() == null ? classData.getPermission()
-            : methodData.getPermission())
+    ModuleDefinition finalModule = getValidValue(methodData.getModule(), classData.getModule());
+    PermissionDefinition finalPermission =
+        getValidValue(methodData.getPermission(), classData.getPermission());
+
+    return sanitize(AuthAnnotationDataDto.builder().module(finalModule).permission(finalPermission)
         .required(methodData.isRequired()).build());
   }
 
@@ -180,12 +184,42 @@ public abstract class AbstractAuthenticationInterceptor<T extends AbstractMongoE
   }
 
   private AuthAnnotationDataDto sanitize(AuthAnnotationDataDto annotationData) {
+    ModuleDefinition module = annotationData.getModule();
+    PermissionDefinition permission = annotationData.getPermission();
     return AuthAnnotationDataDto.builder()
-        .module(
-            annotationData.getModule() == null ? BasicModuleEnum.ANY : annotationData.getModule())
-        .permission(annotationData.getPermission() == null ? BasicPermissionEnum.ANY
-            : annotationData.getPermission())
+        .module(isUndefined(module) ? BasicModuleEnum.ANY : module)
+        .permission(isUndefined(permission) ? BasicPermissionEnum.ANY : permission)
         .required(annotationData.isRequired()).build();
+  }
+
+  private boolean isUndefined(ModuleDefinition module) {
+    return module == null || "UNDEFINED".equals(module.name());
+  }
+
+  private boolean isUndefined(PermissionDefinition permission) {
+    return permission == null || "UNDEFINED".equals(permission.name());
+  }
+
+  private ModuleDefinition getValidValue(ModuleDefinition methodValue,
+      ModuleDefinition classValue) {
+    if (!isUndefined(methodValue)) {
+      return methodValue;
+    }
+    if (!isUndefined(classValue)) {
+      return classValue;
+    }
+    return null;
+  }
+
+  private PermissionDefinition getValidValue(PermissionDefinition methodValue,
+      PermissionDefinition classValue) {
+    if (!isUndefined(methodValue)) {
+      return methodValue;
+    }
+    if (!isUndefined(classValue)) {
+      return classValue;
+    }
+    return null;
   }
 
   private AuthAnnotationDataDto fetchAnnotationData(Annotation annotation) {

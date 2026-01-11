@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import com.sixsprints.core.auth.BasicAuth;
+import com.sixsprints.core.auth.BasicModuleEnum;
 import com.sixsprints.core.auth.BasicPermissionEnum;
 import com.sixsprints.core.controller.AbstractCrudController;
 import com.sixsprints.core.exception.EntityAlreadyExistsException;
@@ -21,6 +22,7 @@ import com.sixsprints.core.utils.RestUtil;
 
 @RestController
 @RequestMapping(value = "/api/v1/user")
+@BasicAuth(module = BasicModuleEnum.USER)
 public class UserController extends AbstractCrudController<User, UserDto, UserDto, UserDto> {
 
   private final UserService crudService;
