@@ -45,12 +45,13 @@ public abstract class AbstractAuthenticationInterceptor<T extends AbstractMongoE
     if (!(handler instanceof HandlerMethod)) {
       return true;
     }
-    Method method = ((HandlerMethod) handler).getMethod();
+    HandlerMethod handlerMethod = (HandlerMethod) handler;
+    Method method = handlerMethod.getMethod();
     if (method.isAnnotationPresent(DontAuthenticate.class)) {
       return true;
     }
-    AuthAnnotationDataDto annotationData = annotationData(method);
-    log.debug("Final annotation data: {}", annotationData);
+    AuthAnnotationDataDto annotationData = annotationData(method, handlerMethod.getBeanType());
+    log.info("Final annotation data: {}", annotationData);
     if (annotationData == null) {
       return true;
     }
@@ -145,9 +146,8 @@ public abstract class AbstractAuthenticationInterceptor<T extends AbstractMongoE
     return false;
   }
 
-  private AuthAnnotationDataDto annotationData(Method method) {
-    Annotation annotationClass =
-        findRelevantAnnotation(method.getDeclaringClass().getAnnotations());
+  private AuthAnnotationDataDto annotationData(Method method, Class<?> beanType) {
+    Annotation annotationClass = findClassLevelAnnotation(beanType);
     Annotation annotationMethod = findRelevantAnnotation(method.getAnnotations());
 
     if (annotationClass == null && annotationMethod == null) {
@@ -156,7 +156,8 @@ public abstract class AbstractAuthenticationInterceptor<T extends AbstractMongoE
 
     AuthAnnotationDataDto classData = fetchAnnotationData(annotationClass);
     AuthAnnotationDataDto methodData = fetchAnnotationData(annotationMethod);
-    log.debug("Class Data: {}, Method Data: {}", classData, methodData);
+    log.info("{}::{}: Class Data: {}, Method Data: {}", beanType.getName(), method.getName(),
+        classData, methodData);
 
     if (classData == null) {
       return sanitize(methodData);
@@ -172,6 +173,18 @@ public abstract class AbstractAuthenticationInterceptor<T extends AbstractMongoE
 
     return sanitize(AuthAnnotationDataDto.builder().module(finalModule).permission(finalPermission)
         .required(methodData.isRequired()).build());
+  }
+
+  private Annotation findClassLevelAnnotation(Class<?> clazz) {
+    Class<?> currentClass = clazz;
+    while (currentClass != null) {
+      Annotation annotation = findRelevantAnnotation(currentClass.getAnnotations());
+      if (annotation != null) {
+        return annotation;
+      }
+      currentClass = currentClass.getSuperclass();
+    }
+    return null;
   }
 
   private Annotation findRelevantAnnotation(Annotation[] annotations) {

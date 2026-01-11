@@ -28,16 +28,16 @@ public class AbstractAuthenticationInterceptorAnnotationMergeTest {
     authInterceptor = new AuthInterceptor(userService);
 
     // Use reflection to access the private annotationData method
-    annotationDataMethod =
-        AbstractAuthenticationInterceptor.class.getDeclaredMethod("annotationData", Method.class);
+    annotationDataMethod = AbstractAuthenticationInterceptor.class.getDeclaredMethod("annotationData",
+        Method.class, Class.class);
     annotationDataMethod.setAccessible(true);
   }
 
   @Test
   public void shouldReturnNullWhenNoAnnotations() throws Exception {
     Method method = TestClassNoAnnotations.class.getMethod("testMethod");
-    AuthAnnotationDataDto result =
-        (AuthAnnotationDataDto) annotationDataMethod.invoke(authInterceptor, method);
+    AuthAnnotationDataDto result = (AuthAnnotationDataDto) annotationDataMethod.invoke(authInterceptor,
+        method, TestClassNoAnnotations.class);
 
     assertThat(result).isNull();
   }
@@ -45,8 +45,8 @@ public class AbstractAuthenticationInterceptorAnnotationMergeTest {
   @Test
   public void shouldUseMethodAnnotationOnly() throws Exception {
     Method method = TestClassNoAnnotations.class.getMethod("methodWithAnnotation");
-    AuthAnnotationDataDto result =
-        (AuthAnnotationDataDto) annotationDataMethod.invoke(authInterceptor, method);
+    AuthAnnotationDataDto result = (AuthAnnotationDataDto) annotationDataMethod.invoke(authInterceptor,
+        method, TestClassNoAnnotations.class);
 
     assertThat(result).isNotNull();
     assertThat(result.getModule()).isEqualTo(BasicModuleEnum.USER);
@@ -57,8 +57,8 @@ public class AbstractAuthenticationInterceptorAnnotationMergeTest {
   @Test
   public void shouldUseClassAnnotationOnly() throws Exception {
     Method method = TestClassWithAnnotation.class.getMethod("testMethod");
-    AuthAnnotationDataDto result =
-        (AuthAnnotationDataDto) annotationDataMethod.invoke(authInterceptor, method);
+    AuthAnnotationDataDto result = (AuthAnnotationDataDto) annotationDataMethod.invoke(authInterceptor,
+        method, TestClassWithAnnotation.class);
 
     assertThat(result).isNotNull();
     assertThat(result.getModule()).isEqualTo(BasicModuleEnum.USER);
@@ -69,8 +69,8 @@ public class AbstractAuthenticationInterceptorAnnotationMergeTest {
   @Test
   public void shouldUseMethodWhenBothHaveDefinedValues() throws Exception {
     Method method = TestClassWithAnnotation.class.getMethod("methodOverridingClass");
-    AuthAnnotationDataDto result =
-        (AuthAnnotationDataDto) annotationDataMethod.invoke(authInterceptor, method);
+    AuthAnnotationDataDto result = (AuthAnnotationDataDto) annotationDataMethod.invoke(authInterceptor,
+        method, method.getDeclaringClass());
 
     assertThat(result).isNotNull();
     // Method should override class
@@ -82,8 +82,8 @@ public class AbstractAuthenticationInterceptorAnnotationMergeTest {
   @Test
   public void shouldFallBackToClassWhenMethodHasUndefined() throws Exception {
     Method method = TestClassWithAnnotation.class.getMethod("methodWithUndefined");
-    AuthAnnotationDataDto result =
-        (AuthAnnotationDataDto) annotationDataMethod.invoke(authInterceptor, method);
+    AuthAnnotationDataDto result = (AuthAnnotationDataDto) annotationDataMethod.invoke(authInterceptor,
+        method, method.getDeclaringClass());
 
     assertThat(result).isNotNull();
     // Should use class values since method has UNDEFINED
@@ -95,8 +95,8 @@ public class AbstractAuthenticationInterceptorAnnotationMergeTest {
   @Test
   public void shouldUseAnyWhenClassHasUndefinedAndMethodHasUndefined() throws Exception {
     Method method = TestClassWithUndefined.class.getMethod("methodWithUndefined");
-    AuthAnnotationDataDto result =
-        (AuthAnnotationDataDto) annotationDataMethod.invoke(authInterceptor, method);
+    AuthAnnotationDataDto result = (AuthAnnotationDataDto) annotationDataMethod.invoke(authInterceptor,
+        method, method.getDeclaringClass());
 
     assertThat(result).isNotNull();
     // Both have UNDEFINED, should default to ANY
@@ -108,8 +108,8 @@ public class AbstractAuthenticationInterceptorAnnotationMergeTest {
   @Test
   public void shouldUseAnyWhenClassHasUndefinedAndNoMethodAnnotation() throws Exception {
     Method method = TestClassWithUndefined.class.getMethod("testMethod");
-    AuthAnnotationDataDto result =
-        (AuthAnnotationDataDto) annotationDataMethod.invoke(authInterceptor, method);
+    AuthAnnotationDataDto result = (AuthAnnotationDataDto) annotationDataMethod.invoke(authInterceptor,
+        method, method.getDeclaringClass());
 
     assertThat(result).isNotNull();
     // Class has UNDEFINED, should default to ANY
@@ -121,8 +121,8 @@ public class AbstractAuthenticationInterceptorAnnotationMergeTest {
   @Test
   public void shouldUseMethodWhenClassHasUndefined() throws Exception {
     Method method = TestClassWithUndefined.class.getMethod("methodWithDefinedValues");
-    AuthAnnotationDataDto result =
-        (AuthAnnotationDataDto) annotationDataMethod.invoke(authInterceptor, method);
+    AuthAnnotationDataDto result = (AuthAnnotationDataDto) annotationDataMethod.invoke(authInterceptor,
+        method, method.getDeclaringClass());
 
     assertThat(result).isNotNull();
     // Method has defined values, class has UNDEFINED, should use method
@@ -134,8 +134,8 @@ public class AbstractAuthenticationInterceptorAnnotationMergeTest {
   @Test
   public void shouldUseMethodUndefinedModuleButClassDefinedPermission() throws Exception {
     Method method = TestClassWithAnnotation.class.getMethod("methodWithPartialUndefined");
-    AuthAnnotationDataDto result =
-        (AuthAnnotationDataDto) annotationDataMethod.invoke(authInterceptor, method);
+    AuthAnnotationDataDto result = (AuthAnnotationDataDto) annotationDataMethod.invoke(authInterceptor,
+        method, method.getDeclaringClass());
 
     assertThat(result).isNotNull();
     // Method module is UNDEFINED, should use class module (USER)
@@ -148,8 +148,8 @@ public class AbstractAuthenticationInterceptorAnnotationMergeTest {
   @Test
   public void shouldUseClassModuleButMethodPermission() throws Exception {
     Method method = TestClassWithAnnotation.class.getMethod("methodWithUndefinedModuleOnly");
-    AuthAnnotationDataDto result =
-        (AuthAnnotationDataDto) annotationDataMethod.invoke(authInterceptor, method);
+    AuthAnnotationDataDto result = (AuthAnnotationDataDto) annotationDataMethod.invoke(authInterceptor,
+        method, method.getDeclaringClass());
 
     assertThat(result).isNotNull();
     // Method module is UNDEFINED, should use class module (USER)
@@ -163,8 +163,8 @@ public class AbstractAuthenticationInterceptorAnnotationMergeTest {
   public void shouldUseClassModuleAndMethodPermissionWhenClassHasUndefinedPermission()
       throws Exception {
     Method method = TestClassWithUndefinedPermission.class.getMethod("methodWithCreatePermission");
-    AuthAnnotationDataDto result =
-        (AuthAnnotationDataDto) annotationDataMethod.invoke(authInterceptor, method);
+    AuthAnnotationDataDto result = (AuthAnnotationDataDto) annotationDataMethod.invoke(authInterceptor,
+        method, method.getDeclaringClass());
 
     assertThat(result).isNotNull();
     // Class module is USER, method module is UNDEFINED → use class module (USER)
