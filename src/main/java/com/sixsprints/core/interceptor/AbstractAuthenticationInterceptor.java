@@ -50,7 +50,7 @@ public abstract class AbstractAuthenticationInterceptor<T extends AbstractMongoE
       return true;
     }
     AuthAnnotationDataDto annotationData = annotationData(method);
-    log.info("Final annotation data: {}", annotationData);
+    log.debug("Final annotation data: {}", annotationData);
     if (annotationData == null) {
       return true;
     }
@@ -156,7 +156,7 @@ public abstract class AbstractAuthenticationInterceptor<T extends AbstractMongoE
 
     AuthAnnotationDataDto classData = fetchAnnotationData(annotationClass);
     AuthAnnotationDataDto methodData = fetchAnnotationData(annotationMethod);
-    log.info("Class Data: {}, Method Data: {}", classData, methodData);
+    log.debug("Class Data: {}, Method Data: {}", classData, methodData);
 
     if (classData == null) {
       return sanitize(methodData);
